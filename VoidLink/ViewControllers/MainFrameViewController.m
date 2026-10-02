@@ -110,8 +110,12 @@ static NSMutableSet* hostList;
     // Needs to be synchronous to ensure the alert is shown before any potential
     // failure callback could be invoked.
     dispatch_sync(dispatch_get_main_queue(), ^{
+        // The generated PIN is data, not part of a translated format string.
+        // Always show it even if a future translation omits a placeholder.
+        NSString *instructions = [LocalizationHelper localizedTemplateForKey:@"Enter this PIN on your host PC. If you use Sunshine, open its web interface and enter it on the PIN page."];
+        NSString *pairingMessage = [NSString stringWithFormat:@"%@\n\n%@", PIN, instructions];
         self->_pairAlert = [UIAlertController alertControllerWithTitle:[LocalizationHelper localizedStringForKey:@"Pairing"]
-                                                               message:[LocalizationHelper localizedStringForKey:@"Enter_PIN_Msg", PIN]
+                                                               message:pairingMessage
                                                         preferredStyle:UIAlertControllerStyleAlert];
         [self->_pairAlert addAction:[UIAlertAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"Cancel"] style:UIAlertActionStyleDestructive handler:^(UIAlertAction* action) {
             dispatch_async(dispatch_get_main_queue(), ^{

@@ -11,11 +11,20 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @interface LocalizationHelper : NSObject
+
+// Resolve a template before formatting. Partial translations fall back per key
+// to the development language, then English, then the readable source string.
++ (NSString *)localizedTemplateForKey:(NSString *)key
+    NS_SWIFT_NAME(localizedTemplate(forKey:));
 
 // Method to get localized string with format arguments
 + (NSString *)localizedStringForKey:(NSString *)key, ... NS_FORMAT_FUNCTION(1,2);
 
 @end
+
+NS_ASSUME_NONNULL_END
 
 #endif /* LocalizationHelper_h */

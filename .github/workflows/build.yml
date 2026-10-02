@@ -29,6 +29,9 @@ jobs:
       - name: Test gesture holds and scrolling
         run: bash BuildScripts/test-gestures.sh
 
+      - name: Test localization fallback and pairing PIN
+        run: bash BuildScripts/test-localization.sh
+
       - name: Build unsigned device archive
         run: |
           set -o pipefail

@@ -8,7 +8,8 @@
 
 extension LocalizationHelper {
     static func localizedString(forKey key: String, _ args: CVarArg...) -> String {
-        let format = NSLocalizedString(key, tableName: "Localizable", bundle: .main, value: "", comment: "")
+        let format = localizedTemplate(forKey: key)
+        guard !args.isEmpty else { return format }
         return String(format: format, arguments: args)
     }
 }

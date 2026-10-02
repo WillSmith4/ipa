@@ -1,6 +1,109 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "SensitivityY" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertical sensitivity"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czułość pionowa"
+          }
+        }
+      }
+    },
+    "SensitivityX" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horizontal sensitivity"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czułość pozioma"
+          }
+        }
+      }
+    },
+    "relativeTouchSlideThresholdStackTip" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In relative touch mode, the pointer starts moving after your finger travels this distance in screen points. Increase the threshold to reduce accidental movement when tapping; set it to 0 for an immediate response."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W trybie dotyku względnego wskaźnik zaczyna się poruszać po przesunięciu palca o tę odległość w punktach ekranu. Zwiększ próg, aby ograniczyć przypadkowy ruch przy stuknięciu, lub ustaw 0, aby reagował natychmiast."
+          }
+        }
+      }
+    },
+    "enterSqueezePressShort" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the key or shortcut to hold when you squeeze Apple Pencil Pro. Use + to combine keys, for example CTRL+E."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz klawisz lub skrót przytrzymywany po ściśnięciu Apple Pencil Pro. Połącz klawisze znakiem +, np. CTRL+E."
+          }
+        }
+      }
+    },
+    "Enter this PIN on your host PC. If you use Sunshine, open its web interface and enter it on the PIN page." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter this PIN on your host PC. If you use Sunshine, open its web interface and enter it on the PIN page."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz ten PIN na komputerze, z którym się łączysz. Jeśli używasz Sunshine, otwórz jego panel w przeglądarce i wpisz kod na stronie PIN."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请在主机端输入此 PIN 码。如果主机运行的是 Sunshine，请打开其网页控制台并在 PIN 页面输入此代码。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在主機端輸入此 PIN 碼。如果主機執行的是 Sunshine，請開啟其網頁控制台並在 PIN 頁面輸入此代碼。"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請在主機端輸入此 PIN 碼。如果主機執行的是 Sunshine，請開啟其網頁控制台並在 PIN 頁面輸入此代碼。"
+          }
+        }
+      }
+    },
     "Pinch In": {
       "extractionState": "manual",
       "localizations": {
@@ -6575,24 +6678,36 @@
       }
     },
     "Cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj"
           }
         }
       }
@@ -9777,30 +9892,36 @@
       }
     },
     "Enter_PIN_Msg" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "\nEnter the following PIN on the host machine: %@\n\nIf your host PC is running Sunshine, navigate to the Sunshine web UI to enter the PIN"
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\nEnter the following PIN on the host machine: %@\n\nIf your host PC is running Sunshine, navigate to the Sunshine web UI to enter the PIN"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "\n请在主机端输入PIN码: %@\n\n如果主机运行的是Sunshine, 请在网页控制台输入PIN码"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\n请在主机端输入PIN码: %@\n\n如果主机运行的是Sunshine, 请在网页控制台输入PIN码"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "\n在主機上輸入以下 PIN 碼：%@\n\n如果您的主機電腦正在執行 Sunshine，請導覽至 Sunshine Web UI 以輸入 PIN"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\n在主機上輸入以下 PIN 碼：%@\n\n如果您的主機電腦正在執行 Sunshine，請導覽至 Sunshine Web UI 以輸入 PIN"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "\n在主機上輸入以下 PIN 碼：%@\n\n如果您的主機電腦正在執行 Sunshine，請導覽至 Sunshine Web UI 以輸入 PIN"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\n在主機上輸入以下 PIN 碼：%@\n\n如果您的主機電腦正在執行 Sunshine，請導覽至 Sunshine Web UI 以輸入 PIN"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\nWpisz ten PIN na komputerze, z którym się łączysz: %@\n\nJeśli używasz Sunshine, wpisz go w panelu Sunshine w przeglądarce."
           }
         }
       }
@@ -16084,47 +16205,71 @@
       }
     },
     "Pairing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在配对"
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在配对"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在配對"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在配對"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在配對"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在配對"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pairing"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parowanie"
           }
         }
       }
     },
     "Pairing Failed" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配对失败"
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对失败"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配對失敗"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配對失敗"
           }
         },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "配對失敗"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配對失敗"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pairing Failed"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parowanie nie powiodło się"
           }
         }
       }
@@ -16413,7 +16558,21 @@
       }
     },
     "PencilProPackDescription" : {
-      "extractionState" : "manual"
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drawing Toolkit includes pressure curves, Pencil tip calibration and Pencil shortcuts. These features are included in the app."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Narzędzia rysowania obejmują krzywe nacisku, kalibrację końcówki Apple Pencil i skróty rysika. Te funkcje są dostępne w aplikacji bez dodatkowych opłat."
+          }
+        }
+      }
     },
     "PencilProPackLowOSVersionTip" : {
       "extractionState" : "manual",
