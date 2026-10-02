@@ -129,18 +129,6 @@ private final class PencilTipOffsetCanvasView: UIView {
         setupSliders()
         applyOffset(currentOffset)
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(pencilProPurchaseAborted(_:)),
-            name: AddOnProduct.PencilProPack.purchaseAbortedNotification(),
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(persistOffset),
-            name: AddOnProduct.PencilProPack.purchaseSucceededNotification(),
-            object: nil
-        )
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissSelf))
         tap.delegate = self
@@ -326,30 +314,10 @@ private final class PencilTipOffsetCanvasView: UIView {
     }
 
     @objc private func saveTapped() {
-        saveButton.isEnabled = false
-        IAPManager.checkPurchaseInfo(.PencilProPack) { info in
-            self.saveButton.isEnabled = true
-            if info.valid {
-                self.persistOffset()
-            } else {
-                IAPManager.inAppPurchaseAction(viewController: self, product: .PencilProPack)
-            }
-        }
+        persistOffset()
     }
 
-    @objc private func pencilProPurchaseAborted(_ notification: Notification) {
-        guard let interruption = notification.object as? PurchaseInterruption else { return }
-        if interruption == .lowOSVersion {
-            AlertControllerUtil.showAlert(
-                in: self,
-                title: "",
-                message: LocalizationHelper.localizedString(forKey:"PencilProPackLowOSVersionTip"),
-                withCancel: false,
-                buttonTitle: LocalizationHelper.localizedString(forKey: "OK"),
-                countdown: 0
-            )
-        }
-    }
+
 
     @objc private func dismissSelf() {
         dismiss(animated: true)

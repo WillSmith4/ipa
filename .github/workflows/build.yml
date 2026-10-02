@@ -2,29 +2,64 @@ name: Build VoidLink IPA
 
 on:
   push:
-    branches: [ "feat/frame_pacing_metal" ]
+    branches: [main, 'codex/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ipa-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    name: Build VoidLink IPA
-    runs-on: macos-latest
-
+    runs-on: macos-15
+    timeout-minutes: 45
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Checkout submodules
-        run: "git submodule update --init --recursive"
-
-      - name: Build VoidLink
+      - name: Select Xcode 26
         run: |
-          xcodebuild -verbose -scheme VoidLink -sdk iphoneos -configuration Debug archive -archivePath $PWD/build/VoidLink.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED="NO" CODE_SIGN_ENTITLEMENTS="" CODE_SIGNING_ALLOWED="NO"
-          mkdir -p ./build/IPA && mkdir -p ./build/IPA/Payload
-          cp -r ./build/VoidLink.xcarchive/Products/Applications/VoidLink.app ./build/IPA/Payload/VoidLink.app
-          cd ./build/IPA && zip -r ../../build/VoidLink.ipa ./Payload/* && cd ../..
+          sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+          xcodebuild -version
 
-      - name: Upload VoidLink IPA to Artifacts
+      - name: Test gesture holds and scrolling
+        run: bash BuildScripts/test-gestures.sh
+
+      - name: Build unsigned device archive
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild -project VoidLink.xcodeproj -scheme VoidLink \
+            -sdk iphoneos -destination 'generic/platform=iOS' -configuration Release \
+            -archivePath "$PWD/build/VoidLink.xcarchive" \
+            -resultBundlePath "$PWD/build/Archive.xcresult" \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
+            archive 2>&1 | tee build/xcodebuild.log
+
+      - name: Package IPA
+        run: |
+          mkdir -p build/IPA/Payload
+          ditto build/VoidLink.xcarchive/Products/Applications/VoidLink.app build/IPA/Payload/VoidLink.app
+          cd build/IPA
+          zip -qry ../VoidLink-unsigned.ipa Payload
+
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: VoidLink.ipa
-          path: build/VoidLink.ipa
+          name: VoidLink-unsigned-IPA
+          path: build/VoidLink-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: |
+            build/xcodebuild.log
+            build/Archive.xcresult
+          if-no-files-found: ignore

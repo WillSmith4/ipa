@@ -295,6 +295,10 @@
 		FBD3495019FF2174002D2A60 /* SettingsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = FBD3494F19FF2174002D2A60 /* SettingsViewController.m */; };
 		FBD3495319FF36FB002D2A60 /* SWRevealViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = FBD3495219FF36FB002D2A60 /* SWRevealViewController.m */; };
 		FBD349621A0089F6002D2A60 /* DataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = FBD349611A0089F6002D2A60 /* DataManager.m */; };
+		CA6100000000000000000002 /* GestureActionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6100000000000000000001 /* GestureActionEngine.swift */; };
+		CA6100000000000000000003 /* GestureActionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6100000000000000000001 /* GestureActionEngine.swift */; };
+		CA6100000000000000000012 /* StreamGestureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6100000000000000000011 /* StreamGestureController.swift */; };
+		CA6100000000000000000013 /* StreamGestureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6100000000000000000011 /* StreamGestureController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -578,6 +582,9 @@
 		FBD3495219FF36FB002D2A60 /* SWRevealViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SWRevealViewController.m; sourceTree = "<group>"; };
 		FBD349601A0089F6002D2A60 /* DataManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DataManager.h; path = Database/DataManager.h; sourceTree = "<group>"; };
 		FBD349611A0089F6002D2A60 /* DataManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = DataManager.m; path = Database/DataManager.m; sourceTree = "<group>"; };
+		CA6100000000000000000001 /* GestureActionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureActionEngine.swift; sourceTree = "<group>"; };
+		CA6100000000000000000011 /* StreamGestureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamGestureController.swift; sourceTree = "<group>"; };
+		CA6100000000000000000021 /* VoidLink v1.1.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.1.xcdatamodel"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -972,6 +979,8 @@
 				18416EA32EBB3DCE00AE0124 /* UITouchUtil.swift */,
 				18B317022EE67A39009B62C2 /* InertialScroller.swift */,
 				18951D1C2EBB6D2300A86E12 /* TouchPadGestureHandler.swift */,
+				CA6100000000000000000011 /* StreamGestureController.swift */,
+				CA6100000000000000000001 /* GestureActionEngine.swift */,
 				18A765BC2ECD51FB004784AA /* ControllerUtil.swift */,
 				A1C0DE002FBC000100000001 /* ControllerNavigator.swift */,
 				A1C0DE022FBC000100000001 /* RadialMenuOverlayView.swift */,
@@ -1384,6 +1393,8 @@
 				A70100000000000000000006 /* Frame.m in Sources */,
 				A70100000000000000000007 /* FrameQueue.m in Sources */,
 				A70100000000000000000008 /* TouchPadGestureHandler.swift in Sources */,
+				CA6100000000000000000013 /* StreamGestureController.swift in Sources */,
+				CA6100000000000000000003 /* GestureActionEngine.swift in Sources */,
 				A70100000000000000000009 /* FloatBuffer.m in Sources */,
 				A7010000000000000000000A /* PaddedLabel.m in Sources */,
 				A7010000000000000000000B /* BandwidthTracker.m in Sources */,
@@ -1503,6 +1514,8 @@
 				97E20DDF2E2164A9000D5DCA /* Frame.m in Sources */,
 				97E20DE02E2164A9000D5DCA /* FrameQueue.m in Sources */,
 				18951D1D2EBB6D2300A86E12 /* TouchPadGestureHandler.swift in Sources */,
+				CA6100000000000000000012 /* StreamGestureController.swift in Sources */,
+				CA6100000000000000000002 /* GestureActionEngine.swift in Sources */,
 				97E20DE12E2164A9000D5DCA /* FloatBuffer.m in Sources */,
 				18FCADAF2ECAC23200787A96 /* PencilHandler.swift in Sources */,
 				97E20DE22E2164A9000D5DCA /* PaddedLabel.m in Sources */,
@@ -2253,9 +2266,10 @@
 			isa = XCVersionGroup;
 			children = (
 				18BF141D2E0D7A00009DEE4F /* VoidLink v1.0.xcdatamodel */,
+				CA6100000000000000000021 /* VoidLink v1.1.xcdatamodel */,
 				FB290D0619B2C406004C83CF /* Limelight.xcdatamodel */,
 			);
-			currentVersion = 18BF141D2E0D7A00009DEE4F /* VoidLink v1.0.xcdatamodel */;
+			currentVersion = CA6100000000000000000021 /* VoidLink v1.1.xcdatamodel */;
 			path = Limelight.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

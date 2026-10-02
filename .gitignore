@@ -1,6 +1,7 @@
 **/xcuserdata/
 **/Moonlight.xcscmblueprint
 **/xcschemes/*.xcscheme
+!VoidLink.xcodeproj/xcshareddata/xcschemes/VoidLink.xcscheme
 .DS_Store
 Build
 build/

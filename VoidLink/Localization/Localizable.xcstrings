@@ -1,6 +1,210 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Pinch In": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch In"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ściśnięcie palców"
+          }
+        }
+      }
+    },
+    "Pinch Out": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch Out"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozsunięcie palców"
+          }
+        }
+      }
+    },
+    "Rotate Left": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate Left"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrót w lewo"
+          }
+        }
+      }
+    },
+    "Rotate Right": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate Right"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrót w prawo"
+          }
+        }
+      }
+    },
+    "Rotation Sensitivity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation Sensitivity"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czułość obrotu"
+          }
+        }
+      }
+    },
+    "Gesture key binding help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a key name or a chord joined with +, such as Q, E, SPACE, LEFT_ARROW or CTRL+Q. Keys stay held while the gesture moves and release when it ends."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz nazwę klawisza lub kombinację połączoną znakiem +, np. Q, E, SPACE, LEFT_ARROW lub CTRL+Q. Klawisze są przytrzymywane podczas ruchu i zwalniane po zakończeniu gestu."
+          }
+        }
+      }
+    },
+    "Invalid key binding": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid key binding"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieprawidłowy klawisz"
+          }
+        }
+      }
+    },
+    "Camera gesture help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch in scrolls down, pinch out scrolls up, and two-finger rotation holds Q (left) or E (right) by default. Choose scrolling, a key/chord, or Off for each direction. Edit changes the key/chord. Stronger movement extends the continuous hold; lifting a finger releases it immediately. Keyboard keys are digital, so the game determines rotation speed."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domyślnie ściśnięcie przewija w dół, rozsunięcie w górę, a obrót dwóch palców przytrzymuje Q (w lewo) lub E (w prawo). Dla każdego kierunku wybierz przewijanie, klawisz/kombinację lub wyłączenie. Edytuj zmienia przypisanie. Silniejszy ruch wydłuża przytrzymanie; uniesienie palca zwalnia klawisz natychmiast. Klawisze są cyfrowe, więc prędkość obrotu określa gra."
+          }
+        }
+      }
+    },
+    "Drawing Toolkit included": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drawing Toolkit is included"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Narzędzia rysowania są dostępne bez opłat"
+          }
+        }
+      }
+    },
+    "Scroll Down": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scroll Down"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przewijaj w dół"
+          }
+        }
+      }
+    },
+    "Scroll Up": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scroll Up"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przewijaj w górę"
+          }
+        }
+      }
+    },
+    "Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klawisz"
+          }
+        }
+      }
+    },
     "\nHost processing latency min/max/avg: %.1f/%.1f/%.1f ms" : {
       "extractionState" : "manual",
       "localizations" : {

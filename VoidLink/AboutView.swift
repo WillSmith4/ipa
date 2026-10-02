@@ -91,33 +91,12 @@ public struct AboutView: View {
                 }
 
                 HStack(spacing: 15) {
-                    if #available(iOS 15.0, *) {
-                        if PublicUtils.isIPad, PublicUtils.isIAPAddonAvailable {
-                            Button(LocalizationHelper.localizedString(forKey: "I'm an artist")) {
-                                IAPManager.checkPurchaseInfo(.PencilProPack) { info in
-                                    if !info.valid {
-                                        IAPManager.inAppPurchaseAction(viewController: self.aboutVC, product: .PencilProPack)
-                                    }
-                                    else {
-                                        AlertControllerUtil.showAlert(
-                                            in: self.aboutVC,
-                                            title: "",
-                                            message: LocalizationHelper.localizedString(forKey:"Drawing Toolkit already purchased"),
-                                            withCancel: false,
-                                            buttonTitle: LocalizationHelper.localizedString(forKey: "OK"),
-                                            countdown: 0)
-                                    }
-                                }
-                            }
+                    if PublicUtils.isIPad {
+                        Text("Drawing Toolkit included".localized)
+                            .foregroundColor(.secondary)
                             .padding()
-                            .background(Color.blue.opacity(1))
-                            .foregroundColor(.white)
-                            .frame(height: 46)
-                            .cornerRadius(12)
-                            .padding(.top, 10)
-                        }
                     }
-                    
+
                     // OK 按钮
                     Button(LocalizationHelper.localizedString(forKey: "OK")) {
                         aboutVC.dismiss(animated:true)

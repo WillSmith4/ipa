@@ -129,8 +129,15 @@ import UIKit
     @objc public weak var delegate: IAPManagerDelegate?
     @objc public private(set) var fetchedProductIds: [String] = []
 
+    /// Drawing Toolkit is included in the app, independent of receipts, OS
+    /// version, account, bundle identifier or purchase revocation.
+    @objc public static func isIncluded(_ product: AddOnProduct) -> Bool {
+        product == .PencilProPack
+    }
+
     private override init() {
         super.init()
+        guard AddOnProduct.allCases.contains(where: { !Self.isIncluded($0) }) else { return }
         if #available(iOS 15.0, *, *) {
             Task {
                 await listenForTransactions()
@@ -148,6 +155,7 @@ import UIKit
     // MARK: - Fetch Products (StoreKit 2)
 
     @objc public func fetchProducts() {
+        guard AddOnProduct.allCases.contains(where: { !Self.isIncluded($0) }) else { return }
         if #available(iOS 15.0, *, *) {
             Task {
                 await fetchProductsStoreKit2()
@@ -159,7 +167,7 @@ import UIKit
 
     @available(iOS 15.0, *, *)
     private func fetchProductsStoreKit2() async {
-        let ids = Set(AddOnProduct.allCases.map { $0.productId() })
+        let ids = Set(AddOnProduct.allCases.filter { !Self.isIncluded($0) }.map { $0.productId() })
         do {
             let sk2Products = try await Product.products(for: ids)
             let idsFetched = sk2Products.map { $0.id }
@@ -177,7 +185,7 @@ import UIKit
     @objc public var skProducts: [SKProduct] = []
     private var productsRequest: SKProductsRequest?
     private func fetchProductsLegacy() {
-        let productIds = Set(AddOnProduct.allCases.map { $0.productId() })
+        let productIds = Set(AddOnProduct.allCases.filter { !Self.isIncluded($0) }.map { $0.productId() })
         
         
         guard productsRequest == nil else { return }
@@ -196,6 +204,7 @@ import UIKit
     // MARK: - Purchase (StoreKit 2)
 
     @objc public func purchase(_ product: AddOnProduct) {
+        guard !Self.isIncluded(product) else { return }
         if #available(iOS 15.0, *, *) {
             Task {
                 await purchaseStoreKit2(product)
@@ -275,6 +284,7 @@ import UIKit
     }
 
     @objc static func handlePurchaseSuccess(_ product: AddOnProduct) {
+        guard !isIncluded(product) else { return }
         switch product {
         case .PencilProPack:
             if !PublicUtils.isIPad {return}
@@ -312,6 +322,7 @@ import UIKit
     
     // MARK: - Restore (StoreKit 2)
     @objc static func restore(product: AddOnProduct, in viewController: UIViewController){
+        guard !isIncluded(product) else { return }
         if #available(iOS 15.0, *) {
             Task{
                 do {
@@ -394,6 +405,11 @@ import UIKit
         _ product: AddOnProduct,
         completion: @escaping (PurchaseInfo) -> Void
     ) {
+        if isIncluded(product) {
+            let deliver = { completion(PurchaseInfo(status: .purchased, expirationDate: nil)) }
+            if Thread.isMainThread { deliver() } else { DispatchQueue.main.async(execute: deliver) }
+            return
+        }
         let productID = product.productId()
         if #available(iOS 15.0, *) {
             Task {
@@ -437,6 +453,7 @@ import UIKit
     }
     
     @objc static public func inAppPurchaseAction(viewController: UIViewController, product: AddOnProduct){
+        guard !isIncluded(product) else { return }
         
         let alert = UIAlertController(title: product.productName(),
                                       message: LocalizationHelper.localizedString(forKey: "No purchase found", product.productName()),

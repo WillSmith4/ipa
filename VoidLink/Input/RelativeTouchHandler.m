@@ -192,7 +192,6 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
     
-    if(TouchPadGestureHandler.ctrlDown) LiSendKeyboardEvent(CommandManager.keyboardButtonMappings[@"CTRL"].shortValue,KEY_ACTION_UP,0);
     
     [TouchPadGestureHandler startInertialScroll];
     
@@ -229,6 +228,16 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
     }
         
     touchPointSpawnedAtUpperScreenEdge = false;
+}
+
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
+    [TouchPadGestureHandler cancel];
+    multiTouchesDetected = false;
+    quickTapDetected = false;
+    touchLockedForMouseMove = nil;
+    mousePointerMoved = false;
+    LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
+    LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
 }
 
 - (void)sendMouseMoveEvent:(CGPoint)currentLocation{

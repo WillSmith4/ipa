@@ -26,7 +26,7 @@ import UIKit
     @objc static var hoverSupported: Bool = false
     // @objc static private(set) var autoHoverTermination: Bool = false
     @objc static private(set) var pencilAndHoverMode: PencilAndHoverMode = .pencilOnly
-    private(set) var pencilProEnabled: Bool = false
+    private(set) var pencilProEnabled: Bool = true
     private var isFirstMove: Bool = false
     private var strokeSampleIndex: Int32 = 0
     private var initialMoveEventIndexLimit: Int64
@@ -110,18 +110,9 @@ import UIKit
         
         pressureCurveEnabled = selectedProfile.pressureCurveEnabled
         
-        if #available(iOS 15.0, *) {
-            IAPManager.checkPurchaseInfo(.PencilProPack) { info in
-                self.pressureCurveEnabled = self.pressureCurveEnabled && info.valid
-                self.pencilTickEnabled = self.pencilTickEnabled && info.valid
-                self.pencilTipOffset = info.valid ? self.pencilTipOffset : .zero
-                self.pencilProEnabled = info.valid
-                PencilHandler.pencilPausesNativeTouch = selectedProfile.pencilPausesNativeTouch && info.valid
-                if info.valid {
-                    self.setupPencilInteraction(view: self.streamView)
-                }
-            }
-        }
+        pencilProEnabled = true
+        PencilHandler.pencilPausesNativeTouch = selectedProfile.pencilPausesNativeTouch
+        setupPencilInteraction(view: streamView)
         
         let strokePressureCurvePoints = PressureCurve.importCurvePoints(selectedProfile.pressureCurvePoints)
         let strokePressureCurve = PressureCurve()

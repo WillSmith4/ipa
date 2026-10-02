@@ -461,7 +461,9 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     _scrollView.scrollEnabled = interactionEnabled;
     _scrollView.panGestureRecognizer.enabled = interactionEnabled;
 #if !TARGET_OS_TV
-    _scrollView.pinchGestureRecognizer.enabled = interactionEnabled;
+    BOOL remotePinchEnabled = _settings.enablePinch &&
+        (![_settings.pinchInAction isEqualToString:@"NONE"] || ![_settings.pinchOutAction isEqualToString:@"NONE"]);
+    _scrollView.pinchGestureRecognizer.enabled = interactionEnabled && !remotePinchEnabled;
 #endif
 }
 
@@ -691,13 +693,11 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     _motionHandler.controllerGyroBiasY = _settings.controllerGyroBiasY.doubleValue;
     _motionHandler.controllerGyroBiasZ = _settings.controllerGyroBiasZ.doubleValue;
 
-    TouchPadGestureHandler.enablePinch = _settings.enablePinch;
-    TouchPadGestureHandler.ctrlDownForPinch = _settings.ctrlDownForPinch;
     TouchPadGestureHandler.scrollSensitivity = _settings.scrollSensitivity.floatValue;
-    TouchPadGestureHandler.pinchSensitivity = _settings.pinchSensitivity.floatValue;
     TouchPadGestureHandler.displayLinkRate = _settings.framerate.intValue;
+    [_streamView configureStreamGestures];
     
-    [self setMagnifierViewportInteractionEnabled:_oscProfile.touchMode == AbsoluteTouch && !_settings.passthroughGestures];
+    [self setMagnifierViewportInteractionEnabled:_oscProfile.touchMode == AbsoluteTouch && !_settings.passthroughGestures && !_settings.enablePinch];
     
     GenericUtils.globeAsEscape = _settings.globeAsEscape;
     
@@ -716,6 +716,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
+    [_streamView cancelStreamGestures];
     [super viewWillDisappear:animated];
 }
 
@@ -1223,6 +1224,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 }
 
 - (void)setUserInteractionEnabledForStreamView:(bool)enabled{
+    if (!enabled) [_streamView cancelStreamGestures];
     _streamView.userInteractionEnabled = enabled;
     for(UIView* view in self.view.subviews){
         if([view isKindOfClass:[OnScreenWidgetView class]]) view.userInteractionEnabled = enabled;
@@ -1660,6 +1662,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 }
 
 - (void)expandSettingsView{
+    [_streamView cancelStreamGestures];
     [_streamView saveStreamingGameProfileChanges];
     [self.mainFrameViewcontroller expandSettingsView];
 }
@@ -1728,6 +1731,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     unsigned int portTestResults = LiTestClientConnectivity(CONN_TEST_SERVER, 443, portFlags);
     
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self->_streamView cancelStreamGestures];
         // Allow the display to go to sleep now
         [UIApplication sharedApplication].idleTimerDisabled = NO;
         
@@ -1804,6 +1808,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
         [self presentViewController:conTermAlert animated:YES completion:nil];
     });
 
+    [_streamView cancelStreamGestures];
     [_streamMan stopStream];
 }
 
@@ -1868,6 +1873,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     unsigned int portTestResults = LiTestClientConnectivity(CONN_TEST_SERVER, 443, portTestFlags);
 
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self->_streamView cancelStreamGestures];
         // Allow the display to go to sleep now
         [UIApplication sharedApplication].idleTimerDisabled = NO;
         
@@ -1891,6 +1897,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
         [self presentViewController:alert animated:YES completion:nil];
     });
     
+    [_streamView cancelStreamGestures];
     [_streamMan stopStream];
 }
 
@@ -1898,6 +1905,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     Log(LOG_I, @"Launch failed: %@", message);
     
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self->_streamView cancelStreamGestures];
         // Allow the display to go to sleep now
         [UIApplication sharedApplication].idleTimerDisabled = NO;
         

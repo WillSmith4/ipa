@@ -570,18 +570,6 @@ class PressureCurveViewController: UIViewController, UIGestureRecognizerDelegate
         self.displayCurve()
         
         
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(pencilProPurchaseAborted(_:)),
-            name: AddOnProduct.PencilProPack.purchaseAbortedNotification(),
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(persistCurve),
-            name: AddOnProduct.PencilProPack.purchaseSucceededNotification(),
-            object: nil
-        )
         
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissSelf))
         tap.delegate = self
@@ -831,21 +819,7 @@ class PressureCurveViewController: UIViewController, UIGestureRecognizerDelegate
         }
     }
     
-    @objc private func pencilProPurchaseAborted(_ notification: Notification) {
-        guard let interruption = notification.object as? PurchaseInterruption else { return }
-        if interruption != .learnMore {
-            resetTapped()
-        }
-        if interruption == .lowOSVersion {
-            AlertControllerUtil.showAlert(
-                in: self,
-                title: "",
-                message: LocalizationHelper.localizedString(forKey:"PencilProPackLowOSVersionTip"),
-                withCancel: false,
-                buttonTitle: LocalizationHelper.localizedString(forKey: "OK"),
-                countdown: 0)
-        }
-    }
+
     
     @objc private func pressureRangeTest() {
         AlertControllerUtil.showAlert(
@@ -935,16 +909,7 @@ class PressureCurveViewController: UIViewController, UIGestureRecognizerDelegate
     }
 
     @objc private func saveTapped() {
-        saveButton.isEnabled = false
-        IAPManager.checkPurchaseInfo(.PencilProPack) { info in
-            self.saveButton.isEnabled = true
-            if info.valid {
-                self.persistCurve()
-            }
-            else{
-                IAPManager.inAppPurchaseAction(viewController: self, product: .PencilProPack)
-            }
-        }
+        persistCurve()
     }
 
     @objc private func exitTapped() {

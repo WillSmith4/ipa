@@ -288,10 +288,25 @@
         NSEntityDescription* entity = [NSEntityDescription entityForName:@"Settings" inManagedObjectContext:_managedObjectContext];
         Settings* settings = [[Settings alloc] initWithEntity:entity insertIntoManagedObjectContext:_managedObjectContext];
         
+        [self initializeGestureActions:settings];
         return settings;
     } else {
         // we should only ever have 1 settings object stored
-        return [fetchedRecords objectAtIndex:0];
+        Settings *settings = [fetchedRecords objectAtIndex:0];
+        [self initializeGestureActions:settings];
+        return settings;
+    }
+}
+
+// A nil binding identifies a store predating configurable camera gestures.
+// Migrate once to plain wheel zoom, without changing any unrelated setting.
+- (void)initializeGestureActions:(Settings *)settings {
+    if (settings.pinchInAction == nil) {
+        settings.ctrlDownForPinch = NO;
+        settings.pinchInAction = @"SCROLL_DOWN";
+        settings.pinchOutAction = @"SCROLL_UP";
+        settings.rotateLeftAction = @"Q";
+        settings.rotateRightAction = @"E";
     }
 }
 

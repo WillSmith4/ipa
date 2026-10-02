@@ -86,10 +86,7 @@ import UIKit
         return !isTVOS
     }()
     
-    @objc public static var pencilSectionAvailable: Bool = {
-        let availableIds = ["com.voidlink.iOS", "com.voidlinkextreme.iOS", "com.voidlink.tf.debug10.iOS"]
-        return availableIds.contains(Bundle.main.bundleIdentifier ?? "") && isIPad
-    }()
+    @objc public static var pencilSectionAvailable: Bool = isIPad
     
     @objc public static let isGUIWidgetPickerAvailable: Bool = {
         if #available(iOS 13.0, tvOS 13.0, *) {

@@ -48,6 +48,8 @@
 ;
 
 - (void)cleanUp;
+- (void)cancelStreamGestures;
+- (void)configureStreamGestures;
 
 - (void) reloadLegacyWidgets:(OSCProfile* )profile;
 - (void) setOnScreenControls;

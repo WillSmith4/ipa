@@ -3602,10 +3602,6 @@ import ObjectiveC.runtime
 #if os(tvOS)
         return false
 #else
-        if !(PencilHandler.shared?.pencilProEnabled ?? false) {
-            IAPManager.shared.purchase(AddOnProduct.PencilProPack)
-            return false
-        }
         return true
 #endif
     }

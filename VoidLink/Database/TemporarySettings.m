@@ -18,6 +18,11 @@
     self = [self init];
     
     self.parent = settings;
+    self.pinchInAction = settings.pinchInAction ?: @"SCROLL_DOWN";
+    self.pinchOutAction = settings.pinchOutAction ?: @"SCROLL_UP";
+    self.rotateLeftAction = settings.rotateLeftAction ?: @"Q";
+    self.rotateRightAction = settings.rotateRightAction ?: @"E";
+    self.rotationSensitivity = settings.rotationSensitivity ?: @1;
     
 #if TARGET_OS_TV
     self.settingsMenuMode = settings.settingsMenuMode;

@@ -86,6 +86,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 
     NSDictionary<NSString *, NSNumber *> *dictCodes;
 #if !TARGET_OS_TV
+    StreamGestureController *cameraGestures;
     CustomTapGestureRecognizer *keyboardToggleRecognizer;
 #endif
     UIPanGestureRecognizer *discreteMouseWheelRecognizer;
@@ -290,6 +291,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
     }
     sessionTouchHandler = touchHandler;
     if(_streamFrameVC.touchDisabled) touchHandler = nil;
+    [self configureStreamGestures];
 #endif
 }
 
@@ -309,6 +311,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 }
 
 - (void)keyboardWillShow:(NSNotification *)notification{
+    [self cancelStreamGestures];
 #if TARGET_OS_TV
     (void)notification;
 #else
@@ -1975,6 +1978,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 
 - (void)toggleTouchDisabled:(bool)disabled{
     touchHandler = disabled ? nil : sessionTouchHandler;
+    [cameraGestures setInputEnabled:!disabled && touchMode != TouchDisabled];
 }
 
 - (BOOL)isMultipleTouchEnabled {
@@ -1983,7 +1987,26 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 
 #endif
 
+- (void)configureStreamGestures {
+#if !TARGET_OS_TV
+    if (!cameraGestures) cameraGestures = [[StreamGestureController alloc] initWithView:self];
+    TemporarySettings *snapshot = [[[DataManager alloc] init] getSettings];
+    [cameraGestures configure:snapshot enabled:touchMode != TouchDisabled && !_streamFrameVC.touchDisabled];
+#endif
+}
+
+- (void)cancelStreamGestures {
+#if !TARGET_OS_TV
+    [cameraGestures cancel];
+#endif
+    [TouchPadGestureHandler cancel];
+}
+
 - (void)cleanUp{
+    [self cancelStreamGestures];
+#if !TARGET_OS_TV
+    [cameraGestures setInputEnabled:NO];
+#endif
 #if TARGET_OS_TV
     tvOSRemoteTextInputLoopActive = NO;
     [GamepadNavigationIllustrationHud setTvOSSystemTextInputActive:NO];

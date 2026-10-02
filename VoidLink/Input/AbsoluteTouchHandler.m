@@ -215,7 +215,6 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     [longPressTimer invalidate];
     longPressTimer = nil;
     
-    if(TouchPadGestureHandler.ctrlDown) LiSendKeyboardEvent(CommandManager.keyboardButtonMappings[@"CTRL"].shortValue,KEY_ACTION_UP,0);
     
     if(touchPointSpawnedAtUpperScreenEdge) return; // we're done here. this touch event will not be sent to the remote PC.
     
@@ -263,8 +262,16 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 }
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
-    // Treat this as a normal touchesEnded event
-    [self touchesEnded:touches withEvent:event];
+    // Recognition of a camera gesture is a cancellation, never a click.
+    [longPressTimer invalidate];
+    longPressTimer = nil;
+    [TouchPadGestureHandler cancel];
+    multiTouchesDetected = false;
+    dragButtonDown = false;
+    capturedTouch = nil;
+    LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, mouseButtonForCursorMove);
+    LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
+    LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
 }
 
 - (void)sendShortMouseLeftButtonClickEvent{

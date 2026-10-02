@@ -2183,30 +2183,7 @@ static NSMutableSet* hostList;
     [self changeDefaultSettings];
     [self updatePartialSettings];
     
-    [IAPManager.shared fetchProducts];
-    [GenericUtils handleAddOnProductPurchaseIntentFor:AddOnProductPencilProPack];
-    
-    /*
-    if (@available(iOS 15.0, *)) {
-        [IAPManager checkPurchaseInfo:AddOnProductPencilProPack completion:^(PurchaseInfo* info) {
-            switch (info.status) {
-                case PurchaseStatusPurchased:
-                    NSLog(@"PurchaseStatus Purchased");
-                    break;
-                case PurchaseStatusNotPurchased:
-                    NSLog(@"PurchaseStatus NotPurchased");
-                    break;
-                case PurchaseStatusRevoked:
-                    NSLog(@"PurchaseStatus Revoked");
-                    break;
-                default:
-                    break;
-            }
-            NSLog(@"PurchaseStatus Valid: %d", info.valid);
-            NSLog(@"PurchaseStatus Expiration: %@", info.expirationDate);
-        }];
-    }
-    */
+
 }
 
 - (void)prewarmSoftKeyboard {

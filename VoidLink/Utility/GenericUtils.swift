@@ -345,6 +345,7 @@ import UIKit
     
     @objc public static var pencilProPurchaseProcessedWithImportingWidgetTemplates: Bool = false
     @objc public static func handleAddOnProductPurchaseIntent(for product:AddOnProduct) {
+        guard !IAPManager.isIncluded(product) else { return }
         let key = "addOnProduct_\(product.productId())_purchased"
         let defaults = UserDefaults.standard
         let purchased = defaults.bool(forKey: key)

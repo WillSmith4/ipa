@@ -78,6 +78,9 @@
     MenuSectionView *otherSection;
     MenuSectionView *experimentalSection;
     NSMutableSet* hiddenStacks;
+    NSArray<UIStackView *> *gestureActionStacks;
+    UIStackView *rotationSensitivityStack;
+    UISlider *rotationSensitivitySlider;
 
     // ControllerNavigator UI navigation state
     UIView *_controllerNavigationHighlightOverlayView;
@@ -638,14 +641,6 @@
                                                  name:@"GameProfileSelectedNotification"
                                                object:nil];
         
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(pencilProPurchaseAborted:)
-                                                 name:@"PencilProPurchaseAbortedNotification"
-                                               object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(pencilProPurchaseSucceeded:)
-                                                 name:@"PencilProPurchaseSucceededNotification"
-                                               object:nil];
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         if(self.mainFrameViewController.settingsExpandedInStreamView){
@@ -950,6 +945,12 @@
     BOOL globeAsEscape = self.globeAsEscapeSwitch.isOn;
     CGFloat streamingRadialMenuDelay = self.streamingRadialMenuDelaySlider.value;
     NSInteger backgroundSessionTimer = self.backgroundSessionTimerSlider.value == self.backgroundSessionTimerSlider.maximumValue ? (uint32_t) INT16_MAX : (uint32_t)self.backgroundSessionTimerSlider.value;
+
+    currentSettings.pinchInAction = tempSettings.pinchInAction;
+    currentSettings.pinchOutAction = tempSettings.pinchOutAction;
+    currentSettings.rotateLeftAction = tempSettings.rotateLeftAction;
+    currentSettings.rotateRightAction = tempSettings.rotateRightAction;
+    currentSettings.rotationSensitivity = @(rotationSensitivitySlider.value);
 
     [dataMan saveSettings:currentSettings
                          withBitrate:_bitrate
@@ -1667,6 +1668,46 @@ BOOL isCustomResolution(int resolutionSelected) {
     self.pinchSensitivityStack.hasDynamicLabel = YES;
     [self addSetting:self.pinchSensitivityStack ofId:@"pinchSensitivityStack" to:touchControlSection];
 
+    NSMutableArray *actionStacks = [NSMutableArray array];
+    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotateLeftAction", @"rotateRightAction"];
+    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotate Left", @"Rotate Right"];
+    for (NSInteger i = 0; i < gestureFields.count; i++) {
+        UILabel *label = [[UILabel alloc] init];
+        label.text = [LocalizationHelper localizedStringForKey:gestureTitles[i]];
+        label.font = ((UILabel *)self.pinchGestureStack.arrangedSubviews.firstObject).font;
+        UISegmentedControl *selector = [[UISegmentedControl alloc] initWithItems:@[
+            [LocalizationHelper localizedStringForKey:@"Off"],
+            [LocalizationHelper localizedStringForKey:@"Scroll Down"],
+            [LocalizationHelper localizedStringForKey:@"Scroll Up"],
+            [LocalizationHelper localizedStringForKey:@"Key"],
+            [LocalizationHelper localizedStringForKey:@"Edit"]]];
+        selector.accessibilityIdentifier = gestureFields[i];
+        [self refreshGestureActionSelector:selector];
+        [selector addTarget:self action:@selector(gestureActionChanged:) forControlEvents:UIControlEventValueChanged];
+        UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[label, selector]];
+        stack.axis = self.pinchGestureStack.axis;
+        stack.spacing = self.pinchGestureStack.spacing;
+        stack.alignment = self.pinchGestureStack.alignment;
+        stack.hasInfoTag = YES;
+        [self addSetting:stack ofId:[gestureFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
+        [actionStacks addObject:stack];
+    }
+    gestureActionStacks = actionStacks;
+    UILabel *rotationLabel = [[UILabel alloc] init];
+    rotationLabel.text = [LocalizationHelper localizedStringForKey:@"Rotation Sensitivity"];
+    rotationLabel.font = ((UILabel *)self.pinchSensitivityStack.arrangedSubviews.firstObject).font;
+    rotationSensitivitySlider = [[UISlider alloc] init];
+    rotationSensitivitySlider.minimumValue = 0;
+    rotationSensitivitySlider.maximumValue = 3;
+    rotationSensitivitySlider.value = tempSettings.rotationSensitivity.floatValue;
+    [rotationSensitivitySlider addTarget:self action:@selector(rotationSensitivityChanged:) forControlEvents:UIControlEventValueChanged];
+    rotationSensitivityStack = [[UIStackView alloc] initWithArrangedSubviews:@[rotationLabel, rotationSensitivitySlider]];
+    rotationSensitivityStack.axis = self.pinchSensitivityStack.axis;
+    rotationSensitivityStack.spacing = self.pinchSensitivityStack.spacing;
+    rotationSensitivityStack.hasDynamicLabel = YES;
+    [self addSetting:rotationSensitivityStack ofId:@"rotationSensitivityStack" to:touchControlSection];
+    [self rotationSensitivityChanged:rotationSensitivitySlider];
+
     self.onScreenWidgetStack.hasInfoTag = YES; // ?????
     [self addSetting:self.onScreenWidgetStack ofId:@"onScreenWidgetStack" to:touchControlSection];
 
@@ -1790,12 +1831,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     [motionControlSection addToParentStack:_parentStack];
 
 
-    NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
-    bool loadPencilSection = ([bundleId isEqualToString:@"com.voidlink.iOS"]
-                              || [bundleId isEqualToString:@"com.voidlinkextreme.iOS"]
-                              || [bundleId isEqualToString:@"com.voidlink.tf.debug10.iOS"]);
-
-    if ([PublicUtils isIPad] && loadPencilSection) {
+    if ([PublicUtils isIPad]) {
         MenuSectionView *pencilSection = [[MenuSectionView alloc] init];
         pencilSection.delegate = self;
         pencilSection.sectionTitle = [LocalizationHelper localizedStringForKey:@"=drawingToolkit"];
@@ -2478,6 +2514,9 @@ BOOL isCustomResolution(int resolutionSelected) {
         tipText = [LocalizationHelper localizedStringForKey:@"relativeTouchSlideThresholdStackTip"];
         showOnlineDocAction = true;
         onlineDocLink = [LocalizationHelper localizedStringForKey:@"relativeTouchSlideThresholdStackLink"];
+    }
+    if ([@[@"pinchInActionStack", @"pinchOutActionStack", @"rotateLeftActionStack", @"rotateRightActionStack"] containsObject:sender.superview.accessibilityIdentifier]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Camera gesture help"];
     }
     if([sender.superview.accessibilityIdentifier isEqualToString: @"ctrlDownForPinchStack"]){
         tipText = [LocalizationHelper localizedStringForKey:@"ctrlDownForPinchStackTip"];
@@ -4182,13 +4221,15 @@ BOOL isCustomResolution(int resolutionSelected) {
     || sender.selectedSegmentIndex==TouchDisabled
     || (sender.selectedSegmentIndex==AbsoluteTouch && !_passthroughGesturesSwitch.isOn);
     
-    [self setHidden:gesturePassthroughUnavailable forStack:self.pinchGestureStack];
+    [self setHidden:sender.selectedSegmentIndex==TouchDisabled forStack:self.pinchGestureStack];
+    for (UIStackView *stack in gestureActionStacks) [self setHidden:sender.selectedSegmentIndex==TouchDisabled forStack:stack];
+    [self setHidden:sender.selectedSegmentIndex==TouchDisabled forStack:rotationSensitivityStack];
     [self setHidden:gesturePassthroughUnavailable forStack:self.scrollSensitivityStack];
 
-    [self setHidden:gesturePassthroughUnavailable
+    [self setHidden:sender.selectedSegmentIndex==TouchDisabled
      || !_pinchGestureSwitch.isOn
     forStack:self.ctrlDownForPinchStack];
-    [self setHidden:gesturePassthroughUnavailable
+    [self setHidden:sender.selectedSegmentIndex==TouchDisabled
      || !_pinchGestureSwitch.isOn
     forStack:self.pinchSensitivityStack];
 
@@ -4244,7 +4285,7 @@ BOOL isCustomResolution(int resolutionSelected) {
 }
 
 - (void)passthroughGesturesSwitchFlipped:(UISwitch* )sender{
-    [self setHidden:!sender.isOn forStack:_pinchGestureStack];
+
     [self setHidden:!sender.isOn forStack:_scrollSensitivityStack];
     if(!sender.isOn) [self.pinchGestureSwitch sendActionsForControlEvents:UIControlEventValueChanged];
     else [_pinchGestureSwitch sendActionsForControlEvents:UIControlEventValueChanged];
@@ -4829,55 +4870,40 @@ BOOL isCustomResolution(int resolutionSelected) {
     if (@available(iOS 13.0, *)) if(!self.controllerNavigationSwitch.isOn) ControllerNavigator.enabled = false;
 }
 
+- (void)refreshGestureActionSelector:(UISegmentedControl *)selector {
+    NSString *action = [tempSettings valueForKey:selector.accessibilityIdentifier];
+    NSArray *presets = @[@"NONE", @"SCROLL_DOWN", @"SCROLL_UP"];
+    NSUInteger index = [presets indexOfObject:action];
+    selector.selectedSegmentIndex = index == NSNotFound ? 3 : index;
+    [selector setTitle:index == NSNotFound ? action : [LocalizationHelper localizedStringForKey:@"Key"] forSegmentAtIndex:3];
+}
+
+- (void)gestureActionChanged:(UISegmentedControl *)selector {
+    NSString *field = selector.accessibilityIdentifier;
+    NSInteger index = selector.selectedSegmentIndex;
+    if (index < 3) {
+        [tempSettings setValue:@[@"NONE", @"SCROLL_DOWN", @"SCROLL_UP"][index] forKey:field];
+        [self refreshGestureActionSelector:selector];
+    } else {
+        [self refreshGestureActionSelector:selector];
+        [GestureActionEditor editIn:self title:[LocalizationHelper localizedStringForKey:@"Key"] current:[tempSettings valueForKey:field] completion:^(NSString *action) {
+            [self->tempSettings setValue:action forKey:field];
+            [self refreshGestureActionSelector:selector];
+        }];
+    }
+}
+
+- (void)rotationSensitivityChanged:(UISlider *)sender {
+    [self findDynamicLabelFromStack:rotationSensitivityStack].text = [NSString stringWithFormat:@"  %d%%  ", (int)round(sender.value * 100)];
+}
+
 - (void)pencilTickModeChanged:(UISegmentedControl* )sender{
     [self setHidden:sender.selectedSegmentIndex != ManualTick forStack:self.pencilTickIntervalStack];
-    
-    if(settingsViewJustExpanded) return;
-    
-    if(sender.selectedSegmentIndex != ManualTick) return;
-    [IAPManager checkPurchaseInfo:AddOnProductPencilProPack completion:^(PurchaseInfo* info) {
-        if(!info.valid){
-            [IAPManager inAppPurchaseActionWithViewController:self product:AddOnProductPencilProPack];
-        }
-    }];
 }
 
-- (void)pencilProPurchaseAborted:(NSNotification *)notification{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.pencilTickSelector.selectedSegmentIndex = PencilTickDisabled;
-        [self.pencilTickSelector sendActionsForControlEvents:UIControlEventValueChanged];
-        [self.pressureCurveSwitch setOn:false];
-        [self.doubleTapShortcutSwitch setOn:false];
-        [self.squeezeShortcutSwitch setOn:false];
-        [self.pencilPausesNativeTouchSwitch setOn:false];
-        [self.disablePencilSlideGestureSwitch setOn:false];
-        [self.pencilTipOffsetSwitch setOn:false];
-        
-        
-        NSNumber *value = notification.userInfo[@"interruption"];
-        if (!value) return;
 
-        PurchaseInterruption interruption = value.intValue;
 
-        if(interruption == PurchaseInterruptionLowOSVersion){
-            [AlertControllerUtil showAlertIn:self
-                                       title:@""
-                                     message:[LocalizationHelper localizedStringForKey:@"PencilProPackLowOSVersionTip"]
-                                  withCancel:NO
-                                 buttonTitle:[LocalizationHelper localizedStringForKey:@"OK"]
-                                   countdown:0
-                                      action:nil
-                                  completion:nil];
-        }
-    });
-}
 
-- (void)pencilProPurchaseSucceeded:(NSNotification *)notification{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.onScreenWidgetSelector.selectedSegmentIndex = OnScreenControlsLevelCustom;
-        self.pencilTickSelector.selectedSegmentIndex = ManualTick;
-    });
-}
 
 - (void)pencilTickIntervalSliderMoved:(UISlider* )sender{
     [self findDynamicLabelFromStack:(UIStackView*)sender.superview].text = [NSString stringWithFormat:@"  %d μs  ", (uint16_t)sender.value];
@@ -4902,48 +4928,16 @@ BOOL isCustomResolution(int resolutionSelected) {
 }
 
 - (void)doubleTapShortcutSwitchFlipped:(UISwitch* )sender{
-    if(sender.isOn && !settingsViewJustLoaded){
-        [IAPManager checkPurchaseInfo:AddOnProductPencilProPack completion:^(PurchaseInfo* info) {
-            if(info.valid) [PencilHandler enterDoubleTapShortcutsIn:self];
-            else {
-                [IAPManager inAppPurchaseActionWithViewController:self product:AddOnProductPencilProPack];
-            }
-        }];
-    }
+    if(sender.isOn && !settingsViewJustLoaded) [PencilHandler enterDoubleTapShortcutsIn:self];
 }
 
 - (void)squeezeShortcutSwitchFlipped:(UISwitch* )sender{
-    if(sender.isOn && !settingsViewJustLoaded){
-        [IAPManager checkPurchaseInfo:AddOnProductPencilProPack completion:^(PurchaseInfo* info) {
-            if(info.valid) [PencilHandler enterSqueezeShortcutsIn:self];
-            else {
-                [IAPManager inAppPurchaseActionWithViewController:self product:AddOnProductPencilProPack];
-            }
-        }];
-    }
+    if(sender.isOn && !settingsViewJustLoaded) [PencilHandler enterSqueezeShortcutsIn:self];
 }
 
-- (void)disablePencilSlideGestureSwitchFlipped:(UISwitch* )sender{
-    if(sender.isOn && !settingsViewJustLoaded){
-        [IAPManager checkPurchaseInfo:AddOnProductPencilProPack completion:^(PurchaseInfo* info) {
-            if(info.valid) nil;
-            else {
-                [IAPManager inAppPurchaseActionWithViewController:self product:AddOnProductPencilProPack];
-            }
-        }];
-    }
-}
+- (void)disablePencilSlideGestureSwitchFlipped:(UISwitch *)sender {}
 
-- (void)pencilPausesNativeTouchSwitchFlipped:(UISwitch* )sender{
-    if(sender.isOn && !settingsViewJustLoaded){
-        [IAPManager checkPurchaseInfo:AddOnProductPencilProPack completion:^(PurchaseInfo* info) {
-            if(info.valid) nil;
-            else {
-                [IAPManager inAppPurchaseActionWithViewController:self product:AddOnProductPencilProPack];
-            }
-        }];
-    }
-}
+- (void)pencilPausesNativeTouchSwitchFlipped:(UISwitch *)sender {}
 
 - (void)widgetPickerViewController:(WidgetPickerViewController *)controller didCreateWidget:(NSDictionary *)payload API_AVAILABLE(ios(13.0)){
     OSCProfilesManager * profileMan = [OSCProfilesManager sharedManager:CGRectZero];
@@ -4972,18 +4966,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     [profileMan replaceSelectedProfileWith:profile overwriteDefault:true];
 }
 
-/*
-- (void)autoHoverSwitchFlipped:(UISwitch* )sender{
-    if(sender.isOn && !settingsViewJustLoaded){
-        [IAPManager checkPurchaseInfo:AddOnProductPencilProPack completion:^(PurchaseInfo* info) {
-            if(info.valid) nil;
-            else {
-                [IAPManager inAppPurchaseActionWithViewController:self product:AddOnProductPencilProPack];
-            }
-        }];
-    }
-}
-*/
+
 
 - (void)loadPencilSettings:(TemporarySettings*) tempSettings{
     if([PublicUtils isIPad]){

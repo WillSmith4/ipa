@@ -24,39 +24,6 @@ private let settingsFavoriteIdentifiersKey = "FavoriteSettingStackIdentifiers"
 private let settingsSectionFoldAnimationDuration = PublicUtils.iOS26Available ? 0.2 : 0
 private let settingsEmergingHighlightPhaseDuration = 0.2
 
-/// Purchase results can arrive after SettingsViewController has been dismissed.
-/// Keep this observer independent from a settings session so an interrupted
-/// purchase cannot leave Pencil Pro-only values persisted while the menu is
-/// closed.
-private enum PencilProInterruptedPurchaseReset {
-    private static let observer: NSObjectProtocol = NotificationCenter.default.addObserver(
-        forName: AddOnProduct.PencilProPack.purchaseAbortedNotification(),
-        object: nil,
-        queue: .main
-    ) { _ in
-        let dataManager = DataManager()
-        if let settings = dataManager.retrieveSettings() {
-            settings.pencilTickMode = NSNumber(value: PencilTickMode.PencilTickDisabled.rawValue)
-            settings.pencilTipOffsetX = 0
-            settings.pencilTipOffsetY = 0
-            dataManager.saveData()
-        }
-
-        let profileManager = OSCProfilesManager.sharedManager(CGRect.zero)
-        let profile = profileManager.getSelectedProfile()
-        profile.pressureCurveEnabled = false
-        profile.doubleTapShorcutEnabled = false
-        profile.squeezeShorcutEnabled = false
-        profile.pencilPausesNativeTouch = false
-        profile.disablePencilSlideGestures = false
-        profileManager.replaceSelectedProfile(with: profile, overwriteDefault: true)
-    }
-
-    static func install() {
-        _ = observer
-    }
-}
-
 private let settingsBitrateTable: [Double] = [
     500, 1_000, 1_500, 2_000, 2_500, 3_000, 4_000, 5_000, 6_000, 7_000,
     8_000, 9_000, 10_000, 11_000, 12_000, 13_000, 14_000, 15_000, 16_000, 17_000,
@@ -239,6 +206,10 @@ private let settingsLegacyHelpByStackIdentifier: [String: SettingsLegacyHelpCont
     "pointerVelocityFactorStack": .init(messageKey: "pointerVelocityFactorStackTip", learnMoreURLKey: "pointerVelocityFactorStackDoc"),
     "delayLeftClickStack": .init(messageKey: "delayLeftClickStackTip", learnMoreURLKey: nil),
     "relativeTouchSlideThresholdStack": .init(messageKey: "relativeTouchSlideThresholdStackTip", learnMoreURLKey: "relativeTouchSlideThresholdStackLink"),
+    "pinchInActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
+    "pinchOutActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
+    "rotateLeftActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
+    "rotateRightActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "ctrlDownForPinchStack": .init(messageKey: "ctrlDownForPinchStackTip", learnMoreURLKey: nil),
     "onScreenWidgetStack": .init(messageKey: "onScreenWidgetStackTip", learnMoreURLKey: "onScreenWidgetStackDoc"),
 
@@ -319,6 +290,11 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case ctrlDownForPinch = "ctrlDownForPinchStack"
     case scrollSensitivity = "scrollSensitivityStack"
     case pinchSensitivity = "pinchSensitivityStack"
+    case pinchInAction = "pinchInActionStack"
+    case pinchOutAction = "pinchOutActionStack"
+    case rotateLeftAction = "rotateLeftActionStack"
+    case rotateRightAction = "rotateRightActionStack"
+    case rotationSensitivity = "rotationSensitivityStack"
     case onScreenWidget = "onScreenWidgetStack"
     case buttonVisualFeedback = "buttonVisualFeedbackStack"
     case trackTouchPoint = "trackTouchPointStack"
@@ -445,6 +421,11 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"
         case .scrollSensitivity: return "Scroll Sensitivity"
         case .pinchSensitivity: return "Pinch Sensitivity"
+        case .pinchInAction: return "Pinch In"
+        case .pinchOutAction: return "Pinch Out"
+        case .rotateLeftAction: return "Rotate Left"
+        case .rotateRightAction: return "Rotate Right"
+        case .rotationSensitivity: return "Rotation Sensitivity"
         case .onScreenWidget: return "On-Screen Widgets"
         case .buttonVisualFeedback: return "Button Visual Feedback"
         case .trackTouchPoint: return "Touch Point Tracking"
@@ -1208,9 +1189,14 @@ final class SettingsItemRegistry: ObservableObject {
     let delayLeftClick = SettingsItemModel<Bool>(id: .delayLeftClick, value: true)
     let passthroughGestures = SettingsItemModel<Bool>(id: .passthroughGestures, value: true)
     let pinchGesture = SettingsItemModel<Bool>(id: .pinchGesture, value: true)
-    let ctrlDownForPinch = SettingsItemModel<Bool>(id: .ctrlDownForPinch, value: true)
+    let ctrlDownForPinch = SettingsItemModel<Bool>(id: .ctrlDownForPinch, value: false)
     let scrollSensitivity = SettingsItemModel<Double>(id: .scrollSensitivity, value: 1)
     let pinchSensitivity = SettingsItemModel<Double>(id: .pinchSensitivity, value: 1)
+    let pinchInAction = SettingsItemModel<String>(id: .pinchInAction, value: "SCROLL_DOWN")
+    let pinchOutAction = SettingsItemModel<String>(id: .pinchOutAction, value: "SCROLL_UP")
+    let rotateLeftAction = SettingsItemModel<String>(id: .rotateLeftAction, value: "Q")
+    let rotateRightAction = SettingsItemModel<String>(id: .rotateRightAction, value: "E")
+    let rotationSensitivity = SettingsItemModel<Double>(id: .rotationSensitivity, value: 1)
     let onScreenWidget = SettingsItemModel<Int>(id: .onScreenWidget, value: 0)
     let buttonVisualFeedback = SettingsItemModel<Bool>(id: .buttonVisualFeedback, value: true)
     let trackTouchPoint = SettingsItemModel<Bool>(id: .trackTouchPoint, value: false)
@@ -1341,6 +1327,11 @@ final class SettingsItemRegistry: ObservableObject {
             ctrlDownForPinch.objectWillChange,
             scrollSensitivity.objectWillChange,
             pinchSensitivity.objectWillChange,
+            pinchInAction.objectWillChange,
+            pinchOutAction.objectWillChange,
+            rotateLeftAction.objectWillChange,
+            rotateRightAction.objectWillChange,
+            rotationSensitivity.objectWillChange,
             onScreenWidget.objectWillChange,
             buttonVisualFeedback.objectWillChange,
             trackTouchPoint.objectWillChange,
@@ -1804,7 +1795,6 @@ final class SettingsSession: NSObject, ObservableObject {
     private lazy var scrollCancellableInteractionDescriptors: [SettingsItemDescriptor] = {
         allItemDescriptors.filter { $0.continuousInteraction?.cancelsOnScroll == true }
     }()
-    private var pencilPurchaseNotificationTokens: [NSObjectProtocol] = []
     private let pendingHighlightMoveLock = NSLock()
     private var pendingHighlightMoveOffset: Int?
     private var pendingHighlightMoveUsesSectionHeadersOnly: Bool?
@@ -1870,6 +1860,11 @@ final class SettingsSession: NSObject, ObservableObject {
         itemRegistry.ctrlDownForPinch.value = snapshot.ctrlDownForPinch
         itemRegistry.scrollSensitivity.value = snapshot.scrollSensitivity.doubleValue
         itemRegistry.pinchSensitivity.value = snapshot.pinchSensitivity.doubleValue
+        itemRegistry.pinchInAction.value = snapshot.pinchInAction ?? "SCROLL_DOWN"
+        itemRegistry.pinchOutAction.value = snapshot.pinchOutAction ?? "SCROLL_UP"
+        itemRegistry.rotateLeftAction.value = snapshot.rotateLeftAction ?? "Q"
+        itemRegistry.rotateRightAction.value = snapshot.rotateRightAction ?? "E"
+        itemRegistry.rotationSensitivity.value = snapshot.rotationSensitivity.doubleValue
         itemRegistry.onScreenWidget.value = snapshot.onscreenControls.intValue
         itemRegistry.buttonVisualFeedback.value = snapshot.buttonVisualFeedback
         itemRegistry.trackTouchPoint.value = snapshot.touchPointTracking
@@ -1973,7 +1968,6 @@ final class SettingsSession: NSObject, ObservableObject {
         }
         
 #if !os(tvOS)
-        PencilProInterruptedPurchaseReset.install()
         
         screenConnectionNotificationTokens = [
             NotificationCenter.default.addObserver(
@@ -1999,24 +1993,7 @@ final class SettingsSession: NSObject, ObservableObject {
             }
         ]
         
-        pencilPurchaseNotificationTokens = [
-            NotificationCenter.default.addObserver(
-                forName: AddOnProduct.PencilProPack.purchaseAbortedNotification(),
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                self?.resetPencilProItemsAfterInterruptedPurchase()
-            },
-            NotificationCenter.default.addObserver(
-                forName: AddOnProduct.PencilProPack.purchaseSucceededNotification(),
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                guard let self else { return }
-                self.itemRegistry.onScreenWidget.value = OnScreenControlsLevel.custom.rawValue
-                self.itemRegistry.pencilTick.value = PencilTickMode.ManualTick.rawValue
-            }
-        ]
+
         
 #endif
         
@@ -2038,7 +2015,6 @@ final class SettingsSession: NSObject, ObservableObject {
     deinit {
         favoriteAutoscrollDisplayLink?.invalidate()
         screenConnectionNotificationTokens.forEach(NotificationCenter.default.removeObserver)
-        pencilPurchaseNotificationTokens.forEach(NotificationCenter.default.removeObserver)
     }
 
     var isActive: Bool { presentingController != nil }
@@ -2509,6 +2485,43 @@ final class SettingsSession: NSObject, ObservableObject {
         ]
     }
 
+    private var cameraGesturesAvailable: Bool {
+        !PublicUtils.isTVOS && itemRegistry.touchMode.value != TouchMode.TouchDisabled.rawValue
+    }
+
+    private func gestureActionItem(_ keyPath: KeyPath<SettingsItemRegistry, SettingsItemModel<String>>) -> SettingsItemDescriptor {
+        let model = itemRegistry[keyPath: keyPath]
+        return SettingsItemDescriptor(
+            id: model.id,
+            control: .picker(
+                value: { GestureAction.presets.firstIndex(of: $0.itemRegistry[keyPath: keyPath].value) ?? 3 },
+                setValue: { session, index in
+                    let item = session.itemRegistry[keyPath: keyPath]
+                    if index < 3 {
+                        item.value = GestureAction.presets[index]
+                    } else if let presenter = session.presentingController {
+                        GestureActionEditor.edit(in: presenter, title: item.titleKey.localized, current: item.value) {
+                            item.value = $0
+                        }
+                    }
+                },
+                options: { session in
+                    let action = session.itemRegistry[keyPath: keyPath].value
+                    return [
+                        .init(value: 0, title: "Off".localized),
+                        .init(value: 1, title: "Scroll Down".localized),
+                        .init(value: 2, title: "Scroll Up".localized),
+                        .init(value: 3, title: GestureAction.presets.contains(action) ? "Key".localized : action),
+                        .init(value: 4, title: "Edit".localized)
+                    ]
+                },
+                distribution: .proportionalToContent
+            ),
+            isVisible: { $0.cameraGesturesAvailable },
+            hasInfo: true
+        )
+    }
+
     fileprivate var touchSettingsCatalog: [SettingsItemDescriptor] {
         [
             pickerItem(
@@ -2580,22 +2593,10 @@ final class SettingsSession: NSObject, ObservableObject {
                 \.passthroughGestures,
                 isVisible: {$0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue}
             ),
-            toggleItem(
-                \.pinchGesture,
-                // UIKit reveals this row with passthroughGesturesSwitchFlipped:
-                // derive the same relationship directly from the source item.
-                isVisible: {$0.itemRegistry.touchMode.value == TouchMode.RelativeTouch.rawValue || ($0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue
-                    && $0.itemRegistry.passthroughGestures.value)}
-            ),
-            toggleItem(
-                \.ctrlDownForPinch,
-                isVisible: {($0.itemRegistry.touchMode.value == TouchMode.RelativeTouch.rawValue
-                             && $0.itemRegistry.pinchGesture.value)
-                            || ($0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue
-                            && $0.itemRegistry.passthroughGestures.value
-                            && $0.itemRegistry.pinchGesture.value)},
-                hasInfo: true
-            ),
+            toggleItem(\.pinchGesture, isVisible: { $0.cameraGesturesAvailable }),
+            toggleItem(\.ctrlDownForPinch,
+                       isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value },
+                       hasInfo: true),
             sliderItem(
                 \.scrollSensitivity,
                 range: 0...3,
@@ -2605,15 +2606,18 @@ final class SettingsSession: NSObject, ObservableObject {
                     && $0.itemRegistry.passthroughGestures.value)}
             ),
             sliderItem(
-                \.pinchSensitivity,
-                range: 0...3,
-                clampedTo: 0...3,
+                \.pinchSensitivity, range: 0...3, clampedTo: 0...3,
                 valueText: { _, model in "\(Int((model.value * 100).rounded()))%" },
-                isVisible: {($0.itemRegistry.touchMode.value == TouchMode.RelativeTouch.rawValue
-                             && $0.itemRegistry.pinchGesture.value)
-                            || ($0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue
-                            && $0.itemRegistry.passthroughGestures.value
-                            && $0.itemRegistry.pinchGesture.value)},
+                isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value }
+            ),
+            gestureActionItem(\.pinchInAction),
+            gestureActionItem(\.pinchOutAction),
+            gestureActionItem(\.rotateLeftAction),
+            gestureActionItem(\.rotateRightAction),
+            sliderItem(
+                \.rotationSensitivity, range: 0...3, clampedTo: 0...3,
+                valueText: { _, model in "\(Int((model.value * 100).rounded()))%" },
+                isVisible: { $0.cameraGesturesAvailable }
             ),
             pickerItem(
                 \.onScreenWidget,
@@ -3039,8 +3043,7 @@ final class SettingsSession: NSObject, ObservableObject {
                 \.pencilTick,
                 options: { $0.pencilTickOptions },
                 distribution: .equal,
-                hasInfo: true,
-                onValueChanged: { $0.pencilTickChanged() }
+                hasInfo: true
             ),
             sliderItem(
                 \.pencilTickInterval,
@@ -3085,13 +3088,11 @@ final class SettingsSession: NSObject, ObservableObject {
             ),
             toggleItem(
                 \.pencilPausesNativeTouch,
-                isGameProfileSetting: true,
-                onValueChanged: { $0.pencilProToggleChanged(.pencilPausesNativeTouch) }
+                isGameProfileSetting: true
             ),
             toggleItem(
                 \.disablePencilSlideGesture,
-                isGameProfileSetting: true,
-                onValueChanged: { $0.pencilProToggleChanged(.disablePencilSlideGesture) }
+                isGameProfileSetting: true
             )
         ]
     }
@@ -4626,6 +4627,11 @@ final class SettingsSession: NSObject, ObservableObject {
         settings.ctrlDownForPinch = itemRegistry.ctrlDownForPinch.value
         settings.scrollSensitivity = NSNumber(value: itemRegistry.scrollSensitivity.value)
         settings.pinchSensitivity = NSNumber(value: itemRegistry.pinchSensitivity.value)
+        settings.pinchInAction = itemRegistry.pinchInAction.value
+        settings.pinchOutAction = itemRegistry.pinchOutAction.value
+        settings.rotateLeftAction = itemRegistry.rotateLeftAction.value
+        settings.rotateRightAction = itemRegistry.rotateRightAction.value
+        settings.rotationSensitivity = NSNumber(value: itemRegistry.rotationSensitivity.value)
         settings.onscreenControls = NSNumber(value: itemRegistry.onScreenWidget.value)
         settings.buttonVisualFeedback = itemRegistry.buttonVisualFeedback.value
         settings.touchPointTracking = itemRegistry.trackTouchPoint.value
@@ -5060,12 +5066,7 @@ final class SettingsSession: NSObject, ObservableObject {
             })
     }
 
-    fileprivate func pencilTickChanged() {
-        guard itemRegistry.pencilTick.value == PencilTickMode.ManualTick.rawValue else { return }
-        requirePencilPro(rollback: { [weak self] in
-            self?.itemRegistry.pencilTick.value = PencilTickMode.PencilTickDisabled.rawValue
-        })
-    }
+
 
     fileprivate func pencilTipOffsetChanged() {
 #if os(tvOS)
@@ -5096,93 +5097,17 @@ final class SettingsSession: NSObject, ObservableObject {
     }
 
     fileprivate func doubleTapShortcutChanged() {
-#if os(tvOS)
-        itemRegistry.doubleTapShortcut.value = false
-        return
-#else
-        guard itemRegistry.doubleTapShortcut.value else { return }
-        requirePencilPro(rollback: { [weak self] in
-            self?.itemRegistry.doubleTapShortcut.value = false
-        }, onValid: { [weak self] in
-            guard let presenter = self?.presentingController else { return }
-            PencilHandler.enterDoubleTapShortcuts(in: presenter)
-        })
+#if !os(tvOS)
+        guard itemRegistry.doubleTapShortcut.value, let presenter = presentingController else { return }
+        PencilHandler.enterDoubleTapShortcuts(in: presenter)
 #endif
     }
 
     fileprivate func squeezeShortcutChanged() {
-#if os(tvOS)
-        itemRegistry.squeezeShortcut.value = false
-        return
-#else
-        guard itemRegistry.squeezeShortcut.value else { return }
-        requirePencilPro(rollback: { [weak self] in
-            self?.itemRegistry.squeezeShortcut.value = false
-        }, onValid: { [weak self] in
-            guard let presenter = self?.presentingController else { return }
-            PencilHandler.enterSqueezeShortcuts(in: presenter)
-        })
+#if !os(tvOS)
+        guard itemRegistry.squeezeShortcut.value, let presenter = presentingController else { return }
+        PencilHandler.enterSqueezeShortcuts(in: presenter)
 #endif
-    }
-
-    fileprivate func pencilProToggleChanged(_ itemID: SettingsItemID) {
-        let isOn: Bool
-        let rollback: () -> Void
-        switch itemID {
-        case .pencilPausesNativeTouch:
-            isOn = itemRegistry.pencilPausesNativeTouch.value
-            rollback = { [weak self] in self?.itemRegistry.pencilPausesNativeTouch.value = false }
-        case .disablePencilSlideGesture:
-            isOn = itemRegistry.disablePencilSlideGesture.value
-            rollback = { [weak self] in self?.itemRegistry.disablePencilSlideGesture.value = false }
-        default:
-            return
-        }
-        guard isOn else { return }
-        requirePencilPro(rollback: rollback)
-    }
-
-    private func resetPencilProItemsAfterInterruptedPurchase() {
-        itemRegistry.pencilTick.value = PencilTickMode.PencilTickDisabled.rawValue
-        itemRegistry.pressureCurve.value = false
-        itemRegistry.doubleTapShortcut.value = false
-        itemRegistry.squeezeShortcut.value = false
-        itemRegistry.pencilPausesNativeTouch.value = false
-        itemRegistry.disablePencilSlideGesture.value = false
-        itemRegistry.pencilTipOffset.value = false
-    }
-
-    /// Mirrors the UIKit Pencil Pro gate. StoreKit 2 does not exist before
-    /// iOS 15, so that path rolls the just-changed model back immediately and
-    /// presents the same low-OS explanation instead of waiting for a purchase
-    /// notification that cannot succeed.
-    private func requirePencilPro(
-        rollback: @escaping () -> Void,
-        onValid: @escaping () -> Void = {}
-    ) {
-        guard let presenter = presentingController else {
-            rollback()
-            return
-        }
-        guard #available(iOS 15.0, *) else {
-            rollback()
-            AlertControllerUtil.showAlert(
-                in: presenter,
-                title: "",
-                message: "PencilProPackLowOSVersionTip".localized,
-                withCancel: false,
-                buttonTitle: "OK".localized,
-                countdown: 0
-            )
-            return
-        }
-        IAPManager.checkPurchaseInfo(.PencilProPack) { info in
-            if info.valid {
-                onValid()
-            } else {
-                IAPManager.inAppPurchaseAction(viewController: presenter, product: .PencilProPack)
-            }
-        }
     }
 
     @objc func applyClosingRuntimeEffects() {
