@@ -17,6 +17,7 @@ struct GestureSettingsMigrationTests {
         let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         context.persistentStoreCoordinator = oldCoordinator
         let settings = NSEntityDescription.insertNewObject(forEntityName: "Settings", into: context)
+        settings.setValue("gesture-migration-test", forKey: "uniqueId")
         settings.setValue("CTRL+Q", forKey: "pinchInAction")
         settings.setValue("NONE", forKey: "rotateRightAction")
         settings.setValue(false, forKey: "enablePinch")
@@ -31,6 +32,7 @@ struct GestureSettingsMigrationTests {
         let records = try migrated.fetch(NSFetchRequest<NSManagedObject>(entityName: "Settings"))
         precondition(records.count == 1)
         let result = records[0]
+        precondition(result.value(forKey: "uniqueId") as? String == "gesture-migration-test")
         precondition(result.value(forKey: "pinchInAction") as? String == "CTRL+Q")
         precondition(result.value(forKey: "rotateRightAction") as? String == "NONE")
         precondition(result.value(forKey: "enablePinch") as? Bool == false)
