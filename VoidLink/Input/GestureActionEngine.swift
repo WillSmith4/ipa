@@ -52,7 +52,8 @@ final class GestureActionEngine {
             let keys: [Int16] = controlScroll ? [0x11] : []
             holds[axis] = keys.isEmpty ? nil : Hold(keys: keys, until: now + 0.12)
             reconcile()
-            scrollRemainder += (action == "SCROLL_UP" ? 1 : -1) * amount * 7
+            let units = min(Double(Int16.max), amount * 7)
+            scrollRemainder += (action == "SCROLL_UP" ? 1 : -1) * units
             // Preserve sub-unit motion and bound conversion for extreme samples.
             let whole = min(Double(Int16.max), max(Double(Int16.min), scrollRemainder.rounded(.towardZero)))
             if whole != 0 {

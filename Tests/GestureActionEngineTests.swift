@@ -68,6 +68,11 @@ struct GestureActionEngineTests {
         engine.end(axis: 0)
         check(events.last == "17:up", "Ctrl is released after pinch")
 
+        scroll.removeAll()
+        engine.move(axis: 0, action: "SCROLL_UP", amount: Double.greatestFiniteMagnitude, now: 11)
+        engine.move(axis: 0, action: "SCROLL_DOWN", amount: 1, now: 11.1)
+        check(scroll == [Int16.max, -7], "Extreme samples must not leave a backlog of scroll events")
+
         check(GestureAction.keys("q + ctrl + Q", mappings: mappings) == [0x11, 0x51], "Normalize and deduplicate chords")
         check(GestureAction.keys("Q+", mappings: mappings) == nil, "Reject empty chord components")
         check(GestureAction.keys("NULL", mappings: mappings) == nil, "Do not send the NULL sentinel")
