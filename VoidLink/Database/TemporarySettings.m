@@ -18,6 +18,12 @@
     self = [self init];
     
     self.parent = settings;
+    self.swipeAction = settings.swipeAction ?: @"NONE";
+    self.pinchInMovesCursor = settings.pinchInMovesCursor;
+    self.pinchOutMovesCursor = settings.pinchOutMovesCursor;
+    self.rotateLeftMovesCursor = settings.rotateLeftMovesCursor;
+    self.rotateRightMovesCursor = settings.rotateRightMovesCursor;
+    self.swipeMovesCursor = settings.swipeMovesCursor;
     self.pinchInAction = settings.pinchInAction ?: @"SCROLL_DOWN";
     self.pinchOutAction = settings.pinchOutAction ?: @"SCROLL_UP";
     self.rotateLeftAction = settings.rotateLeftAction ?: @"Q";

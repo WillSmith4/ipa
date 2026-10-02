@@ -206,6 +206,12 @@ private let settingsLegacyHelpByStackIdentifier: [String: SettingsLegacyHelpCont
     "pointerVelocityFactorStack": .init(messageKey: "pointerVelocityFactorStackTip", learnMoreURLKey: "pointerVelocityFactorStackDoc"),
     "delayLeftClickStack": .init(messageKey: "delayLeftClickStackTip", learnMoreURLKey: nil),
     "relativeTouchSlideThresholdStack": .init(messageKey: "relativeTouchSlideThresholdStackTip", learnMoreURLKey: "relativeTouchSlideThresholdStackLink"),
+    "swipeActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
+    "pinchInMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
+    "pinchOutMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
+    "rotateLeftMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
+    "rotateRightMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
+    "swipeMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
     "pinchInActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "pinchOutActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "rotateLeftActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
@@ -290,6 +296,12 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case ctrlDownForPinch = "ctrlDownForPinchStack"
     case scrollSensitivity = "scrollSensitivityStack"
     case pinchSensitivity = "pinchSensitivityStack"
+    case swipeAction = "swipeActionStack"
+    case pinchInMovesCursor = "pinchInMovesCursorStack"
+    case pinchOutMovesCursor = "pinchOutMovesCursorStack"
+    case rotateLeftMovesCursor = "rotateLeftMovesCursorStack"
+    case rotateRightMovesCursor = "rotateRightMovesCursorStack"
+    case swipeMovesCursor = "swipeMovesCursorStack"
     case pinchInAction = "pinchInActionStack"
     case pinchOutAction = "pinchOutActionStack"
     case rotateLeftAction = "rotateLeftActionStack"
@@ -421,6 +433,12 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"
         case .scrollSensitivity: return "Scroll Sensitivity"
         case .pinchSensitivity: return "Pinch Sensitivity"
+        case .swipeAction: return "Swipe"
+        case .pinchInMovesCursor: return "Pinch In — Move Cursor"
+        case .pinchOutMovesCursor: return "Pinch Out — Move Cursor"
+        case .rotateLeftMovesCursor: return "Rotate Left — Move Cursor"
+        case .rotateRightMovesCursor: return "Rotate Right — Move Cursor"
+        case .swipeMovesCursor: return "Swipe — Move Cursor"
         case .pinchInAction: return "Pinch In"
         case .pinchOutAction: return "Pinch Out"
         case .rotateLeftAction: return "Rotate Left"
@@ -1192,6 +1210,12 @@ final class SettingsItemRegistry: ObservableObject {
     let ctrlDownForPinch = SettingsItemModel<Bool>(id: .ctrlDownForPinch, value: false)
     let scrollSensitivity = SettingsItemModel<Double>(id: .scrollSensitivity, value: 1)
     let pinchSensitivity = SettingsItemModel<Double>(id: .pinchSensitivity, value: 1)
+    let swipeAction = SettingsItemModel<String>(id: .swipeAction, value: "NONE")
+    let pinchInMovesCursor = SettingsItemModel<Bool>(id: .pinchInMovesCursor, value: false)
+    let pinchOutMovesCursor = SettingsItemModel<Bool>(id: .pinchOutMovesCursor, value: false)
+    let rotateLeftMovesCursor = SettingsItemModel<Bool>(id: .rotateLeftMovesCursor, value: false)
+    let rotateRightMovesCursor = SettingsItemModel<Bool>(id: .rotateRightMovesCursor, value: false)
+    let swipeMovesCursor = SettingsItemModel<Bool>(id: .swipeMovesCursor, value: false)
     let pinchInAction = SettingsItemModel<String>(id: .pinchInAction, value: "SCROLL_DOWN")
     let pinchOutAction = SettingsItemModel<String>(id: .pinchOutAction, value: "SCROLL_UP")
     let rotateLeftAction = SettingsItemModel<String>(id: .rotateLeftAction, value: "Q")
@@ -1327,6 +1351,12 @@ final class SettingsItemRegistry: ObservableObject {
             ctrlDownForPinch.objectWillChange,
             scrollSensitivity.objectWillChange,
             pinchSensitivity.objectWillChange,
+            swipeAction.objectWillChange,
+            pinchInMovesCursor.objectWillChange,
+            pinchOutMovesCursor.objectWillChange,
+            rotateLeftMovesCursor.objectWillChange,
+            rotateRightMovesCursor.objectWillChange,
+            swipeMovesCursor.objectWillChange,
             pinchInAction.objectWillChange,
             pinchOutAction.objectWillChange,
             rotateLeftAction.objectWillChange,
@@ -1860,6 +1890,12 @@ final class SettingsSession: NSObject, ObservableObject {
         itemRegistry.ctrlDownForPinch.value = snapshot.ctrlDownForPinch
         itemRegistry.scrollSensitivity.value = snapshot.scrollSensitivity.doubleValue
         itemRegistry.pinchSensitivity.value = snapshot.pinchSensitivity.doubleValue
+        itemRegistry.swipeAction.value = snapshot.swipeAction ?? "NONE"
+        itemRegistry.pinchInMovesCursor.value = snapshot.pinchInMovesCursor
+        itemRegistry.pinchOutMovesCursor.value = snapshot.pinchOutMovesCursor
+        itemRegistry.rotateLeftMovesCursor.value = snapshot.rotateLeftMovesCursor
+        itemRegistry.rotateRightMovesCursor.value = snapshot.rotateRightMovesCursor
+        itemRegistry.swipeMovesCursor.value = snapshot.swipeMovesCursor
         itemRegistry.pinchInAction.value = snapshot.pinchInAction ?? "SCROLL_DOWN"
         itemRegistry.pinchOutAction.value = snapshot.pinchOutAction ?? "SCROLL_UP"
         itemRegistry.rotateLeftAction.value = snapshot.rotateLeftAction ?? "Q"
@@ -2511,7 +2547,7 @@ final class SettingsSession: NSObject, ObservableObject {
                         .init(value: 0, title: "Off".localized),
                         .init(value: 1, title: "Scroll Down".localized),
                         .init(value: 2, title: "Scroll Up".localized),
-                        .init(value: 3, title: GestureAction.presets.contains(action) ? "Key".localized : action),
+                        .init(value: 3, title: GestureAction.presets.contains(action) ? "Gesture Action".localized : action),
                         .init(value: 4, title: "Edit".localized)
                     ]
                 },
@@ -2610,10 +2646,16 @@ final class SettingsSession: NSObject, ObservableObject {
                 valueText: { _, model in "\(Int((model.value * 100).rounded()))%" },
                 isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value }
             ),
+            gestureActionItem(\.swipeAction),
+            toggleItem(\.swipeMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
             gestureActionItem(\.pinchInAction),
+            toggleItem(\.pinchInMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
             gestureActionItem(\.pinchOutAction),
+            toggleItem(\.pinchOutMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
             gestureActionItem(\.rotateLeftAction),
+            toggleItem(\.rotateLeftMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
             gestureActionItem(\.rotateRightAction),
+            toggleItem(\.rotateRightMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
             sliderItem(
                 \.rotationSensitivity, range: 0...3, clampedTo: 0...3,
                 valueText: { _, model in "\(Int((model.value * 100).rounded()))%" },
@@ -4627,6 +4669,12 @@ final class SettingsSession: NSObject, ObservableObject {
         settings.ctrlDownForPinch = itemRegistry.ctrlDownForPinch.value
         settings.scrollSensitivity = NSNumber(value: itemRegistry.scrollSensitivity.value)
         settings.pinchSensitivity = NSNumber(value: itemRegistry.pinchSensitivity.value)
+        settings.swipeAction = itemRegistry.swipeAction.value
+        settings.pinchInMovesCursor = itemRegistry.pinchInMovesCursor.value
+        settings.pinchOutMovesCursor = itemRegistry.pinchOutMovesCursor.value
+        settings.rotateLeftMovesCursor = itemRegistry.rotateLeftMovesCursor.value
+        settings.rotateRightMovesCursor = itemRegistry.rotateRightMovesCursor.value
+        settings.swipeMovesCursor = itemRegistry.swipeMovesCursor.value
         settings.pinchInAction = itemRegistry.pinchInAction.value
         settings.pinchOutAction = itemRegistry.pinchOutAction.value
         settings.rotateLeftAction = itemRegistry.rotateLeftAction.value

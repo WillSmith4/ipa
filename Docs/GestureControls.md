@@ -1,12 +1,32 @@
 # Streaming camera gestures
 
-The four bindings live in **Touch Control** in both the SwiftUI settings catalog
+The five bindings live in **Touch Control** in both the SwiftUI settings catalog
 and the legacy UIKit menu. Defaults are pinch in → scroll down, pinch out →
 scroll up, counterclockwise rotation → Q, clockwise rotation → E. Each direction
 can be disabled, mapped to either wheel direction, or assigned a keyboard chord
-using the existing `CommandManager` key names. The Edit segment changes a chord.
+using the existing `CommandManager` key names. `W+D` holds both keys together;
+`CTRL+Q` holds the modifier and key. `MOUSE_LEFT`, `MOUSE_MIDDLE` and `MOUSE_RIGHT`
+hold mouse buttons, and can be combined with keys, e.g. `CTRL+MOUSE_MIDDLE`.
+The Edit segment changes a chord.
 Pinch and rotation have independent sensitivity controls. Ctrl-modified pinch
 scrolling remains an opt-in option.
+
+**Swipe (one finger)** recognizes movement beyond the existing touchpad slide
+threshold in any direction. Its default is Off. Each of the five bindings has
+its own **Move Cursor** switch, initially off, so upgrading preserves existing
+controls. Enabling cursor movement with the action Off also works.
+
+For free camera orbit, set **Swipe → Edit → MOUSE_MIDDLE**, then enable
+**Swipe — Move Cursor**. Move your finger horizontally or vertically to produce
+the same input as dragging a mouse with its middle button held. The game's own
+camera controls determine how those mouse movements affect its view.
+
+For pinch/rotation, cursor movement follows the centre of both fingers: moving
+the whole hand up moves the cursor up, while symmetric pinching/rotation around
+a stationary centre does not move it. Simultaneous pinch and rotation send only
+one cursor movement per touch sample. Adding/lifting a finger rebases tracking
+without jumping. Cursor speed uses the existing touchpad speed setting and
+retains fractional movement at low speeds.
 
 ## Input and persistence
 
@@ -18,6 +38,8 @@ scrolling remains an opt-in option.
   sends only state transitions to the Moonlight transport. Motion extends an
   idle deadline (70–450 ms), with greater movement producing a longer hold.
   Reversing direction releases the old action before pressing the new action.
+  Mouse actions (including mixed keyboard/mouse chords) remain held through
+  pauses until the gesture ends, allowing uninterrupted camera drags.
   Finger lift, cancellation, settings/profile changes, disabled input, loss of
   focus and session cleanup release gesture-owned keys. The timer only releases
   expired keys; it never repeats keydown events.
@@ -31,6 +53,13 @@ scrolling remains an opt-in option.
   Lightweight migration preserves the v1.0 model. A one-time nil-binding
   migration installs defaults and turns off the old automatic Ctrl modifier.
   `TemporarySettings` carries these values into each settings/session snapshot.
+- The v1.2 model adds the swipe action and five cursor switches, preserving the
+  v1.1 model and all existing bindings. Both settings front ends load/save them.
+- Legacy delayed tap callbacks are invalidated when a gesture takes over.
+  Gesture presses run after UIKit has cancelled old touches so a stale mouse
+  release cannot interrupt the new drag. The swipe recognizer delays ordinary
+  touch delivery until it knows whether the movement is a swipe; taps still
+  reach the original handler when recognition fails.
 - The Drawing Toolkit is included. Pencil runtime, settings and editors no
   longer consult StoreKit or reset settings after an interrupted purchase.
   Hardware/OS requirements for specific Pencil interactions still apply.
@@ -40,11 +69,16 @@ scrolling remains an opt-in option.
 Run `bash BuildScripts/test-gestures.sh` on a machine with Swift. This executes
 the actual engine against an event recorder and checks held keys, reversal,
 overlapping chords, modifier ordering, idle release, proportional duration,
-fractional scrolling and invalid input. GitHub Actions runs it before archiving
+fractional scrolling, mouse/mixed chords, continuous drag through pauses,
+centroid movement, touch-set changes, fractional cursor motion and invalid input.
+GitHub Actions runs it before archiving
 the iOS app and uploading `VoidLink-unsigned.ipa`.
 
 Device acceptance: exercise pinch/rotation together, reverse direction, lift one
 finger, add a third finger, open settings, background the app, disconnect, change
 bindings, and restart. Check native/relative/absolute modes, ordinary two-finger
 scrolling, widget/edge gestures, and a fresh install with no purchase receipt.
+Also check Swipe + MOUSE_MIDDLE with Move Cursor on/off, W+D, mixed chords,
+simultaneous pinch/rotation with the same button, hand translation up/down,
+and taps/double taps when Swipe is Off and when it is enabled.
 The IPA is unsigned and must be signed for installation on an iOS device.

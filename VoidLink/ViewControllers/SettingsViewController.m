@@ -946,6 +946,12 @@
     CGFloat streamingRadialMenuDelay = self.streamingRadialMenuDelaySlider.value;
     NSInteger backgroundSessionTimer = self.backgroundSessionTimerSlider.value == self.backgroundSessionTimerSlider.maximumValue ? (uint32_t) INT16_MAX : (uint32_t)self.backgroundSessionTimerSlider.value;
 
+    currentSettings.swipeAction = tempSettings.swipeAction;
+    currentSettings.pinchInMovesCursor = tempSettings.pinchInMovesCursor;
+    currentSettings.pinchOutMovesCursor = tempSettings.pinchOutMovesCursor;
+    currentSettings.rotateLeftMovesCursor = tempSettings.rotateLeftMovesCursor;
+    currentSettings.rotateRightMovesCursor = tempSettings.rotateRightMovesCursor;
+    currentSettings.swipeMovesCursor = tempSettings.swipeMovesCursor;
     currentSettings.pinchInAction = tempSettings.pinchInAction;
     currentSettings.pinchOutAction = tempSettings.pinchOutAction;
     currentSettings.rotateLeftAction = tempSettings.rotateLeftAction;
@@ -1669,8 +1675,8 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.pinchSensitivityStack ofId:@"pinchSensitivityStack" to:touchControlSection];
 
     NSMutableArray *actionStacks = [NSMutableArray array];
-    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotateLeftAction", @"rotateRightAction"];
-    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotate Left", @"Rotate Right"];
+    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotateLeftAction", @"rotateRightAction", @"swipeAction"];
+    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotate Left", @"Rotate Right", @"Swipe"];
     for (NSInteger i = 0; i < gestureFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:gestureTitles[i]];
@@ -1679,7 +1685,7 @@ BOOL isCustomResolution(int resolutionSelected) {
             [LocalizationHelper localizedStringForKey:@"Off"],
             [LocalizationHelper localizedStringForKey:@"Scroll Down"],
             [LocalizationHelper localizedStringForKey:@"Scroll Up"],
-            [LocalizationHelper localizedStringForKey:@"Key"],
+            [LocalizationHelper localizedStringForKey:@"Gesture Action"],
             [LocalizationHelper localizedStringForKey:@"Edit"]]];
         selector.accessibilityIdentifier = gestureFields[i];
         [self refreshGestureActionSelector:selector];
@@ -1690,6 +1696,24 @@ BOOL isCustomResolution(int resolutionSelected) {
         stack.alignment = self.pinchGestureStack.alignment;
         stack.hasInfoTag = YES;
         [self addSetting:stack ofId:[gestureFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
+        [actionStacks addObject:stack];
+    }
+    NSArray *cursorFields = @[@"pinchInMovesCursor", @"pinchOutMovesCursor", @"rotateLeftMovesCursor", @"rotateRightMovesCursor", @"swipeMovesCursor"];
+    NSArray *cursorTitles = @[@"Pinch In — Move Cursor", @"Pinch Out — Move Cursor", @"Rotate Left — Move Cursor", @"Rotate Right — Move Cursor", @"Swipe — Move Cursor"];
+    for (NSInteger i = 0; i < cursorFields.count; i++) {
+        UILabel *label = [[UILabel alloc] init];
+        label.text = [LocalizationHelper localizedStringForKey:cursorTitles[i]];
+        label.font = ((UILabel *)self.pinchGestureStack.arrangedSubviews.firstObject).font;
+        UISwitch *toggle = [[UISwitch alloc] init];
+        toggle.accessibilityIdentifier = cursorFields[i];
+        toggle.on = [[tempSettings valueForKey:cursorFields[i]] boolValue];
+        [toggle addTarget:self action:@selector(gestureCursorChanged:) forControlEvents:UIControlEventValueChanged];
+        UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[label, toggle]];
+        stack.axis = self.pinchGestureStack.axis;
+        stack.spacing = self.pinchGestureStack.spacing;
+        stack.alignment = self.pinchGestureStack.alignment;
+        stack.hasInfoTag = YES;
+        [self addSetting:stack ofId:[cursorFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
         [actionStacks addObject:stack];
     }
     gestureActionStacks = actionStacks;
@@ -2515,7 +2539,10 @@ BOOL isCustomResolution(int resolutionSelected) {
         showOnlineDocAction = true;
         onlineDocLink = [LocalizationHelper localizedStringForKey:@"relativeTouchSlideThresholdStackLink"];
     }
-    if ([@[@"pinchInActionStack", @"pinchOutActionStack", @"rotateLeftActionStack", @"rotateRightActionStack"] containsObject:sender.superview.accessibilityIdentifier]) {
+    if ([@[@"pinchInMovesCursorStack", @"pinchOutMovesCursorStack", @"rotateLeftMovesCursorStack", @"rotateRightMovesCursorStack", @"swipeMovesCursorStack"] containsObject:sender.superview.accessibilityIdentifier]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Gesture cursor help"];
+    }
+    if ([@[@"pinchInActionStack", @"pinchOutActionStack", @"rotateLeftActionStack", @"rotateRightActionStack", @"swipeActionStack"] containsObject:sender.superview.accessibilityIdentifier]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Camera gesture help"];
     }
     if([sender.superview.accessibilityIdentifier isEqualToString: @"ctrlDownForPinchStack"]){
@@ -4875,7 +4902,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     NSArray *presets = @[@"NONE", @"SCROLL_DOWN", @"SCROLL_UP"];
     NSUInteger index = [presets indexOfObject:action];
     selector.selectedSegmentIndex = index == NSNotFound ? 3 : index;
-    [selector setTitle:index == NSNotFound ? action : [LocalizationHelper localizedStringForKey:@"Key"] forSegmentAtIndex:3];
+    [selector setTitle:index == NSNotFound ? action : [LocalizationHelper localizedStringForKey:@"Gesture Action"] forSegmentAtIndex:3];
 }
 
 - (void)gestureActionChanged:(UISegmentedControl *)selector {
@@ -4886,11 +4913,15 @@ BOOL isCustomResolution(int resolutionSelected) {
         [self refreshGestureActionSelector:selector];
     } else {
         [self refreshGestureActionSelector:selector];
-        [GestureActionEditor editIn:self title:[LocalizationHelper localizedStringForKey:@"Key"] current:[tempSettings valueForKey:field] completion:^(NSString *action) {
+        [GestureActionEditor editIn:self title:[LocalizationHelper localizedStringForKey:@"Gesture Action"] current:[tempSettings valueForKey:field] completion:^(NSString *action) {
             [self->tempSettings setValue:action forKey:field];
             [self refreshGestureActionSelector:selector];
         }];
     }
+}
+
+- (void)gestureCursorChanged:(UISwitch *)sender {
+    [tempSettings setValue:@(sender.isOn) forKey:sender.accessibilityIdentifier];
 }
 
 - (void)rotationSensitivityChanged:(UISlider *)sender {

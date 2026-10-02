@@ -1995,6 +1995,13 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 #endif
 }
 
+- (void)cancelMouseTouchesForGesture {
+    if ([touchHandler isKindOfClass:[RelativeTouchHandler class]] ||
+        [touchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
+        [touchHandler touchesCancelled:[NSSet set] withEvent:nil];
+    }
+}
+
 - (void)cancelStreamGestures {
 #if !TARGET_OS_TV
     [cameraGestures cancel];

@@ -29,6 +29,7 @@
 static int mouseButtonForCursorMove = BUTTON_LEFT;
 
 @implementation AbsoluteTouchHandler {
+    NSUInteger inputGeneration;
     __weak StreamView* streamView;
     
     bool multiTouchesDetected;
@@ -88,6 +89,7 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 }
 
 - (void)onLongPressStart:(NSTimer*)timer {
+    NSUInteger generation = inputGeneration;
     // Raise the left click and start a right click
     if(multiTouchesDetected) return;
     
@@ -98,7 +100,8 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
         }
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_RIGHT);
         dispatch_time_t delayShort = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC));
-        dispatch_after(delayShort, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_after(delayShort, dispatch_get_main_queue(), ^{
+            if (generation != self->inputGeneration) return;
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
             self->rightButtonClicked = true;
         });
@@ -262,6 +265,7 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 }
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
+    inputGeneration++;
     // Recognition of a camera gesture is a cancellation, never a click.
     [longPressTimer invalidate];
     longPressTimer = nil;
@@ -275,11 +279,14 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 }
 
 - (void)sendShortMouseLeftButtonClickEvent{
+    NSUInteger generation = inputGeneration;
     dispatch_time_t delayShort = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(leftClickDelay * NSEC_PER_SEC));
     dispatch_time_t delayLong = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.03 * NSEC_PER_SEC));
-    dispatch_after(delayShort, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_after(delayShort, dispatch_get_main_queue(), ^{
+        if (generation != self->inputGeneration) return;
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
-        dispatch_after(delayLong, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_after(delayLong, dispatch_get_main_queue(), ^{
+            if (generation != self->inputGeneration) return;
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
         });

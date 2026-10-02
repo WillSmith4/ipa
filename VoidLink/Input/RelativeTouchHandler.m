@@ -16,6 +16,7 @@
 static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 
 @implementation RelativeTouchHandler {
+    NSUInteger inputGeneration;
     TemporarySettings* currentSettings;
     CGPoint latestMousePointerLocation, initialMousePointerLocation;
     CGPoint twoFingerTouchLocation;
@@ -95,13 +96,16 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 }
 
 - (void)mouseRightClick {
+    NSUInteger generation = inputGeneration;
     multiTouchesDetected = false;
     dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC));
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (generation != self->inputGeneration) return;
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_RIGHT);
         Log(LOG_D, @"Sending right mouse button press");
         // Wait 100 ms to simulate a real button press
-        dispatch_after(delay, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_after(delay, dispatch_get_main_queue(), ^{
+            if (generation != self->inputGeneration) return;
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
         });
     });
@@ -231,6 +235,7 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 }
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
+    inputGeneration++;
     [TouchPadGestureHandler cancel];
     multiTouchesDetected = false;
     quickTapDetected = false;
@@ -241,7 +246,9 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 }
 
 - (void)sendMouseMoveEvent:(CGPoint)currentLocation{
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
+    NSUInteger generation = inputGeneration;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (generation != self->inputGeneration) return;
         bool isAdjacentPoints = [self isAdjacentPoints:self->initialMousePointerLocation from:currentLocation tolerance:self->currentSettings.relativeTouchSlideThreshold.floatValue];
     
         if (!self->firstTouchMoved && !isAdjacentPoints) {
@@ -266,14 +273,17 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 
 // this will turn into a dragging anytime...
 - (void)sendLongMouseLeftButtonClickEvent{
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
+    NSUInteger generation = inputGeneration;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (generation != self->inputGeneration) return;
         // if (!self->isDragging){
         Log(LOG_D, @"Sending left mouse button press");
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
         
         // Wait 100 ms to simulate a real button press
         dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(QUICK_TAP_TIME_INTERVAL * NSEC_PER_SEC));
-        dispatch_after(delay, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_after(delay, dispatch_get_main_queue(), ^{
+            if (generation != self->inputGeneration) return;
             if(!self->quickTapDetected){
                 LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
             }
@@ -284,10 +294,13 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 }
 
 - (void)sendShortMouseLeftButtonClickEvent{
+    NSUInteger generation = inputGeneration;
     dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.05 * NSEC_PER_SEC));
-    dispatch_after(delay, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_after(delay, dispatch_get_main_queue(), ^{
+        if (generation != self->inputGeneration) return;
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
-        dispatch_after(delay, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        dispatch_after(delay, dispatch_get_main_queue(), ^{
+            if (generation != self->inputGeneration) return;
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
         });
     });

@@ -3,12 +3,13 @@ import Foundation
 @main
 struct GestureActionEngineTests {
     static func main() {
-        let mappings: [String: Int16] = ["Q": 0x51, "E": 0x45, "CTRL": 0x11, "SHIFT": 0x10, "NULL": 0xFF]
+        let mappings: [String: Int16] = ["Q": 0x51, "E": 0x45, "W": 0x57, "D": 0x44, "CTRL": 0x11, "SHIFT": 0x10, "NULL": 0xFF]
         var events: [String] = []
         var scroll: [Int16] = []
         let engine = GestureActionEngine(mappings: mappings,
             sendKey: { events.append("\($0):\($1 ? "down" : "up")") },
-            sendScroll: { scroll.append($0) })
+            sendScroll: { scroll.append($0) },
+            sendMouse: { events.append("mouse\($0):\($1 ? "down" : "up")") })
         func check(_ condition: @autoclosure () -> Bool, _ message: String) {
             precondition(condition(), message)
         }
@@ -78,6 +79,50 @@ struct GestureActionEngineTests {
         check(GestureAction.keys("NULL", mappings: mappings) == nil, "Do not send the NULL sentinel")
         check(GestureAction.keys("UNKNOWN", mappings: mappings) == nil, "Reject unsupported keys")
         engine.cancel()
+        events.removeAll()
+        engine.move(axis: 2, action: "W+D", amount: 10, now: 20)
+        check(events == ["68:down", "87:down"], "Both ordinary keys must be held together")
+        engine.cancel()
+        events.removeAll()
+        for i in 0..<120 {
+            engine.move(axis: 2, action: "MOUSE_MIDDLE", amount: 2, now: 21 + Double(i) / 120)
+        }
+        engine.tick(now: 60)
+        check(events == ["mouse2:down"] && engine.hasHolds && !engine.hasTimedHolds, "Camera drag remains continuous through movement and pauses")
+        engine.end(axis: 2)
+        check(events == ["mouse2:down", "mouse2:up"], "Finger lift ends the drag")
+        events.removeAll()
+        engine.move(axis: 0, action: "CTRL+MOUSE_RIGHT", amount: 5, now: 70)
+        engine.move(axis: 1, action: "CTRL+MOUSE_RIGHT", amount: 5, now: 70)
+        engine.end(axis: 0)
+        engine.tick(now: 90)
+        check(events == ["17:down", "mouse3:down"], "Overlapping mouse chords share ownership and retain their modifier")
+        engine.move(axis: 1, action: "MOUSE_LEFT", amount: 1, now: 91)
+        check(events.suffix(3) == ["mouse3:up", "17:up", "mouse1:down"], "Reversal releases the old drag before pressing the new one")
+        engine.cancel()
+        check(events.last == "mouse1:up", "Cancellation must release mouse buttons")
+        check(GestureAction.inputs("ctrl + MOUSE_MIDDLE + CTRL", mappings: mappings) == [.key(0x11), .mouse(2)], "Mixed chords normalize and deduplicate")
+        for invalid in ["", "MOUSE_MIDDLE+", "MOUSE_UNKNOWN", "MOUSE_LEFT+UNKNOWN", "WHEELUP", "NULL+MOUSE_LEFT"] {
+            check(GestureAction.inputs(invalid, mappings: mappings) == nil, "Reject invalid or non-stateful mouse actions: \(invalid)")
+        }
+
+        var pointer = GesturePointerMotion()
+        typealias Point = GesturePointerMotion.Point
+        func sample(_ points: [Point]) -> (Double, Double) { pointer.sample(points) }
+        check(sample([.init(id: 0, x: 50, y: 50)]) == (0, 0), "Touch down must not warp the cursor")
+        check(sample([.init(id: 0, x: 55, y: 40)]) == (5, -10), "Swipe follows both axes")
+        check(sample([.init(id: 0, x: 55, y: 40), .init(id: 1, x: 155, y: 40)]) == (0, 0), "Adding a finger rebases without a jump")
+        check(sample([.init(id: 0, x: 45, y: 30), .init(id: 1, x: 165, y: 30)]) == (0, -10), "Pinch plus upward hand motion moves the cursor upward")
+        check(sample([.init(id: 1, x: 165, y: 40), .init(id: 0, x: 45, y: 20)]) == (0, 0), "Symmetric rotation has no translation; touch order is irrelevant")
+        check(sample([.init(id: 0, x: 45, y: 20)]) == (0, 0), "Lifting one finger cannot jump the cursor")
+        var totalX = 0
+        for _ in 0..<10 { totalX += Int(pointer.cursor(dx: 0.2, dy: 0, speed: 1).0) }
+        check(totalX == 2, "Slow subpixel cursor motion is accumulated")
+        pointer.reset()
+        check(pointer.cursor(dx: -10, dy: 10, speed: 2) == (-27, 27), "Cursor uses existing touchpad speed and preserves direction")
+        check(pointer.cursor(dx: .nan, dy: 10, speed: 1) == (0, 0), "Ignore invalid cursor samples")
+        check(pointer.cursor(dx: Double.greatestFiniteMagnitude, dy: 0, speed: 3).0 == Int16.max, "Bound transport values without overflow")
+        check(pointer.cursor(dx: -1, dy: 0, speed: 1).0 == -1, "Extreme movement leaves no cursor backlog")
         print("GestureActionEngine: all checks passed")
     }
 }

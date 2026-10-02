@@ -49,6 +49,7 @@
 
 - (void)cleanUp;
 - (void)cancelStreamGestures;
+- (void)cancelMouseTouchesForGesture;
 - (void)configureStreamGestures;
 
 - (void) reloadLegacyWidgets:(OSCProfile* )profile;

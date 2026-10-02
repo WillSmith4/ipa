@@ -1,6 +1,176 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Swipe — Move Cursor" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe — Move Cursor"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuwanie jednym palcem — ruch kursora"
+          }
+        }
+      }
+    },
+    "Rotate Right — Move Cursor" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate Right — Move Cursor"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrót w prawo — ruch kursora"
+          }
+        }
+      }
+    },
+    "Rotate Left — Move Cursor" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotate Left — Move Cursor"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrót w lewo — ruch kursora"
+          }
+        }
+      }
+    },
+    "Pinch Out — Move Cursor" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch Out — Move Cursor"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozsuwanie palców — ruch kursora"
+          }
+        }
+      }
+    },
+    "Pinch In — Move Cursor" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinch In — Move Cursor"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szczypanie do środka — ruch kursora"
+          }
+        }
+      }
+    },
+    "Camera gesture help" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign wheel scrolling, a key, simultaneous keys (W+D, CTRL+Q), or mouse buttons (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT). Swipe starts after the touchpad movement threshold. Enable Move Cursor for any gesture to move and hold its action together. Keyboard hold duration follows movement; mouse drags remain held through pauses. Lifting fingers or cancelling releases the action."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypisz przewijanie, klawisz, kombinację (W+D, CTRL+Q) lub przyciski myszy (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT). Przesuwanie zaczyna się po przekroczeniu progu ruchu touchpada. Włącz ruch kursora dla gestu, aby poruszać myszą z przytrzymaną akcją. Czas trzymania klawiszy zależy od ruchu; przyciski myszy pozostają wciśnięte podczas przerw. Podniesienie palców lub anulowanie zwalnia akcję."
+          }
+        }
+      }
+    },
+    "Gesture key binding help" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a key, simultaneous keys (CTRL+Q or W+D), or MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT. Combine keyboard and mouse with +, for example CTRL+MOUSE_MIDDLE. Mouse actions stay held until the gesture ends."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz klawisz, kilka jednocześnie (CTRL+Q lub W+D) albo MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT. Znak + łączy też klawiaturę z myszą, np. CTRL+MOUSE_MIDDLE. Przyciski myszy są trzymane do zakończenia gestu."
+          }
+        }
+      }
+    },
+    "Gesture cursor help" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move the cursor with the centre of the fingers while this gesture is active. Moving the whole hand up moves the cursor up; symmetric pinch/rotation leaves it still. Movement uses touchpad pointer speed. For free camera orbit, assign MOUSE_MIDDLE to Swipe and enable Swipe — Move Cursor. Mouse buttons remain held through pauses until fingers lift."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuwa kursor zgodnie z ruchem środka między palcami podczas gestu. Przesunięcie całej dłoni w górę przesuwa kursor w górę; symetryczne szczypanie lub obrót pozostawia go w miejscu. Używa prędkości kursora touchpada. Aby swobodnie obracać kamerę, przypisz MOUSE_MIDDLE do przesuwania jednym palcem i włącz ruch kursora dla tego gestu. Przyciski myszy pozostają wciśnięte podczas przerw aż do podniesienia palców."
+          }
+        }
+      }
+    },
+    "Gesture Action" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Action"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akcja"
+          }
+        }
+      }
+    },
+    "Swipe" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe (one finger)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuwanie jednym palcem"
+          }
+        }
+      }
+    },
     "SensitivityY" : {
       "extractionState": "manual",
       "localizations": {
@@ -189,23 +359,6 @@
         }
       }
     },
-    "Gesture key binding help": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter a key name or a chord joined with +, such as Q, E, SPACE, LEFT_ARROW or CTRL+Q. Keys stay held while the gesture moves and release when it ends."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wpisz nazwę klawisza lub kombinację połączoną znakiem +, np. Q, E, SPACE, LEFT_ARROW lub CTRL+Q. Klawisze są przytrzymywane podczas ruchu i zwalniane po zakończeniu gestu."
-          }
-        }
-      }
-    },
     "Invalid key binding": {
       "extractionState": "manual",
       "localizations": {
@@ -219,23 +372,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieprawidłowy klawisz"
-          }
-        }
-      }
-    },
-    "Camera gesture help": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pinch in scrolls down, pinch out scrolls up, and two-finger rotation holds Q (left) or E (right) by default. Choose scrolling, a key/chord, or Off for each direction. Edit changes the key/chord. Stronger movement extends the continuous hold; lifting a finger releases it immediately. Keyboard keys are digital, so the game determines rotation speed."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Domyślnie ściśnięcie przewija w dół, rozsunięcie w górę, a obrót dwóch palców przytrzymuje Q (w lewo) lub E (w prawo). Dla każdego kierunku wybierz przewijanie, klawisz/kombinację lub wyłączenie. Edytuj zmienia przypisanie. Silniejszy ruch wydłuża przytrzymanie; uniesienie palca zwalnia klawisz natychmiast. Klawisze są cyfrowe, więc prędkość obrotu określa gra."
           }
         }
       }

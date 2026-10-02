@@ -96,6 +96,12 @@
 @property (nonatomic) BOOL duckOtherApps;
 @property (nonatomic) BOOL muteInBackground;
 @property (nonatomic) BOOL enablePinch;
+@property (nonatomic, copy) NSString * swipeAction;
+@property (nonatomic) BOOL pinchInMovesCursor;
+@property (nonatomic) BOOL pinchOutMovesCursor;
+@property (nonatomic) BOOL rotateLeftMovesCursor;
+@property (nonatomic) BOOL rotateRightMovesCursor;
+@property (nonatomic) BOOL swipeMovesCursor;
 @property (nonatomic, copy) NSString * pinchInAction;
 @property (nonatomic, copy) NSString * pinchOutAction;
 @property (nonatomic, copy) NSString * rotateLeftAction;
