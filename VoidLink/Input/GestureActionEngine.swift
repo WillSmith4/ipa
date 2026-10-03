@@ -160,3 +160,33 @@ struct GesturePointerMotion {
 
     mutating func reset() { self = GesturePointerMotion() }
 }
+
+/// Signed angle between consecutive two-finger vectors. As with the supplied
+/// AlloyFinger current/previous-vector calculation, positive means clockwise
+/// in screen coordinates (y down). atan2 avoids acos rounding away tiny angles.
+struct GestureRotationMotion {
+    private var ids: [Int] = []
+    private var previous: (x: Double, y: Double)?
+
+    mutating func sample(_ points: [GesturePointerMotion.Point]) -> Double? {
+        guard points.count == 2 else { reset(); return nil }
+        let pair = points.sorted { $0.id < $1.id }
+        let pairIDs = pair.map { $0.id }
+        let x = pair[1].x - pair[0].x, y = pair[1].y - pair[0].y
+        let length = hypot(x, y)
+        guard x.isFinite, y.isFinite, length.isFinite, length > 0 else { reset(); return nil }
+        let vector = (x: x / length, y: y / length)
+        let old = ids == pairIDs ? previous : nil
+        ids = pairIDs
+        previous = vector
+        guard let old else { return nil }
+        let cross = old.x * vector.y - old.y * vector.x
+        let dot = old.x * vector.x + old.y * vector.y
+        // Suppress floating-point roundoff for collinear vectors so pure pan or
+        // pinch cannot become a rotation. This is at machine precision only.
+        if dot > 0 && abs(cross) <= 8 * Double.ulpOfOne { return 0 }
+        return atan2(cross, dot) * 180 / .pi
+    }
+
+    mutating func reset() { ids = []; previous = nil }
+}

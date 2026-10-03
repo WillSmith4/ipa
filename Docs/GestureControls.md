@@ -15,6 +15,11 @@ scrolling remains an opt-in option.
 threshold in any direction. Its default is Off. Each of the five bindings has
 its own **Move Cursor** switch, initially off, so upgrading preserves existing
 controls. Enabling cursor movement with the action Off also works.
+At the start of a recognized swipe with Move Cursor enabled, the cursor is
+positioned once at the original finger-down location using Single Point's
+video-area coordinate conversion. This happens before pressing the assigned
+mouse button; subsequent motion remains relative. Cancellation clears any
+queued initial position, and cursor-disabled actions do not reposition it.
 
 For free camera orbit, set **Swipe → Edit → MOUSE_MIDDLE**, then enable
 **Swipe — Move Cursor**. Move your finger horizontally or vertically to produce
@@ -37,7 +42,7 @@ These switches do not change host mouse or camera bindings.
 
 ## Input and persistence
 
-- `StreamView` owns `StreamGestureController`. Its two UIKit recognizers can
+- `StreamView` owns `StreamGestureController`. Its gesture recognizers can
   recognize together, accept direct finger touches on the stream surface, and
   exclude screen-edge menu gestures and on-screen controls. Recognition cancels
   the underlying native/mouse touches; cancellation never generates a click.
@@ -50,7 +55,14 @@ These switches do not change host mouse or camera bindings.
   Finger lift, cancellation, settings/profile changes, disabled input, loss of
   focus and session cleanup release gesture-owned keys. The timer only releases
   expired keys; it never repeats keydown events.
-- Pinch uses incremental log scale; rotation uses incremental UIKit angles.
+- Pinch uses incremental log scale. One custom rotation recognizer tracks the
+  same two touches, starting with their vector when the second finger lands.
+  Every move computes the signed angle between the previous and current vectors
+  using atan2(cross, dot), with no minimum-angle threshold. Positive screen
+  rotation selects the right binding, negative selects left; either finger can
+  act as the pivot. Zero-angle motion does not activate rotation. Touch changes
+  or coincident fingers rebase the vector to prevent angle jumps. Existing
+  sensitivity units and separate left/right settings are preserved.
   Fractional wheel motion is accumulated before sending high-resolution scroll
   events. Keyboard inputs are binary: the host game controls angular speed;
   finger movement controls hold duration, not analog key pressure.

@@ -123,6 +123,34 @@ struct GestureActionEngineTests {
         check(pointer.cursor(dx: .nan, dy: 10, speed: 1) == (0, 0), "Ignore invalid cursor samples")
         check(pointer.cursor(dx: Double.greatestFiniteMagnitude, dy: 0, speed: 3).0 == Int16.max, "Bound transport values without overflow")
         check(pointer.cursor(dx: -1, dy: 0, speed: 1).0 == -1, "Extreme movement leaves no cursor backlog")
+
+        var rotation = GestureRotationMotion()
+        func fingers(angle: Double, radius: Double = 100, x: Double = 0, y: Double = 0) -> [Point] {
+            [.init(id: 10, x: x, y: y),
+             .init(id: 20, x: x + cos(angle * .pi / 180) * radius, y: y + sin(angle * .pi / 180) * radius)]
+        }
+        func near(_ actual: Double?, _ expected: Double, _ message: String) {
+            check(actual != nil && abs(actual! - expected) < 1e-8, message)
+        }
+        check(rotation.sample(fingers(angle: 0)) == nil, "Second finger primes rotation without an initial jump")
+        near(rotation.sample(fingers(angle: 0.000001)), 0.000001, "Tiny arcs are detected without an angle dead zone")
+        near(rotation.sample(fingers(angle: 90)), 89.999999, "Clockwise screen rotation selects the right binding")
+        near(rotation.sample(fingers(angle: 45)), -45, "Reversing the moving finger selects the left binding")
+        check(rotation.sample(fingers(angle: 45, radius: 200, x: 25, y: -30)) == 0, "Translation and radial pinch cannot start rotation from rounding noise")
+        near(rotation.sample(Array(fingers(angle: 60, radius: 200, x: 25, y: -30).reversed())), 15, "Touch identity is stable regardless of array order")
+        rotation.reset()
+        _ = rotation.sample(fingers(angle: 179))
+        near(rotation.sample(fingers(angle: -179)), 2, "Crossing the angle boundary follows the short arc")
+        near(rotation.sample(fingers(angle: 179)), -2, "Boundary crossing preserves reverse direction")
+        check(rotation.sample([.init(id: 10, x: 0, y: 0)]) == nil, "Lifting either finger resets rotation")
+        check(rotation.sample(fingers(angle: 90)) == nil, "A new pair starts a fresh vector")
+        check(rotation.sample([.init(id: 10, x: 0, y: 0), .init(id: 30, x: 100, y: 0)]) == nil, "Replacing a finger cannot create a spurious angle")
+        check(rotation.sample(fingers(angle: 0, radius: 0)) == nil, "Coincident touches cannot produce invalid angles")
+        check(rotation.sample(fingers(angle: 0)) == nil, "Rebase after a degenerate vector")
+        var withThirdFinger = fingers(angle: 15)
+        withThirdFinger.append(.init(id: 30, x: 50, y: 50))
+        check(rotation.sample(withThirdFinger) == nil, "A third finger terminates this two-finger rotation")
+        check(rotation.sample(fingers(angle: 15)) == nil, "Removing a third finger does not synthesize an angle")
         print("GestureActionEngine: all checks passed")
     }
 }

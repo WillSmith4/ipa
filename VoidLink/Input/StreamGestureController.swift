@@ -42,11 +42,55 @@ private final class GestureMotionObserver: UIGestureRecognizer {
     override func reset() { super.reset(); fingers.removeAll(); motion.reset() }
 }
 
+/// One continuous rotation gesture drives both directional bindings. Track the
+/// same fingers from the second touch down and sample every subsequent move.
+private final class StreamRotationRecognizer: UIGestureRecognizer {
+    private var fingers: [UITouch] = []
+    private var motion = GestureRotationMotion()
+    private(set) var deltaDegrees = 0.0
+
+    private func sample() -> Double? {
+        motion.sample(fingers.enumerated().map { index, touch in
+            let point = touch.location(in: view)
+            return .init(id: index, x: Double(point.x), y: Double(point.y))
+        })
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        fingers.append(contentsOf: touches.sorted { $0.location(in: view).x < $1.location(in: view).x })
+        guard fingers.count <= 2 else {
+            state = state == .possible ? .failed : .cancelled
+            return
+        }
+        _ = sample()
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard fingers.count == 2, let angle = sample() else { return }
+        deltaDegrees = angle
+        if state == .possible {
+            // Zero angle has no rotation direction. Leave pure translation and
+            // radial pinching alone; any nonzero angle starts rotation immediately.
+            if angle != 0 { state = .began }
+        } else if state == .began || state == .changed { state = .changed }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        state = state == .possible ? .failed : .ended
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
+        state = state == .possible ? .failed : .cancelled
+    }
+
+    override func reset() { super.reset(); fingers.removeAll(); motion.reset(); deltaDegrees = 0 }
+}
+
 /// Uses the existing touchpad dead zone to distinguish a swipe from a tap.
 private final class StreamSwipeRecognizer: UIGestureRecognizer {
     var threshold = 6.0
     private var finger: UITouch?
-    private var origin = CGPoint.zero
+    private(set) var origin = CGPoint.zero
     var delta = CGPoint.zero
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         guard finger == nil, touches.count == 1, let touch = touches.first else {
@@ -74,13 +118,14 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
 @objc final class StreamGestureController: NSObject, UIGestureRecognizerDelegate {
     private weak var view: UIView?
     private var pinch: UIPinchGestureRecognizer!
-    private var rotation: UIRotationGestureRecognizer!
+    private var rotation: StreamRotationRecognizer!
     private var swipe: StreamSwipeRecognizer!
     private var motionObserver: GestureMotionObserver!
     private var cursorEnabled = Array(repeating: false, count: 5)
     private var pointerSpeed = 1.0
     private var pointer = GesturePointerMotion()
     private var cursorDelta = (x: 0.0, y: 0.0)
+    private var swipeCursorOrigin: CGPoint?
     private var queuedMoves: [(axis: Int, delta: Double)] = []
     private var endingAxes: Set<Int> = []
     private var activeActions: [Int: Int] = [:]
@@ -96,7 +141,6 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var controlScroll = false
     private var edgeTolerance: CGFloat = 0
     private var lastPinch = 1.0
-    private var lastRotation = 0.0
     private var pending = [0.0, 0.0, 0.0]
     private var enabled = true
     private var pinchEnabled = true
@@ -114,7 +158,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         self.view = view
         super.init()
         pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinched(_:)))
-        rotation = UIRotationGestureRecognizer(target: self, action: #selector(rotated(_:)))
+        rotation = StreamRotationRecognizer(target: self, action: #selector(rotated(_:)))
         swipe = StreamSwipeRecognizer(target: self, action: #selector(swiped(_:)))
         // Hold ordinary touches until we know whether this is a configured swipe.
         // Failed recognition still delivers taps to the existing touch handler.
@@ -190,6 +234,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         endingAxes.removeAll()
         activeActions.removeAll()
         cursorDelta = (0, 0)
+        swipeCursorOrigin = nil
         pointer.reset()
         pending = [0, 0, 0]
         hasRecognizedGesture = false
@@ -223,19 +268,16 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         }
     }
 
-    @objc private func rotated(_ recognizer: UIRotationGestureRecognizer) {
+    @objc private func rotated(_ recognizer: StreamRotationRecognizer) {
         switch recognizer.state {
         case .began:
-            lastRotation = 0
             pending[1] = 0
             endingAxes.remove(1)
             fallthrough
         case .changed:
             guard recognizer.numberOfTouches == 2 else { cancel(); return }
-            let angle = Double(recognizer.rotation)
-            // Positive UIKit rotation is clockwise (right).
-            let delta = (angle - lastRotation) * 100 * rotationSensitivity
-            lastRotation = angle
+            // Preserve existing sensitivity units while using per-event angles.
+            let delta = recognizer.deltaDegrees * .pi / 180 * 100 * rotationSensitivity
             move(axis: 1, delta: delta)
         default:
             endingAxes.insert(1)
@@ -250,9 +292,13 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
 
     @objc private func swiped(_ recognizer: StreamSwipeRecognizer) {
         if recognizer.state == .began || recognizer.state == .changed {
-            if recognizer.state == .began { endingAxes.remove(2) }
+            if recognizer.state == .began {
+                endingAxes.remove(2)
+                if cursorEnabled[4] { swipeCursorOrigin = recognizer.origin }
+            }
             move(axis: 2, delta: hypot(Double(recognizer.delta.x), Double(recognizer.delta.y)))
         } else {
+            if recognizer.state == .cancelled || recognizer.state == .failed { swipeCursorOrigin = nil }
             endingAxes.insert(2)
             scheduleFlush()
         }
@@ -265,6 +311,13 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         DispatchQueue.main.async { [weak self] in
             guard let self, self.generation == currentGeneration else { return }
             self.flushScheduled = false
+            if let origin = self.swipeCursorOrigin, self.fingerCount == 1 {
+                // Reuse Single Point's video-area mapping. Position first, before
+                // pressing a drag button, then continue with relative movement.
+                (self.view as? StreamView)?.updateCursorLocation(origin, isMouse: false)
+                self.pointer.reset()
+            }
+            self.swipeCursorOrigin = nil
             // All legacy touchesCancelled callbacks finish before a new mouse
             // hold starts, and both simultaneous recognizers share one cursor move.
             for move in self.queuedMoves { self.applyMove(axis: move.axis, delta: move.delta) }
@@ -289,7 +342,9 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         TouchPadGestureHandler.cancel()
         pending[axis] += delta
         // Accumulate small samples rather than making sensitivity depend on FPS.
-        guard abs(pending[axis]) >= 0.15 else { return }
+        // Rotation has no minimum-angle threshold: even a tiny nonzero delta
+        // selects its direction immediately, matching the vector gesture.
+        guard axis == 1 ? pending[axis] != 0 : abs(pending[axis]) >= 0.15 else { return }
         let amount = pending[axis]
         pending[axis] = 0
         let index = axis == 2 ? 4 : axis * 2 + (amount > 0 ? 1 : 0)
