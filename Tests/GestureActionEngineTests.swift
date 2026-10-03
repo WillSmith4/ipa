@@ -134,8 +134,8 @@ struct GestureActionEngineTests {
         }
         check(rotation.sample(fingers(angle: 0)) == nil, "Second finger primes rotation without an initial jump")
         near(rotation.sample(fingers(angle: 0.000001)), 0.000001, "Tiny arcs are detected without an angle dead zone")
-        near(rotation.sample(fingers(angle: 90)), 89.999999, "Clockwise screen rotation selects the right binding")
-        near(rotation.sample(fingers(angle: 45)), -45, "Reversing the moving finger selects the left binding")
+        near(rotation.sample(fingers(angle: 90)), 89.999999, "Clockwise screen rotation produces a positive angle")
+        near(rotation.sample(fingers(angle: 45)), -45, "Reversing the moving finger produces a negative angle")
         check(rotation.sample(fingers(angle: 45, radius: 200, x: 25, y: -30)) == 0, "Translation and radial pinch cannot start rotation from rounding noise")
         near(rotation.sample(Array(fingers(angle: 60, radius: 200, x: 25, y: -30).reversed())), 15, "Touch identity is stable regardless of array order")
         rotation.reset()
@@ -151,23 +151,49 @@ struct GestureActionEngineTests {
         withThirdFinger.append(.init(id: 30, x: 50, y: 50))
         check(rotation.sample(withThirdFinger) == nil, "A third finger terminates this two-finger rotation")
         check(rotation.sample(fingers(angle: 15)) == nil, "Removing a third finger does not synthesize an angle")
-        var leader = GestureLeadingPointerMotion()
-        func lead(_ ax: Double, _ ay: Double, _ bx: Double, _ by: Double, rotating: Bool = true) -> (Double, Double) {
-            // Reverse collection order to ensure identity, not iteration order, wins.
-            leader.sample([.init(id: 2, x: bx, y: by), .init(id: 1, x: ax, y: ay)], rotating: rotating)
+        // Exercise the actual angle -> relative mouse path. Unlike following a
+        // finger's XY position, a continuous twist cannot reverse direction as
+        // that finger travels around the lower half of its circle.
+        func orbit(_ angles: [Double], radius: Double = 100, sensitivity: Double = 1) -> [Int] {
+            var twist = GestureRotationMotion()
+            var mouse = GesturePointerMotion()
+            return angles.enumerated().compactMap { index, angle in
+                let radians = angle * .pi / 180
+                let x = cos(radians) * radius, y = sin(radians) * radius
+                // Move both fingers symmetrically and translate the whole hand.
+                let offset = Double(index) * 3
+                let points: [Point] = [.init(id: 1, x: offset - x, y: -offset - y),
+                                       .init(id: 2, x: offset + x, y: -offset + y)]
+                guard let delta = twist.sample(points) else { return nil }
+                let dx = GestureRotationMotion.mouseDeltaX(degrees: delta, sensitivity: sensitivity)
+                let movement = mouse.cursor(dx: dx, dy: 0, speed: 1)
+                check(movement.1 == 0, "Twist controls yaw without introducing pitch")
+                return Int(movement.0)
+            }
         }
-        check(lead(0, 0, 100, 0) == (0, 0), "Prime leading finger without a jump")
-        check(lead(5, -5, 105, -5, rotating: false) == (0, 0), "Translation alone does not choose a rotation leader")
-        check(lead(5, -5, 105, -15) == (0, -10), "Moving thumb leads while the other finger is a stationary pivot")
-        check(lead(5, 30, 105, -20) == (0, -5), "Keep the leader when the other finger moves faster")
-        check(lead(5, 20, 105, -30, rotating: false) == (0, -10), "Whole-hand translation still follows the chosen finger during rotation")
-        check(lead(5, 10, 105, -20) == (0, 10), "Reversal follows the same finger immediately")
-        check(leader.sample([.init(id: 1, x: 5, y: 10)], rotating: true) == (0, 0), "Lifting resets the leading finger")
-        check(lead(0, 0, 100, 0) == (0, 0), "A new pair rebases")
-        check(lead(0, -10, 100, 10) == (0, -10), "Symmetric rotation follows the first touch instead of cancelling to zero")
-        check(leader.sample([.init(id: 1, x: 0, y: -10), .init(id: 3, x: 100, y: 10)], rotating: true) == (0, 0), "Replacing a finger resets its identity")
-        leader.reset()
-        check(lead(50, 50, 100, 100) == (0, 0), "Cancellation clears the leader")
+        let fullTurn = Array(stride(from: 0.0, through: 360.0, by: 5.0))
+        let clockwise = orbit(fullTurn)
+        check(clockwise.allSatisfy { $0 > 0 }, "A clockwise full circle always sends positive mouse X, across every quadrant")
+        check(abs(clockwise.reduce(0, +) - 848) <= 1, "Mouse distance is proportional to accumulated angle")
+        let counterclockwise = orbit(fullTurn.map { -$0 })
+        check(counterclockwise.allSatisfy { $0 < 0 }, "Counterclockwise twist always sends negative mouse X")
+        check(abs(clockwise.reduce(0, +) + counterclockwise.reduce(0, +)) <= 1, "Opposite turns have equal strength")
+        for radius in [5.0, 1000.0] {
+            check(abs(orbit(fullTurn, radius: radius).reduce(0, +) - clockwise.reduce(0, +)) <= 1,
+                  "Finger spacing cannot change rotation strength")
+        }
+        let slowTurn = orbit(Array(stride(from: 0.0, through: 360.0, by: 0.25)))
+        check(slowTurn.contains(0), "Subpixel angle increments are accumulated")
+        check(abs(slowTurn.reduce(0, +) - clockwise.reduce(0, +)) <= 1, "Sampling frequency cannot change total rotation")
+        let boundary = orbit([179, -179, 179])
+        check(boundary[0] > 0 && boundary[1] < 0 && abs(boundary.reduce(0, +)) <= 1,
+              "The short arc across +/-180 reverses immediately without a jump")
+        let faster = orbit(fullTurn, sensitivity: 2).reduce(0, +)
+        check(abs(faster - 2 * clockwise.reduce(0, +)) <= 1, "Rotation sensitivity scales mouse distance")
+        check(orbit(fullTurn, sensitivity: 0).allSatisfy { $0 == 0 }, "Zero rotation sensitivity suppresses mouse movement")
+        check(orbit([45, 45, 45, 45]).allSatisfy { $0 == 0 }, "Hand translation alone does not rotate the camera")
+        check(GestureRotationMotion.mouseDeltaX(degrees: .nan, sensitivity: 1) == 0, "Reject invalid angles")
+        check(GestureRotationMotion.mouseDeltaX(degrees: 10, sensitivity: .infinity) == 0, "Reject invalid sensitivity")
 
         engine.cancel()
         events.removeAll()

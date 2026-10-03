@@ -262,13 +262,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "During rotation, the finger moving farthest at the first rotation sample leads the cursor and stays in control until a finger lifts. If both move equally, the first touch leads. Move your thumb first to use it as the leading finger; iOS does not identify thumbs. Pinch follows the centre between both fingers. Swipe first places the cursor at the original touch position, then moves it relatively. Movement uses touchpad pointer speed. Assign MOUSE_MIDDLE and enable Move Cursor for camera orbit; mouse buttons remain held through pauses until fingers lift."
+            "value": "During rotation, the signed twist angle controls horizontal mouse motion: clockwise moves right, counterclockwise moves left. Finger spacing and moving the whole hand do not change the rotation. Rotation Sensitivity and pointer speed control its strength; the game determines the resulting camera angle. Assign MOUSE_MIDDLE and enable Rotation — Move Cursor for games using middle-button camera orbit. Pinch follows the centre between the fingers. Swipe first places the cursor at the original touch position, then moves it relatively. Mouse buttons remain held through pauses until fingers lift."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podczas obrotu kursor prowadzi palec, który poruszył się najbardziej na początku obrotu. Pozostaje prowadzącym do podniesienia palca. Przy równym ruchu prowadzi pierwszy dotyk. Porusz najpierw kciukiem, aby to on prowadził; iOS nie rozpoznaje, który palec jest kciukiem. Szczypanie śledzi środek między palcami. Przesuwanie jednym palcem najpierw ustawia kursor w miejscu pierwszego dotknięcia, a potem przesuwa go względnie. Używa prędkości kursora touchpada. Aby obracać kamerę, przypisz MOUSE_MIDDLE i włącz ruch kursora; przycisk pozostaje wciśnięty podczas przerw aż do podniesienia palców."
+            "value": "Podczas obrotu kąt skrętu palców steruje poziomym ruchem myszy: zgodnie z ruchem wskazówek zegara w prawo, przeciwnie w lewo. Rozstaw palców i przesunięcie całej dłoni nie zmieniają obrotu. Czułość obrotu i prędkość kursora określają siłę ruchu; wynikowy kąt kamery zależy od gry. W grach obracających kamerę środkowym przyciskiem przypisz MOUSE_MIDDLE i włącz Obrót — ruch kursora. Szczypanie śledzi środek między palcami. Przesuwanie jednym palcem najpierw ustawia kursor w miejscu pierwszego dotknięcia, a potem przesuwa go względnie. Przyciski myszy pozostają wciśnięte podczas przerw aż do podniesienia palców."
           }
         }
       }

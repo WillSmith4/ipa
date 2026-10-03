@@ -26,15 +26,28 @@ For free camera orbit, set **Swipe → Edit → MOUSE_MIDDLE**, then enable
 the same input as dragging a mouse with its middle button held. The game's own
 camera controls determine how those mouse movements affect its view.
 
-For rotation, cursor movement follows one leading finger, selected by the
-largest displacement in the first nonzero rotation sample. Ties use the first
-touch. iOS does not report anatomical finger identity: move the thumb first to
-make it the leader, with the other finger acting as a pivot. The same touch stays
-in control until lift/cancellation, including reversals and whole-hand movement.
+For **Rotation + Move Cursor**, the signed angle between consecutive two-finger
+vectors drives relative horizontal mouse motion, like a camera's yaw input.
+Clockwise twist sends positive mouse X; counterclockwise sends negative X.
+A complete circle keeps the same direction throughout every quadrant. Finger
+spacing, choice of pivot and translation of the whole hand do not affect the
+amount of rotation. Crossing +/-180 degrees follows the short arc without a jump.
+The mapping uses 100 mouse-motion units per radian, multiplied by Rotation
+Sensitivity and the existing pointer speed (including its 1.35 factor).
+Fractional output is retained across samples. The game's mouse sensitivity and
+camera controls determine the resulting yaw; this is not a universal degrees-to-
+degrees mapping. Enable **Rotation — Move Cursor** and use **MOUSE_MIDDLE** for
+games that rotate the camera while dragging with the middle button held.
+
+The transport has relative/absolute mouse motion, buttons and scrolling, but no
+mouse-rotation or camera-yaw event. The existing gyro-to-mouse path in
+MotionHandler.swift likewise maps yaw/pitch to LiSendMouseMoveEvent(dx, dy).
+Touch/pen rotation fields describe contact or stylus orientation, not camera yaw.
+VoidLink cannot set the remote game's target_yaw or lerp_angle directly.
+
 Pinch still follows the centre between both fingers. When both cursor gestures
-are active, rotation takes priority and sends only one cursor movement per sample. Adding/lifting a finger rebases tracking
-without jumping. Cursor speed uses the existing touchpad speed setting and
-retains fractional movement at low speeds.
+are active, rotation takes priority and sends one horizontal movement per sample.
+Adding/lifting a finger rebases tracking without jumping.
 
 **Move Stream Image** and **Zoom Stream Image** in Touch Control independently
 enable the existing local viewport pan and zoom. Both default to On, including
@@ -110,8 +123,9 @@ Run `bash BuildScripts/test-gestures.sh` on a machine with Swift. This executes
 the actual engine against an event recorder and checks held keys, reversal,
 overlapping chords, modifier ordering, idle release, proportional duration,
 fractional scrolling, mouse/mixed chords, continuous drag through pauses,
-centroid and leading-finger movement, touch-set changes, fractional cursor motion
-and invalid input.
+centroid movement, full clockwise/counterclockwise twist, angle-boundary reversal,
+finger-spacing and sample-rate independence, sensitivity, touch-set changes,
+fractional cursor motion and invalid input.
 GitHub Actions runs it before archiving
 the iOS app and uploading `VoidLink-unsigned.ipa`.
 
@@ -120,7 +134,8 @@ finger, add a third finger, open settings, background the app, disconnect, chang
 bindings, and restart. Check native/relative/absolute modes, ordinary two-finger
 scrolling, widget/edge gestures, and a fresh install with no purchase receipt.
 Also check Swipe + MOUSE_MIDDLE with Move Cursor on/off, W+D, mixed chords,
-simultaneous pinch/rotation with the same button, hand translation up/down,
+simultaneous pinch/rotation with the same button, full circles in both directions,
+pure hand translation (no rotation output),
 and taps/double taps when Swipe is Off and when it is enabled. In Single Point,
 verify double tap sends only one right click, single tap sends one left click,
 the switch Off restores previous behavior, and a cancelled tap never fires later.

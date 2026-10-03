@@ -47,18 +47,14 @@ private final class GestureMotionObserver: UIGestureRecognizer {
 private final class StreamRotationRecognizer: UIGestureRecognizer {
     private var fingers: [UITouch] = []
     private var motion = GestureRotationMotion()
-    private var pointer = GestureLeadingPointerMotion()
     private(set) var deltaDegrees = 0.0
-    private(set) var pointerDelta = (x: 0.0, y: 0.0)
 
     private func sample() -> Double? {
         let points: [GesturePointerMotion.Point] = fingers.enumerated().map { index, touch in
             let point = touch.location(in: view)
             return .init(id: index, x: Double(point.x), y: Double(point.y))
         }
-        let angle = motion.sample(points)
-        pointerDelta = pointer.sample(points, rotating: angle != nil && angle != 0)
-        return angle
+        return motion.sample(points)
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -92,9 +88,7 @@ private final class StreamRotationRecognizer: UIGestureRecognizer {
         super.reset()
         fingers.removeAll()
         motion.reset()
-        pointer.reset()
         deltaDegrees = 0
-        pointerDelta = (0, 0)
     }
 }
 
@@ -137,7 +131,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var pointerSpeed = 1.0
     private var pointer = GesturePointerMotion()
     private var cursorDelta = (x: 0.0, y: 0.0)
-    private var rotationCursorDelta = (x: 0.0, y: 0.0)
+    private var rotationCursorDeltaX = 0.0
     private var swipeCursorOrigin: CGPoint?
     private var queuedMoves: [(axis: Int, delta: Double)] = []
     private var endingAxes: Set<Int> = []
@@ -247,7 +241,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         endingAxes.removeAll()
         activeActions.removeAll()
         cursorDelta = (0, 0)
-        rotationCursorDelta = (0, 0)
+        rotationCursorDeltaX = 0
         swipeCursorOrigin = nil
         pointer.reset()
         pending = [0, 0, 0]
@@ -290,10 +284,11 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             fallthrough
         case .changed:
             guard recognizer.numberOfTouches == 2 else { cancel(); return }
-            // Preserve existing sensitivity units while using per-event angles.
-            let delta = recognizer.deltaDegrees * .pi / 180 * 100 * rotationSensitivity
-            rotationCursorDelta.x += recognizer.pointerDelta.x
-            rotationCursorDelta.y += recognizer.pointerDelta.y
+            // Twist changes camera yaw: its signed angle drives horizontal
+            // mouse motion, independent of finger radius, pivot or screen angle.
+            let delta = GestureRotationMotion.mouseDeltaX(degrees: recognizer.deltaDegrees,
+                                                         sensitivity: rotationSensitivity)
+            rotationCursorDeltaX += delta
             move(axis: 1, delta: delta)
         default:
             endingAxes.insert(1)
@@ -340,12 +335,12 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             self.queuedMoves.removeAll()
             if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
                 let motion = self.activeActions[1] != nil && self.cursorEnabled[2]
-                    ? self.rotationCursorDelta : self.cursorDelta
+                    ? (x: self.rotationCursorDeltaX, y: 0.0) : self.cursorDelta
                 let delta = self.pointer.cursor(dx: motion.x, dy: motion.y, speed: self.pointerSpeed)
                 if delta.0 != 0 || delta.1 != 0 { LiSendMouseMoveEvent(delta.0, delta.1) }
             }
             self.cursorDelta = (0, 0)
-            self.rotationCursorDelta = (0, 0)
+            self.rotationCursorDeltaX = 0
             for axis in self.endingAxes {
                 self.engine.end(axis: axis)
                 self.activeActions.removeValue(forKey: axis)

@@ -129,37 +129,6 @@ final class GestureActionEngine {
     }
 }
 
-/// Follows the finger that leads the first rotation sample. UIKit provides touch
-/// identities, not anatomical finger names; the moving thumb can lead while the
-/// other finger acts as a pivot. Keep that identity even if the other moves faster.
-struct GestureLeadingPointerMotion {
-    private var previous: [Int: GesturePointerMotion.Point] = [:]
-    private var leader: Int?
-
-    mutating func sample(_ points: [GesturePointerMotion.Point], rotating: Bool) -> (x: Double, y: Double) {
-        let current = Dictionary(uniqueKeysWithValues: points.map { ($0.id, $0) })
-        defer { previous = current }
-        guard points.count == 2, Set(current.keys) == Set(previous.keys),
-              points.allSatisfy({ $0.x.isFinite && $0.y.isFinite }) else {
-            leader = nil
-            return (0, 0)
-        }
-        let movement = points.sorted { $0.id < $1.id }.map { p in
-            (id: p.id, x: p.x - previous[p.id]!.x, y: p.y - previous[p.id]!.y)
-        }
-        if leader == nil && rotating {
-            // A tie keeps the first touch, independent of Set/array iteration order.
-            leader = movement.reduce(movement[0]) { best, next in
-                hypot(next.x, next.y) > hypot(best.x, best.y) ? next : best
-            }.id
-        }
-        guard let delta = movement.first(where: { $0.id == leader }) else { return (0, 0) }
-        return (delta.x, delta.y)
-    }
-
-    mutating func reset() { previous.removeAll(); leader = nil }
-}
-
 /// Tracks the centre of all fingers, matching translation of the whole hand.
 /// Changing the touch set rebases without a cursor jump.
 struct GesturePointerMotion {
@@ -198,6 +167,15 @@ struct GesturePointerMotion {
 struct GestureRotationMotion {
     private var ids: [Int] = []
     private var previous: (x: Double, y: Double)?
+
+    /// A streaming client cannot set the game's yaw directly. Map the signed
+    /// twist delta to relative horizontal mouse motion, as MotionHandler maps
+    /// gyro yaw to LiSendMouseMoveEvent. Keep the existing rotation gain units;
+    /// GesturePointerMotion supplies pointer speed and fractional accumulation.
+    static func mouseDeltaX(degrees: Double, sensitivity: Double) -> Double {
+        guard degrees.isFinite, sensitivity.isFinite, sensitivity >= 0 else { return 0 }
+        return degrees * .pi / 180 * 100 * sensitivity
+    }
 
     mutating func sample(_ points: [GesturePointerMotion.Point]) -> Double? {
         guard points.count == 2 else { reset(); return nil }
