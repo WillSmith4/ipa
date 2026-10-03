@@ -4,21 +4,24 @@ import CoreData
 @main
 struct GestureSettingsMigrationTests {
     static func main() throws {
-        let modelDirectory = URL(fileURLWithPath: CommandLine.arguments[1])
-        let storeDirectory = URL(fileURLWithPath: CommandLine.arguments[2])
-        for source in ["1.1", "1.2"] {
-            try checkMigration(from: source, models: modelDirectory, stores: storeDirectory)
+        let models = URL(fileURLWithPath: CommandLine.arguments[1])
+        let stores = URL(fileURLWithPath: CommandLine.arguments[2])
+        for source in ["1.1", "1.2", "1.3"] {
+            for (index, bindings) in [("Q", "E"), ("CTRL+MOUSE_MIDDLE", "CTRL+MOUSE_MIDDLE"), ("NONE", "NONE")].enumerated() {
+                try checkMigration(from: source, caseID: index, left: bindings.0, right: bindings.1, models: models, stores: stores)
+            }
         }
-        print("Gesture settings: migration preserves bindings and viewport switches persist independently")
+        print("Gesture settings: unified rotation migration and independent viewport/double-tap switches passed")
     }
 
-    static func checkMigration(from source: String, models modelDirectory: URL, stores storeDirectory: URL) throws {
-        let old = NSManagedObjectModel(contentsOf: modelDirectory.appendingPathComponent("VoidLink v\(source).mom"))!
-        let current = NSManagedObjectModel(contentsOf: modelDirectory.appendingPathComponent("VoidLink v1.3.mom"))!
+    static func checkMigration(from source: String, caseID: Int, left: String, right: String,
+                               models: URL, stores: URL) throws {
+        let old = NSManagedObjectModel(contentsOf: models.appendingPathComponent("VoidLink v\(source).mom"))!
+        let current = NSManagedObjectModel(contentsOf: models.appendingPathComponent("VoidLink v1.4.mom"))!
         for model in [old, current] {
             for entity in model.entities { entity.managedObjectClassName = "NSManagedObject" }
         }
-        let storeURL = storeDirectory.appendingPathComponent("settings-\(source).sqlite")
+        let storeURL = stores.appendingPathComponent("settings-\(source)-\(caseID).sqlite")
         let oldCoordinator = NSPersistentStoreCoordinator(managedObjectModel: old)
         let oldStore = try oldCoordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: storeURL)
         let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
@@ -26,12 +29,15 @@ struct GestureSettingsMigrationTests {
         let settings = NSEntityDescription.insertNewObject(forEntityName: "Settings", into: context)
         settings.setValue("gesture-migration-test", forKey: "uniqueId")
         settings.setValue("CTRL+Q", forKey: "pinchInAction")
-        settings.setValue("NONE", forKey: "rotateRightAction")
+        settings.setValue(left, forKey: "rotateLeftAction")
+        settings.setValue(right, forKey: "rotateRightAction")
         settings.setValue(false, forKey: "enablePinch")
-        if source == "1.2" {
+        if source != "1.1" {
             settings.setValue("MOUSE_MIDDLE", forKey: "swipeAction")
             settings.setValue(true, forKey: "swipeMovesCursor")
+            settings.setValue(caseID != 2, forKey: "rotateRightMovesCursor")
         }
+        if source == "1.3" { settings.setValue(false, forKey: "localStreamPanEnabled") }
         try context.save()
         try oldCoordinator.remove(oldStore)
 
@@ -43,21 +49,31 @@ struct GestureSettingsMigrationTests {
         let records = try migrated.fetch(NSFetchRequest<NSManagedObject>(entityName: "Settings"))
         precondition(records.count == 1)
         let result = records[0]
+        precondition(result.value(forKey: "rotationAction") == nil, "Nil marks a store requiring binding migration")
+        // Execute the same initializer as DataManager, not a copy of its logic.
+        InitializeUnifiedRotationSettings(result)
+        precondition(result.value(forKey: "rotationAction") as? String == (left == right ? left : "MOUSE_MIDDLE"))
+        precondition(result.value(forKey: "rotationMovesCursor") as? Bool == (source != "1.1" && caseID != 2))
+        precondition(result.value(forKey: "singlePointDoubleTapRightClick") as? Bool == true)
         precondition(result.value(forKey: "uniqueId") as? String == "gesture-migration-test")
         precondition(result.value(forKey: "pinchInAction") as? String == "CTRL+Q")
-        precondition(result.value(forKey: "rotateRightAction") as? String == "NONE")
+        precondition(result.value(forKey: "rotateLeftAction") as? String == left)
+        precondition(result.value(forKey: "rotateRightAction") as? String == right)
         precondition(result.value(forKey: "enablePinch") as? Bool == false)
-        precondition(result.value(forKey: "swipeAction") as? String == (source == "1.2" ? "MOUSE_MIDDLE" : "NONE"))
-        let flags = ["pinchInMovesCursor", "pinchOutMovesCursor", "rotateLeftMovesCursor", "rotateRightMovesCursor", "swipeMovesCursor"]
-        for flag in flags { precondition(result.value(forKey: flag) as? Bool == (source == "1.2" && flag == "swipeMovesCursor")) }
-        precondition(result.value(forKey: "localStreamPanEnabled") as? Bool == true)
+        precondition(result.value(forKey: "swipeAction") as? String == (source != "1.1" ? "MOUSE_MIDDLE" : "NONE"))
+        precondition(result.value(forKey: "swipeMovesCursor") as? Bool == (source != "1.1"))
+        precondition(result.value(forKey: "localStreamPanEnabled") as? Bool == (source != "1.3"))
         precondition(result.value(forKey: "localStreamZoomEnabled") as? Bool == true)
-        // Exercise both independent switch combinations across a store reopen.
+
+        // A later edit must survive initialization and reopening; the new fixed
+        // click switch is independent of both viewport switches and bindings.
         let panEnabled = source == "1.2"
         result.setValue(panEnabled, forKey: "localStreamPanEnabled")
         result.setValue(!panEnabled, forKey: "localStreamZoomEnabled")
-        result.setValue("MOUSE_MIDDLE", forKey: "swipeAction")
-        for flag in flags { result.setValue(true, forKey: flag) }
+        result.setValue(false, forKey: "singlePointDoubleTapRightClick")
+        result.setValue("W+D", forKey: "rotationAction")
+        result.setValue(false, forKey: "rotationMovesCursor")
+        InitializeUnifiedRotationSettings(result)
         try migrated.save()
         try coordinator.remove(store)
         let reopened = NSPersistentStoreCoordinator(managedObjectModel: current)
@@ -65,9 +81,16 @@ struct GestureSettingsMigrationTests {
         let reopenedContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         reopenedContext.persistentStoreCoordinator = reopened
         let saved = try reopenedContext.fetch(NSFetchRequest<NSManagedObject>(entityName: "Settings"))[0]
-        precondition(saved.value(forKey: "swipeAction") as? String == "MOUSE_MIDDLE")
-        for flag in flags { precondition(saved.value(forKey: flag) as? Bool == true) }
+        InitializeUnifiedRotationSettings(saved)
+        precondition(saved.value(forKey: "rotationAction") as? String == "W+D")
+        precondition(saved.value(forKey: "rotationMovesCursor") as? Bool == false)
         precondition(saved.value(forKey: "localStreamPanEnabled") as? Bool == panEnabled)
         precondition(saved.value(forKey: "localStreamZoomEnabled") as? Bool == !panEnabled)
+        precondition(saved.value(forKey: "singlePointDoubleTapRightClick") as? Bool == false)
+
+        let fresh = NSEntityDescription.insertNewObject(forEntityName: "Settings", into: reopenedContext)
+        InitializeUnifiedRotationSettings(fresh)
+        precondition(fresh.value(forKey: "rotationAction") as? String == "MOUSE_MIDDLE")
+        precondition(fresh.value(forKey: "singlePointDoubleTapRightClick") as? Bool == true)
     }
 }

@@ -12,6 +12,7 @@
 #import "DataManager.h"
 #import "TemporaryApp.h"
 #import "TemporarySettings.h"
+#import "GestureSettingsMigration.h"
 
 @implementation DataManager {
     NSManagedObjectContext *_managedObjectContext;
@@ -308,6 +309,7 @@
         settings.rotateLeftAction = @"Q";
         settings.rotateRightAction = @"E";
     }
+    InitializeUnifiedRotationSettings(settings);
 }
 
 - (void) removeApp:(TemporaryApp*)app {

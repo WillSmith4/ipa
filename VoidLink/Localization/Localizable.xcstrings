@@ -1,6 +1,74 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Double Tap Right Click Help" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Single Point mode, tap twice with one finger to send one right mouse click (press and release). Enabled by default. This fixed action cannot be remapped. A single tap waits briefly for a possible second tap before sending a left click. Turn off to restore the previous tap behavior."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W trybie Single Point stuknij dwa razy jednym palcem, aby wysłać jedno kliknięcie prawego przycisku myszy (wciśnięcie i puszczenie). Opcja jest domyślnie włączona i nie można przypisać jej innej akcji. Pojedyncze stuknięcie czeka krótko na ewentualne drugie, zanim wyśle lewy klik. Wyłącz, aby przywrócić poprzednie działanie stuknięć."
+          }
+        }
+      }
+    },
+    "Double Tap Right Click" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double Tap → Right Click"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podwójne stuknięcie → prawy klik"
+          }
+        }
+      }
+    },
+    "Rotation — Move Cursor" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation — Move Cursor"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrót — ruch kursora"
+          }
+        }
+      }
+    },
+    "Rotation" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rotation"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrót"
+          }
+        }
+      }
+    },
     "Zoom Stream Image Help" : {
       "extractionState": "manual",
       "localizations": {
@@ -194,13 +262,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Move the cursor with the centre of the fingers while this gesture is active. Moving the whole hand up moves the cursor up; symmetric pinch/rotation leaves it still. Movement uses touchpad pointer speed. Swipe first places the cursor once at the original finger-down position, then moves it relatively. For free camera orbit, assign MOUSE_MIDDLE to Swipe and enable Swipe — Move Cursor. Mouse buttons remain held through pauses until fingers lift."
+            "value": "During rotation, the finger moving farthest at the first rotation sample leads the cursor and stays in control until a finger lifts. If both move equally, the first touch leads. Move your thumb first to use it as the leading finger; iOS does not identify thumbs. Pinch follows the centre between both fingers. Swipe first places the cursor at the original touch position, then moves it relatively. Movement uses touchpad pointer speed. Assign MOUSE_MIDDLE and enable Move Cursor for camera orbit; mouse buttons remain held through pauses until fingers lift."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przesuwa kursor zgodnie z ruchem środka między palcami podczas gestu. Przesunięcie całej dłoni w górę przesuwa kursor w górę; symetryczne szczypanie lub obrót pozostawia go w miejscu. Używa prędkości kursora touchpada. Przesuwanie jednym palcem najpierw ustawia kursor jednorazowo w miejscu pierwszego dotknięcia, a potem przesuwa go względnie. Aby swobodnie obracać kamerę, przypisz MOUSE_MIDDLE do przesuwania jednym palcem i włącz ruch kursora dla tego gestu. Przyciski myszy pozostają wciśnięte podczas przerw aż do podniesienia palców."
+            "value": "Podczas obrotu kursor prowadzi palec, który poruszył się najbardziej na początku obrotu. Pozostaje prowadzącym do podniesienia palca. Przy równym ruchu prowadzi pierwszy dotyk. Porusz najpierw kciukiem, aby to on prowadził; iOS nie rozpoznaje, który palec jest kciukiem. Szczypanie śledzi środek między palcami. Przesuwanie jednym palcem najpierw ustawia kursor w miejscu pierwszego dotknięcia, a potem przesuwa go względnie. Używa prędkości kursora touchpada. Aby obracać kamerę, przypisz MOUSE_MIDDLE i włącz ruch kursora; przycisk pozostaje wciśnięty podczas przerw aż do podniesienia palców."
           }
         }
       }

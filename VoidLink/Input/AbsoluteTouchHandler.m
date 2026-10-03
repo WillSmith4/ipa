@@ -28,6 +28,9 @@
 
 static int mouseButtonForCursorMove = BUTTON_LEFT;
 
+@interface AbsoluteTouchHandler () <UIGestureRecognizerDelegate>
+@end
+
 @implementation AbsoluteTouchHandler {
     NSUInteger inputGeneration;
     __weak StreamView* streamView;
@@ -62,6 +65,11 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     UInt8 currentTouchesCount;
     
     bool rightButtonClicked;
+    BOOL doubleTapRightClickEnabled;
+    UITapGestureRecognizer *singleTapRecognizer;
+    UITapGestureRecognizer *doubleTapRecognizer;
+    NSArray *notificationTokens;
+    int tapButtonDown;
 }
 
 - (id)initWithView:(StreamView*)view andSettings:(TemporarySettings*)settings {
@@ -84,8 +92,90 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     self->touchPointSpawnedAtUpperScreenEdge = false;
         
     leftClickDelay = ((CGFloat)settings.leftClickDelayMs.intValue)/1000;
+
+    doubleTapRightClickEnabled = settings.singlePointDoubleTapRightClick;
+    if (doubleTapRightClickEnabled) {
+        singleTapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(singleTapped:)];
+        doubleTapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doubleTapped:)];
+        doubleTapRecognizer.numberOfTapsRequired = 2;
+        [singleTapRecognizer requireGestureRecognizerToFail:doubleTapRecognizer];
+        for (UITapGestureRecognizer *recognizer in @[singleTapRecognizer, doubleTapRecognizer]) {
+            recognizer.delegate = self;
+            recognizer.allowedTouchTypes = @[@(UITouchTypeDirect)];
+            // The handler suppresses its old tap clicks. Keep touch delivery for
+            // cursor placement, dragging and long press, without self-cancellation.
+            recognizer.cancelsTouchesInView = NO;
+            recognizer.delaysTouchesBegan = NO;
+            recognizer.delaysTouchesEnded = NO;
+            [view addGestureRecognizer:recognizer];
+        }
+        __weak typeof(self) weakSelf = self;
+        NSMutableArray *tokens = [NSMutableArray array];
+        for (NSNotificationName name in @[UIApplicationWillResignActiveNotification, UIApplicationDidEnterBackgroundNotification]) {
+            [tokens addObject:[[NSNotificationCenter defaultCenter] addObserverForName:name object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+                [weakSelf touchesCancelled:[NSSet set] withEvent:nil];
+            }]];
+        }
+        notificationTokens = tokens;
+    }
     
     return self;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)recognizer shouldReceiveTouch:(UITouch *)touch {
+    if (touch.view != streamView || touch.type != UITouchTypeDirect) return NO;
+    CGPoint point = [touch locationInView:streamView];
+    if (point.y < slideGestureVerticalThreshold && (point.x < _edgeTolerance || point.x > screenWidthWithThreshold)) return NO;
+    return YES;
+}
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)recognizer {
+    return OnScreenControls.touchesCapturedByOnScreenControls.count == 0;
+}
+
+- (void)singleTapped:(UITapGestureRecognizer *)recognizer {
+    if (recognizer.state != UIGestureRecognizerStateRecognized) return;
+    [self sendTapAt:[recognizer locationInView:streamView] button:BUTTON_LEFT delay:leftClickDelay];
+}
+
+- (void)doubleTapped:(UITapGestureRecognizer *)recognizer {
+    if (recognizer.state != UIGestureRecognizerStateRecognized) return;
+    // Fixed press/release, independent of configurable gesture chords.
+    [self sendTapAt:[recognizer locationInView:streamView] button:BUTTON_RIGHT delay:0];
+}
+
+- (void)sendTapAt:(CGPoint)point button:(int)button delay:(NSTimeInterval)delay {
+    NSUInteger generation = inputGeneration;
+    // UIKit finishes delivering touchesEnded before we send the click. A camera
+    // gesture or lifecycle cancellation invalidates both scheduled callbacks.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if (generation != self->inputGeneration || self->streamView == nil) return;
+        [self->streamView updateCursorLocation:point isMouse:NO];
+        LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, button);
+        self->tapButtonDown = button;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.03 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (generation != self->inputGeneration) return;
+            LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, button);
+            self->tapButtonDown = 0;
+        });
+    });
+}
+
+- (void)dealloc {
+    if (singleTapRecognizer) [streamView removeGestureRecognizer:singleTapRecognizer];
+    if (doubleTapRecognizer) [streamView removeGestureRecognizer:doubleTapRecognizer];
+    for (id token in notificationTokens) [[NSNotificationCenter defaultCenter] removeObserver:token];
+}
+
+- (void)setTapInputEnabled:(BOOL)enabled {
+    if (!doubleTapRightClickEnabled) return;
+    [self cancelTapGestures];
+    singleTapRecognizer.enabled = enabled;
+    doubleTapRecognizer.enabled = enabled;
+}
+
+- (void)cancelTapGestures {
+    if (doubleTapRightClickEnabled) [self touchesCancelled:[NSSet set] withEvent:nil];
 }
 
 - (void)onLongPressStart:(NSTimer*)timer {
@@ -145,7 +235,7 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     }
     
     // Press the left button down
-    if(!_delayMouseLeftClick){
+    if(!_delayMouseLeftClick && !doubleTapRightClickEnabled){
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT); //deprecated
     }
     
@@ -205,7 +295,13 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
         
         NSTimeInterval dragDelay = mouseButtonForCursorMove == BUTTON_LEFT ? leftClickTimeThreshold : 0;
         
-        if(_delayMouseLeftClick && (CACurrentMediaTime()-touchBeganTimeStamp>dragDelay) && !dragButtonDown){
+        if((_delayMouseLeftClick || doubleTapRightClickEnabled) && (CACurrentMediaTime()-touchBeganTimeStamp>dragDelay) && !dragButtonDown){
+            if (doubleTapRightClickEnabled) {
+                // A delayed tap must not release a newly started drag.
+                inputGeneration++;
+                if (tapButtonDown) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, tapButtonDown);
+                tapButtonDown = 0;
+            }
             LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, mouseButtonForCursorMove);
             dragButtonDown = true;
         }
@@ -237,7 +333,11 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
         // Remember this last touch for touch-down deadzoning
         CGPoint touchEndLocation = [capturedTouch locationInView:streamView];
         
-        if(_delayMouseLeftClick){
+        if (doubleTapRightClickEnabled) {
+            // Single/double tap recognizers own clicks; only finish a real drag.
+            if (dragButtonDown) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, mouseButtonForCursorMove);
+        }
+        else if(_delayMouseLeftClick){
             if(CACurrentMediaTime()-touchBeganTimeStamp<leftClickTimeThreshold) {
                 if(CACurrentMediaTime()-lastTouchUp.timestamp<0.15
                    && ![self isAdjacentPoints:touchEndLocation from:lastTouchUpLocation tolerance:30]) [streamView updateCursorLocation:touchEndLocation isMouse:NO];
@@ -266,6 +366,13 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
     inputGeneration++;
+    tapButtonDown = 0;
+    // Cancel a pending single tap before failing its double-tap dependency.
+    BOOL tapEnabled = singleTapRecognizer.enabled;
+    singleTapRecognizer.enabled = NO;
+    doubleTapRecognizer.enabled = NO;
+    singleTapRecognizer.enabled = tapEnabled;
+    doubleTapRecognizer.enabled = tapEnabled;
     // Recognition of a camera gesture is a cancellation, never a click.
     [longPressTimer invalidate];
     longPressTimer = nil;

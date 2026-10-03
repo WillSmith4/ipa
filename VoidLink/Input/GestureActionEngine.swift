@@ -3,7 +3,7 @@ import Foundation
 /// Host actions shared by the settings UI and the gesture runtime. Keyboard
 /// chords use the same names as CommandManager (for example CTRL+Q).
 enum GestureAction {
-    static let defaults = ["SCROLL_DOWN", "SCROLL_UP", "Q", "E", "NONE"]
+    static let defaults = ["SCROLL_DOWN", "SCROLL_UP", "MOUSE_MIDDLE", "NONE"]
     static let presets = ["NONE", "SCROLL_DOWN", "SCROLL_UP"]
 
     enum Input: Equatable {
@@ -127,6 +127,37 @@ final class GestureActionEngine {
         case .mouse(let button): sendMouse(button, down)
         }
     }
+}
+
+/// Follows the finger that leads the first rotation sample. UIKit provides touch
+/// identities, not anatomical finger names; the moving thumb can lead while the
+/// other finger acts as a pivot. Keep that identity even if the other moves faster.
+struct GestureLeadingPointerMotion {
+    private var previous: [Int: GesturePointerMotion.Point] = [:]
+    private var leader: Int?
+
+    mutating func sample(_ points: [GesturePointerMotion.Point], rotating: Bool) -> (x: Double, y: Double) {
+        let current = Dictionary(uniqueKeysWithValues: points.map { ($0.id, $0) })
+        defer { previous = current }
+        guard points.count == 2, Set(current.keys) == Set(previous.keys),
+              points.allSatisfy({ $0.x.isFinite && $0.y.isFinite }) else {
+            leader = nil
+            return (0, 0)
+        }
+        let movement = points.sorted { $0.id < $1.id }.map { p in
+            (id: p.id, x: p.x - previous[p.id]!.x, y: p.y - previous[p.id]!.y)
+        }
+        if leader == nil && rotating {
+            // A tie keeps the first touch, independent of Set/array iteration order.
+            leader = movement.reduce(movement[0]) { best, next in
+                hypot(next.x, next.y) > hypot(best.x, best.y) ? next : best
+            }.id
+        }
+        guard let delta = movement.first(where: { $0.id == leader }) else { return (0, 0) }
+        return (delta.x, delta.y)
+    }
+
+    mutating func reset() { previous.removeAll(); leader = nil }
 }
 
 /// Tracks the centre of all fingers, matching translation of the whole hand.

@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (id)initWithView:(StreamView*)view andSettings:(TemporarySettings*)settings;
 - (void)pauseLeftButtonDrag;
+- (void)setTapInputEnabled:(BOOL)enabled;
+- (void)cancelTapGestures;
 
 @end
 

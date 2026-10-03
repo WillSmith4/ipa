@@ -1,8 +1,8 @@
 # Streaming camera gestures
 
-The five bindings live in **Touch Control** in both the SwiftUI settings catalog
+The four bindings live in **Touch Control** in both the SwiftUI settings catalog
 and the legacy UIKit menu. Defaults are pinch in → scroll down, pinch out →
-scroll up, counterclockwise rotation → Q, clockwise rotation → E. Each direction
+scroll up, rotation in either direction → MOUSE_MIDDLE. Each action
 can be disabled, mapped to either wheel direction, or assigned a keyboard chord
 using the existing `CommandManager` key names. `W+D` holds both keys together;
 `CTRL+Q` holds the modifier and key. `MOUSE_LEFT`, `MOUSE_MIDDLE` and `MOUSE_RIGHT`
@@ -12,7 +12,7 @@ Pinch and rotation have independent sensitivity controls. Ctrl-modified pinch
 scrolling remains an opt-in option.
 
 **Swipe (one finger)** recognizes movement beyond the existing touchpad slide
-threshold in any direction. Its default is Off. Each of the five bindings has
+threshold in any direction. Its default is Off. Each of the four bindings has
 its own **Move Cursor** switch, initially off, so upgrading preserves existing
 controls. Enabling cursor movement with the action Off also works.
 At the start of a recognized swipe with Move Cursor enabled, the cursor is
@@ -26,10 +26,13 @@ For free camera orbit, set **Swipe → Edit → MOUSE_MIDDLE**, then enable
 the same input as dragging a mouse with its middle button held. The game's own
 camera controls determine how those mouse movements affect its view.
 
-For pinch/rotation, cursor movement follows the centre of both fingers: moving
-the whole hand up moves the cursor up, while symmetric pinching/rotation around
-a stationary centre does not move it. Simultaneous pinch and rotation send only
-one cursor movement per touch sample. Adding/lifting a finger rebases tracking
+For rotation, cursor movement follows one leading finger, selected by the
+largest displacement in the first nonzero rotation sample. Ties use the first
+touch. iOS does not report anatomical finger identity: move the thumb first to
+make it the leader, with the other finger acting as a pivot. The same touch stays
+in control until lift/cancellation, including reversals and whole-hand movement.
+Pinch still follows the centre between both fingers. When both cursor gestures
+are active, rotation takes priority and sends only one cursor movement per sample. Adding/lifting a finger rebases tracking
 without jumping. Cursor speed uses the existing touchpad speed setting and
 retains fractional movement at low speeds.
 
@@ -39,6 +42,15 @@ when upgrading. They gate the two-finger scroll-view gestures and the Magnifier
 widget's translation/zoom, under the existing touch-mode and host-pinch priority
 rules. Turning either off retains the current framing and saved profile.
 These switches do not change host mouse or camera bindings.
+
+**Double Tap → Right Click** appears next to those viewport switches in Single
+Point mode. It defaults to On and always sends one right-button press followed
+by release, with no key/chord editor. The existing UIKit double-tap pattern is
+used: single tap waits for double tap to fail, avoiding an extra left click.
+Dragging and long press remain available. Disabling the switch restores the
+original Single Point tap path. Pencil, widgets, edge menus and other touch
+modes do not use this recognizer. Gesture takeover, input disable, profile
+changes, backgrounding and session cleanup cancel pending clicks.
 
 ## Input and persistence
 
@@ -59,10 +71,10 @@ These switches do not change host mouse or camera bindings.
   same two touches, starting with their vector when the second finger lands.
   Every move computes the signed angle between the previous and current vectors
   using atan2(cross, dot), with no minimum-angle threshold. Positive screen
-  rotation selects the right binding, negative selects left; either finger can
-  act as the pivot. Zero-angle motion does not activate rotation. Touch changes
-  or coincident fingers rebase the vector to prevent angle jumps. Existing
-  sensitivity units and separate left/right settings are preserved.
+  rotation is clockwise, negative counterclockwise; both use the same binding.
+  Either finger can act as the pivot. Zero-angle motion does not activate
+  rotation. Touch changes or coincident fingers rebase the vector to prevent
+  angle jumps. Existing sensitivity units are preserved.
   Fractional wheel motion is accumulated before sending high-resolution scroll
   events. Keyboard inputs are binary: the host game controls angular speed;
   finger movement controls hold duration, not analog key pressure.
@@ -77,6 +89,12 @@ These switches do not change host mouse or camera bindings.
 - The v1.3 model adds the two local viewport switches. Migration tests cover
   both v1.1 and v1.2 stores, preserve existing mouse bindings and verify that
   pan and zoom can be saved independently across reopening the store.
+- The v1.4 model adds unified rotation and the default-on Single Point double-tap
+  switch. Equal old rotation bindings (including Off) are retained; conflicting
+  bindings become MOUSE_MIDDLE. Either old cursor switch enables the unified
+  cursor switch. Legacy attributes remain in the model for migration. Tests
+  migrate real v1.1/v1.2/v1.3 SQLite stores using the application's initializer,
+  and verify later edits and independent switches survive reopening.
 - Legacy delayed tap callbacks are invalidated when a gesture takes over.
   Gesture presses run after UIKit has cancelled old touches so a stale mouse
   release cannot interrupt the new drag. The swipe recognizer delays ordinary
@@ -92,7 +110,8 @@ Run `bash BuildScripts/test-gestures.sh` on a machine with Swift. This executes
 the actual engine against an event recorder and checks held keys, reversal,
 overlapping chords, modifier ordering, idle release, proportional duration,
 fractional scrolling, mouse/mixed chords, continuous drag through pauses,
-centroid movement, touch-set changes, fractional cursor motion and invalid input.
+centroid and leading-finger movement, touch-set changes, fractional cursor motion
+and invalid input.
 GitHub Actions runs it before archiving
 the iOS app and uploading `VoidLink-unsigned.ipa`.
 
@@ -102,5 +121,8 @@ bindings, and restart. Check native/relative/absolute modes, ordinary two-finger
 scrolling, widget/edge gestures, and a fresh install with no purchase receipt.
 Also check Swipe + MOUSE_MIDDLE with Move Cursor on/off, W+D, mixed chords,
 simultaneous pinch/rotation with the same button, hand translation up/down,
-and taps/double taps when Swipe is Off and when it is enabled.
+and taps/double taps when Swipe is Off and when it is enabled. In Single Point,
+verify double tap sends only one right click, single tap sends one left click,
+the switch Off restores previous behavior, and a cancelled tap never fires later.
+Test dragging and long press with Delay Left Click both On and Off.
 The IPA is unsigned and must be signed for installation on an iOS device.

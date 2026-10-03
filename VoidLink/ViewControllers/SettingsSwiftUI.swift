@@ -208,16 +208,15 @@ private let settingsLegacyHelpByStackIdentifier: [String: SettingsLegacyHelpCont
     "relativeTouchSlideThresholdStack": .init(messageKey: "relativeTouchSlideThresholdStackTip", learnMoreURLKey: "relativeTouchSlideThresholdStackLink"),
     "localStreamPanEnabledStack": .init(messageKey: "Move Stream Image Help", learnMoreURLKey: nil),
     "localStreamZoomEnabledStack": .init(messageKey: "Zoom Stream Image Help", learnMoreURLKey: nil),
+    "singlePointDoubleTapRightClickStack": .init(messageKey: "Double Tap Right Click Help", learnMoreURLKey: nil),
     "swipeActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "pinchInMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
     "pinchOutMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
-    "rotateLeftMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
-    "rotateRightMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
+    "rotationMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
     "swipeMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
     "pinchInActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "pinchOutActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
-    "rotateLeftActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
-    "rotateRightActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
+    "rotationActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "ctrlDownForPinchStack": .init(messageKey: "ctrlDownForPinchStackTip", learnMoreURLKey: nil),
     "onScreenWidgetStack": .init(messageKey: "onScreenWidgetStackTip", learnMoreURLKey: "onScreenWidgetStackDoc"),
 
@@ -295,6 +294,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case delayLeftClick = "delayLeftClickStack"
     case localStreamPanEnabled = "localStreamPanEnabledStack"
     case localStreamZoomEnabled = "localStreamZoomEnabledStack"
+    case singlePointDoubleTapRightClick = "singlePointDoubleTapRightClickStack"
     case passthroughGestures = "passthroughGesturesStack"
     case pinchGesture = "pinchGestureStack"
     case ctrlDownForPinch = "ctrlDownForPinchStack"
@@ -303,13 +303,11 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case swipeAction = "swipeActionStack"
     case pinchInMovesCursor = "pinchInMovesCursorStack"
     case pinchOutMovesCursor = "pinchOutMovesCursorStack"
-    case rotateLeftMovesCursor = "rotateLeftMovesCursorStack"
-    case rotateRightMovesCursor = "rotateRightMovesCursorStack"
+    case rotationMovesCursor = "rotationMovesCursorStack"
     case swipeMovesCursor = "swipeMovesCursorStack"
     case pinchInAction = "pinchInActionStack"
     case pinchOutAction = "pinchOutActionStack"
-    case rotateLeftAction = "rotateLeftActionStack"
-    case rotateRightAction = "rotateRightActionStack"
+    case rotationAction = "rotationActionStack"
     case rotationSensitivity = "rotationSensitivityStack"
     case onScreenWidget = "onScreenWidgetStack"
     case buttonVisualFeedback = "buttonVisualFeedbackStack"
@@ -434,6 +432,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .delayLeftClick: return "Delay Left Click"
         case .localStreamPanEnabled: return "Move Stream Image"
         case .localStreamZoomEnabled: return "Zoom Stream Image"
+        case .singlePointDoubleTapRightClick: return "Double Tap Right Click"
         case .passthroughGestures: return "Passthrough Gestures"
         case .pinchGesture: return "Pinch Gesture"
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"
@@ -442,13 +441,11 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .swipeAction: return "Swipe"
         case .pinchInMovesCursor: return "Pinch In — Move Cursor"
         case .pinchOutMovesCursor: return "Pinch Out — Move Cursor"
-        case .rotateLeftMovesCursor: return "Rotate Left — Move Cursor"
-        case .rotateRightMovesCursor: return "Rotate Right — Move Cursor"
+        case .rotationMovesCursor: return "Rotation — Move Cursor"
         case .swipeMovesCursor: return "Swipe — Move Cursor"
         case .pinchInAction: return "Pinch In"
         case .pinchOutAction: return "Pinch Out"
-        case .rotateLeftAction: return "Rotate Left"
-        case .rotateRightAction: return "Rotate Right"
+        case .rotationAction: return "Rotation"
         case .rotationSensitivity: return "Rotation Sensitivity"
         case .onScreenWidget: return "On-Screen Widgets"
         case .buttonVisualFeedback: return "Button Visual Feedback"
@@ -1213,6 +1210,7 @@ final class SettingsItemRegistry: ObservableObject {
     let delayLeftClick = SettingsItemModel<Bool>(id: .delayLeftClick, value: true)
     let localStreamPanEnabled = SettingsItemModel<Bool>(id: .localStreamPanEnabled, value: true)
     let localStreamZoomEnabled = SettingsItemModel<Bool>(id: .localStreamZoomEnabled, value: true)
+    let singlePointDoubleTapRightClick = SettingsItemModel<Bool>(id: .singlePointDoubleTapRightClick, value: true)
     let passthroughGestures = SettingsItemModel<Bool>(id: .passthroughGestures, value: true)
     let pinchGesture = SettingsItemModel<Bool>(id: .pinchGesture, value: true)
     let ctrlDownForPinch = SettingsItemModel<Bool>(id: .ctrlDownForPinch, value: false)
@@ -1221,13 +1219,11 @@ final class SettingsItemRegistry: ObservableObject {
     let swipeAction = SettingsItemModel<String>(id: .swipeAction, value: "NONE")
     let pinchInMovesCursor = SettingsItemModel<Bool>(id: .pinchInMovesCursor, value: false)
     let pinchOutMovesCursor = SettingsItemModel<Bool>(id: .pinchOutMovesCursor, value: false)
-    let rotateLeftMovesCursor = SettingsItemModel<Bool>(id: .rotateLeftMovesCursor, value: false)
-    let rotateRightMovesCursor = SettingsItemModel<Bool>(id: .rotateRightMovesCursor, value: false)
+    let rotationMovesCursor = SettingsItemModel<Bool>(id: .rotationMovesCursor, value: false)
     let swipeMovesCursor = SettingsItemModel<Bool>(id: .swipeMovesCursor, value: false)
     let pinchInAction = SettingsItemModel<String>(id: .pinchInAction, value: "SCROLL_DOWN")
     let pinchOutAction = SettingsItemModel<String>(id: .pinchOutAction, value: "SCROLL_UP")
-    let rotateLeftAction = SettingsItemModel<String>(id: .rotateLeftAction, value: "Q")
-    let rotateRightAction = SettingsItemModel<String>(id: .rotateRightAction, value: "E")
+    let rotationAction = SettingsItemModel<String>(id: .rotationAction, value: "MOUSE_MIDDLE")
     let rotationSensitivity = SettingsItemModel<Double>(id: .rotationSensitivity, value: 1)
     let onScreenWidget = SettingsItemModel<Int>(id: .onScreenWidget, value: 0)
     let buttonVisualFeedback = SettingsItemModel<Bool>(id: .buttonVisualFeedback, value: true)
@@ -1356,6 +1352,7 @@ final class SettingsItemRegistry: ObservableObject {
             delayLeftClick.objectWillChange,
             localStreamPanEnabled.objectWillChange,
             localStreamZoomEnabled.objectWillChange,
+            singlePointDoubleTapRightClick.objectWillChange,
             passthroughGestures.objectWillChange,
             pinchGesture.objectWillChange,
             ctrlDownForPinch.objectWillChange,
@@ -1364,13 +1361,11 @@ final class SettingsItemRegistry: ObservableObject {
             swipeAction.objectWillChange,
             pinchInMovesCursor.objectWillChange,
             pinchOutMovesCursor.objectWillChange,
-            rotateLeftMovesCursor.objectWillChange,
-            rotateRightMovesCursor.objectWillChange,
+            rotationMovesCursor.objectWillChange,
             swipeMovesCursor.objectWillChange,
             pinchInAction.objectWillChange,
             pinchOutAction.objectWillChange,
-            rotateLeftAction.objectWillChange,
-            rotateRightAction.objectWillChange,
+            rotationAction.objectWillChange,
             rotationSensitivity.objectWillChange,
             onScreenWidget.objectWillChange,
             buttonVisualFeedback.objectWillChange,
@@ -1897,6 +1892,7 @@ final class SettingsSession: NSObject, ObservableObject {
         itemRegistry.delayLeftClick.value = snapshot.delayLeftClick
         itemRegistry.localStreamPanEnabled.value = snapshot.localStreamPanEnabled
         itemRegistry.localStreamZoomEnabled.value = snapshot.localStreamZoomEnabled
+        itemRegistry.singlePointDoubleTapRightClick.value = snapshot.singlePointDoubleTapRightClick
         itemRegistry.passthroughGestures.value = snapshot.passthroughGestures
         itemRegistry.pinchGesture.value = snapshot.enablePinch
         itemRegistry.ctrlDownForPinch.value = snapshot.ctrlDownForPinch
@@ -1905,13 +1901,11 @@ final class SettingsSession: NSObject, ObservableObject {
         itemRegistry.swipeAction.value = snapshot.swipeAction ?? "NONE"
         itemRegistry.pinchInMovesCursor.value = snapshot.pinchInMovesCursor
         itemRegistry.pinchOutMovesCursor.value = snapshot.pinchOutMovesCursor
-        itemRegistry.rotateLeftMovesCursor.value = snapshot.rotateLeftMovesCursor
-        itemRegistry.rotateRightMovesCursor.value = snapshot.rotateRightMovesCursor
+        itemRegistry.rotationMovesCursor.value = snapshot.rotationMovesCursor
         itemRegistry.swipeMovesCursor.value = snapshot.swipeMovesCursor
         itemRegistry.pinchInAction.value = snapshot.pinchInAction ?? "SCROLL_DOWN"
         itemRegistry.pinchOutAction.value = snapshot.pinchOutAction ?? "SCROLL_UP"
-        itemRegistry.rotateLeftAction.value = snapshot.rotateLeftAction ?? "Q"
-        itemRegistry.rotateRightAction.value = snapshot.rotateRightAction ?? "E"
+        itemRegistry.rotationAction.value = snapshot.rotationAction ?? "MOUSE_MIDDLE"
         itemRegistry.rotationSensitivity.value = snapshot.rotationSensitivity.doubleValue
         itemRegistry.onScreenWidget.value = snapshot.onscreenControls.intValue
         itemRegistry.buttonVisualFeedback.value = snapshot.buttonVisualFeedback
@@ -2643,6 +2637,7 @@ final class SettingsSession: NSObject, ObservableObject {
             ),
             toggleItem(\.localStreamPanEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
             toggleItem(\.localStreamZoomEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
+            toggleItem(\.singlePointDoubleTapRightClick, isVisible: { !PublicUtils.isTVOS && $0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue }, hasInfo: true),
             toggleItem(\.pinchGesture, isVisible: { $0.cameraGesturesAvailable }),
             toggleItem(\.ctrlDownForPinch,
                        isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value },
@@ -2666,10 +2661,8 @@ final class SettingsSession: NSObject, ObservableObject {
             toggleItem(\.pinchInMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
             gestureActionItem(\.pinchOutAction),
             toggleItem(\.pinchOutMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
-            gestureActionItem(\.rotateLeftAction),
-            toggleItem(\.rotateLeftMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
-            gestureActionItem(\.rotateRightAction),
-            toggleItem(\.rotateRightMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
+            gestureActionItem(\.rotationAction),
+            toggleItem(\.rotationMovesCursor, isVisible: { $0.cameraGesturesAvailable }, hasInfo: true),
             sliderItem(
                 \.rotationSensitivity, range: 0...3, clampedTo: 0...3,
                 valueText: { _, model in "\(Int((model.value * 100).rounded()))%" },
@@ -4680,6 +4673,7 @@ final class SettingsSession: NSObject, ObservableObject {
         settings.delayLeftClick = itemRegistry.delayLeftClick.value
         settings.localStreamPanEnabled = itemRegistry.localStreamPanEnabled.value
         settings.localStreamZoomEnabled = itemRegistry.localStreamZoomEnabled.value
+        settings.singlePointDoubleTapRightClick = itemRegistry.singlePointDoubleTapRightClick.value
         settings.passthroughGestures = itemRegistry.passthroughGestures.value
         settings.enablePinch = itemRegistry.pinchGesture.value
         settings.ctrlDownForPinch = itemRegistry.ctrlDownForPinch.value
@@ -4688,13 +4682,11 @@ final class SettingsSession: NSObject, ObservableObject {
         settings.swipeAction = itemRegistry.swipeAction.value
         settings.pinchInMovesCursor = itemRegistry.pinchInMovesCursor.value
         settings.pinchOutMovesCursor = itemRegistry.pinchOutMovesCursor.value
-        settings.rotateLeftMovesCursor = itemRegistry.rotateLeftMovesCursor.value
-        settings.rotateRightMovesCursor = itemRegistry.rotateRightMovesCursor.value
+        settings.rotationMovesCursor = itemRegistry.rotationMovesCursor.value
         settings.swipeMovesCursor = itemRegistry.swipeMovesCursor.value
         settings.pinchInAction = itemRegistry.pinchInAction.value
         settings.pinchOutAction = itemRegistry.pinchOutAction.value
-        settings.rotateLeftAction = itemRegistry.rotateLeftAction.value
-        settings.rotateRightAction = itemRegistry.rotateRightAction.value
+        settings.rotationAction = itemRegistry.rotationAction.value
         settings.rotationSensitivity = NSNumber(value: itemRegistry.rotationSensitivity.value)
         settings.onscreenControls = NSNumber(value: itemRegistry.onScreenWidget.value)
         settings.buttonVisualFeedback = itemRegistry.buttonVisualFeedback.value

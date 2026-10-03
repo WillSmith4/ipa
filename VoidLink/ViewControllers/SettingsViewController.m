@@ -79,6 +79,7 @@
     MenuSectionView *experimentalSection;
     NSMutableSet* hiddenStacks;
     NSArray<UIStackView *> *gestureActionStacks;
+    UIStackView *singlePointDoubleTapStack;
     UIStackView *rotationSensitivityStack;
     UISlider *rotationSensitivitySlider;
 
@@ -948,16 +949,15 @@
 
     currentSettings.localStreamPanEnabled = tempSettings.localStreamPanEnabled;
     currentSettings.localStreamZoomEnabled = tempSettings.localStreamZoomEnabled;
+    currentSettings.singlePointDoubleTapRightClick = tempSettings.singlePointDoubleTapRightClick;
     currentSettings.swipeAction = tempSettings.swipeAction;
     currentSettings.pinchInMovesCursor = tempSettings.pinchInMovesCursor;
     currentSettings.pinchOutMovesCursor = tempSettings.pinchOutMovesCursor;
-    currentSettings.rotateLeftMovesCursor = tempSettings.rotateLeftMovesCursor;
-    currentSettings.rotateRightMovesCursor = tempSettings.rotateRightMovesCursor;
+    currentSettings.rotationMovesCursor = tempSettings.rotationMovesCursor;
     currentSettings.swipeMovesCursor = tempSettings.swipeMovesCursor;
     currentSettings.pinchInAction = tempSettings.pinchInAction;
     currentSettings.pinchOutAction = tempSettings.pinchOutAction;
-    currentSettings.rotateLeftAction = tempSettings.rotateLeftAction;
-    currentSettings.rotateRightAction = tempSettings.rotateRightAction;
+    currentSettings.rotationAction = tempSettings.rotationAction;
     currentSettings.rotationSensitivity = @(rotationSensitivitySlider.value);
 
     [dataMan saveSettings:currentSettings
@@ -1666,8 +1666,8 @@ BOOL isCustomResolution(int resolutionSelected) {
 
     [self addSetting:self.passthroughGesturesStack ofId:@"passthroughGesturesStack" to:touchControlSection];
 
-    NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled"];
-    NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image"];
+    NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled", @"singlePointDoubleTapRightClick"];
+    NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image", @"Double Tap Right Click"];
     for (NSInteger i = 0; i < viewportFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:viewportTitles[i]];
@@ -1681,6 +1681,7 @@ BOOL isCustomResolution(int resolutionSelected) {
         stack.spacing = self.pinchGestureStack.spacing;
         stack.alignment = self.pinchGestureStack.alignment;
         stack.hasInfoTag = YES;
+        if ([viewportFields[i] isEqualToString:@"singlePointDoubleTapRightClick"]) singlePointDoubleTapStack = stack;
         [self addSetting:stack ofId:[viewportFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
     }
     [self addSetting:self.pinchGestureStack ofId:@"pinchGestureStack" to:touchControlSection];
@@ -1695,8 +1696,8 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.pinchSensitivityStack ofId:@"pinchSensitivityStack" to:touchControlSection];
 
     NSMutableArray *actionStacks = [NSMutableArray array];
-    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotateLeftAction", @"rotateRightAction", @"swipeAction"];
-    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotate Left", @"Rotate Right", @"Swipe"];
+    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotationAction", @"swipeAction"];
+    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotation", @"Swipe"];
     for (NSInteger i = 0; i < gestureFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:gestureTitles[i]];
@@ -1718,8 +1719,8 @@ BOOL isCustomResolution(int resolutionSelected) {
         [self addSetting:stack ofId:[gestureFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
         [actionStacks addObject:stack];
     }
-    NSArray *cursorFields = @[@"pinchInMovesCursor", @"pinchOutMovesCursor", @"rotateLeftMovesCursor", @"rotateRightMovesCursor", @"swipeMovesCursor"];
-    NSArray *cursorTitles = @[@"Pinch In — Move Cursor", @"Pinch Out — Move Cursor", @"Rotate Left — Move Cursor", @"Rotate Right — Move Cursor", @"Swipe — Move Cursor"];
+    NSArray *cursorFields = @[@"pinchInMovesCursor", @"pinchOutMovesCursor", @"rotationMovesCursor", @"swipeMovesCursor"];
+    NSArray *cursorTitles = @[@"Pinch In — Move Cursor", @"Pinch Out — Move Cursor", @"Rotation — Move Cursor", @"Swipe — Move Cursor"];
     for (NSInteger i = 0; i < cursorFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:cursorTitles[i]];
@@ -2562,13 +2563,16 @@ BOOL isCustomResolution(int resolutionSelected) {
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamPanEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Move Stream Image Help"];
     }
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"singlePointDoubleTapRightClickStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Double Tap Right Click Help"];
+    }
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamZoomEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Zoom Stream Image Help"];
     }
-    if ([@[@"pinchInMovesCursorStack", @"pinchOutMovesCursorStack", @"rotateLeftMovesCursorStack", @"rotateRightMovesCursorStack", @"swipeMovesCursorStack"] containsObject:sender.superview.accessibilityIdentifier]) {
+    if ([@[@"pinchInMovesCursorStack", @"pinchOutMovesCursorStack", @"rotationMovesCursorStack", @"swipeMovesCursorStack"] containsObject:sender.superview.accessibilityIdentifier]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Gesture cursor help"];
     }
-    if ([@[@"pinchInActionStack", @"pinchOutActionStack", @"rotateLeftActionStack", @"rotateRightActionStack", @"swipeActionStack"] containsObject:sender.superview.accessibilityIdentifier]) {
+    if ([@[@"pinchInActionStack", @"pinchOutActionStack", @"rotationActionStack", @"swipeActionStack"] containsObject:sender.superview.accessibilityIdentifier]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Camera gesture help"];
     }
     if([sender.superview.accessibilityIdentifier isEqualToString: @"ctrlDownForPinchStack"]){
@@ -4246,6 +4250,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self setHidden:(sender.selectedSegmentIndex!=RelativeTouch
                      && sender.selectedSegmentIndex!=AbsoluteTouch) forStack:self.scrollSensitivityStack];*/
     
+    [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:singlePointDoubleTapStack];
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:self.passthroughGesturesStack];
     UISwitch* dummySwitch = [[UISwitch alloc] init];
     [dummySwitch setOn:(sender.selectedSegmentIndex==RelativeTouch

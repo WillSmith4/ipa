@@ -20,16 +20,15 @@
     self.parent = settings;
     self.localStreamPanEnabled = settings.localStreamPanEnabled;
     self.localStreamZoomEnabled = settings.localStreamZoomEnabled;
+    self.singlePointDoubleTapRightClick = settings.singlePointDoubleTapRightClick;
     self.swipeAction = settings.swipeAction ?: @"NONE";
     self.pinchInMovesCursor = settings.pinchInMovesCursor;
     self.pinchOutMovesCursor = settings.pinchOutMovesCursor;
-    self.rotateLeftMovesCursor = settings.rotateLeftMovesCursor;
-    self.rotateRightMovesCursor = settings.rotateRightMovesCursor;
+    self.rotationMovesCursor = settings.rotationMovesCursor;
     self.swipeMovesCursor = settings.swipeMovesCursor;
     self.pinchInAction = settings.pinchInAction ?: @"SCROLL_DOWN";
     self.pinchOutAction = settings.pinchOutAction ?: @"SCROLL_UP";
-    self.rotateLeftAction = settings.rotateLeftAction ?: @"Q";
-    self.rotateRightAction = settings.rotateRightAction ?: @"E";
+    self.rotationAction = settings.rotationAction ?: @"MOUSE_MIDDLE";
     self.rotationSensitivity = settings.rotationSensitivity ?: @1;
     
 #if TARGET_OS_TV

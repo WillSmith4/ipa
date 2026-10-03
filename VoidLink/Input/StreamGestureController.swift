@@ -42,18 +42,23 @@ private final class GestureMotionObserver: UIGestureRecognizer {
     override func reset() { super.reset(); fingers.removeAll(); motion.reset() }
 }
 
-/// One continuous rotation gesture drives both directional bindings. Track the
+/// One continuous rotation gesture drives a single binding. Track the
 /// same fingers from the second touch down and sample every subsequent move.
 private final class StreamRotationRecognizer: UIGestureRecognizer {
     private var fingers: [UITouch] = []
     private var motion = GestureRotationMotion()
+    private var pointer = GestureLeadingPointerMotion()
     private(set) var deltaDegrees = 0.0
+    private(set) var pointerDelta = (x: 0.0, y: 0.0)
 
     private func sample() -> Double? {
-        motion.sample(fingers.enumerated().map { index, touch in
+        let points: [GesturePointerMotion.Point] = fingers.enumerated().map { index, touch in
             let point = touch.location(in: view)
             return .init(id: index, x: Double(point.x), y: Double(point.y))
-        })
+        }
+        let angle = motion.sample(points)
+        pointerDelta = pointer.sample(points, rotating: angle != nil && angle != 0)
+        return angle
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -83,7 +88,14 @@ private final class StreamRotationRecognizer: UIGestureRecognizer {
         state = state == .possible ? .failed : .cancelled
     }
 
-    override func reset() { super.reset(); fingers.removeAll(); motion.reset(); deltaDegrees = 0 }
+    override func reset() {
+        super.reset()
+        fingers.removeAll()
+        motion.reset()
+        pointer.reset()
+        deltaDegrees = 0
+        pointerDelta = (0, 0)
+    }
 }
 
 /// Uses the existing touchpad dead zone to distinguish a swipe from a tap.
@@ -121,10 +133,11 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var rotation: StreamRotationRecognizer!
     private var swipe: StreamSwipeRecognizer!
     private var motionObserver: GestureMotionObserver!
-    private var cursorEnabled = Array(repeating: false, count: 5)
+    private var cursorEnabled = Array(repeating: false, count: 4)
     private var pointerSpeed = 1.0
     private var pointer = GesturePointerMotion()
     private var cursorDelta = (x: 0.0, y: 0.0)
+    private var rotationCursorDelta = (x: 0.0, y: 0.0)
     private var swipeCursorOrigin: CGPoint?
     private var queuedMoves: [(axis: Int, delta: Double)] = []
     private var endingAxes: Set<Int> = []
@@ -195,7 +208,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
 
     @objc func configure(_ settings: TemporarySettings, enabled: Bool) {
         cancel()
-        let bindings: [String?] = [settings.pinchInAction, settings.pinchOutAction, settings.rotateLeftAction, settings.rotateRightAction, settings.swipeAction]
+        let bindings: [String?] = [settings.pinchInAction, settings.pinchOutAction, settings.rotationAction, settings.swipeAction]
         actions = bindings
             .enumerated().map { $0.element ?? GestureAction.defaults[$0.offset] }
         pinchSensitivity = settings.pinchSensitivity.doubleValue
@@ -203,7 +216,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         controlScroll = settings.ctrlDownForPinch
         edgeTolerance = CGFloat(settings.edgeSlidingSensitivity.doubleValue)
         cursorEnabled = [settings.pinchInMovesCursor, settings.pinchOutMovesCursor,
-                         settings.rotateLeftMovesCursor, settings.rotateRightMovesCursor, settings.swipeMovesCursor]
+                         settings.rotationMovesCursor, settings.swipeMovesCursor]
         pointerSpeed = settings.mousePointerVelocityFactor.doubleValue
         swipe.threshold = max(0, settings.relativeTouchSlideThreshold.doubleValue)
         pinchEnabled = settings.enablePinch
@@ -219,8 +232,8 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
 
     private func updateEnabled() {
         pinch.isEnabled = enabled && pinchEnabled && (0...1).contains { actions[$0] != "NONE" || cursorEnabled[$0] }
-        rotation.isEnabled = enabled && (2...3).contains { actions[$0] != "NONE" || cursorEnabled[$0] }
-        swipe.isEnabled = enabled && (actions[4] != "NONE" || cursorEnabled[4])
+        rotation.isEnabled = enabled && (actions[2] != "NONE" || cursorEnabled[2])
+        swipe.isEnabled = enabled && (actions[3] != "NONE" || cursorEnabled[3])
         motionObserver.isEnabled = enabled
     }
 
@@ -234,6 +247,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         endingAxes.removeAll()
         activeActions.removeAll()
         cursorDelta = (0, 0)
+        rotationCursorDelta = (0, 0)
         swipeCursorOrigin = nil
         pointer.reset()
         pending = [0, 0, 0]
@@ -278,6 +292,8 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             guard recognizer.numberOfTouches == 2 else { cancel(); return }
             // Preserve existing sensitivity units while using per-event angles.
             let delta = recognizer.deltaDegrees * .pi / 180 * 100 * rotationSensitivity
+            rotationCursorDelta.x += recognizer.pointerDelta.x
+            rotationCursorDelta.y += recognizer.pointerDelta.y
             move(axis: 1, delta: delta)
         default:
             endingAxes.insert(1)
@@ -294,7 +310,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         if recognizer.state == .began || recognizer.state == .changed {
             if recognizer.state == .began {
                 endingAxes.remove(2)
-                if cursorEnabled[4] { swipeCursorOrigin = recognizer.origin }
+                if cursorEnabled[3] { swipeCursorOrigin = recognizer.origin }
             }
             move(axis: 2, delta: hypot(Double(recognizer.delta.x), Double(recognizer.delta.y)))
         } else {
@@ -323,10 +339,13 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             for move in self.queuedMoves { self.applyMove(axis: move.axis, delta: move.delta) }
             self.queuedMoves.removeAll()
             if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
-                let delta = self.pointer.cursor(dx: self.cursorDelta.x, dy: self.cursorDelta.y, speed: self.pointerSpeed)
+                let motion = self.activeActions[1] != nil && self.cursorEnabled[2]
+                    ? self.rotationCursorDelta : self.cursorDelta
+                let delta = self.pointer.cursor(dx: motion.x, dy: motion.y, speed: self.pointerSpeed)
                 if delta.0 != 0 || delta.1 != 0 { LiSendMouseMoveEvent(delta.0, delta.1) }
             }
             self.cursorDelta = (0, 0)
+            self.rotationCursorDelta = (0, 0)
             for axis in self.endingAxes {
                 self.engine.end(axis: axis)
                 self.activeActions.removeValue(forKey: axis)
@@ -347,7 +366,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         guard axis == 1 ? pending[axis] != 0 : abs(pending[axis]) >= 0.15 else { return }
         let amount = pending[axis]
         pending[axis] = 0
-        let index = axis == 2 ? 4 : axis * 2 + (amount > 0 ? 1 : 0)
+        let index = axis == 2 ? 3 : (axis == 1 ? 2 : (amount > 0 ? 1 : 0))
         activeActions[axis] = index
         let action = actions[index]
         engine.move(axis: axis, action: action, amount: abs(amount), now: CACurrentMediaTime(),

@@ -151,6 +151,33 @@ struct GestureActionEngineTests {
         withThirdFinger.append(.init(id: 30, x: 50, y: 50))
         check(rotation.sample(withThirdFinger) == nil, "A third finger terminates this two-finger rotation")
         check(rotation.sample(fingers(angle: 15)) == nil, "Removing a third finger does not synthesize an angle")
+        var leader = GestureLeadingPointerMotion()
+        func lead(_ ax: Double, _ ay: Double, _ bx: Double, _ by: Double, rotating: Bool = true) -> (Double, Double) {
+            // Reverse collection order to ensure identity, not iteration order, wins.
+            leader.sample([.init(id: 2, x: bx, y: by), .init(id: 1, x: ax, y: ay)], rotating: rotating)
+        }
+        check(lead(0, 0, 100, 0) == (0, 0), "Prime leading finger without a jump")
+        check(lead(5, -5, 105, -5, rotating: false) == (0, 0), "Translation alone does not choose a rotation leader")
+        check(lead(5, -5, 105, -15) == (0, -10), "Moving thumb leads while the other finger is a stationary pivot")
+        check(lead(5, 30, 105, -20) == (0, -5), "Keep the leader when the other finger moves faster")
+        check(lead(5, 20, 105, -30, rotating: false) == (0, -10), "Whole-hand translation still follows the chosen finger during rotation")
+        check(lead(5, 10, 105, -20) == (0, 10), "Reversal follows the same finger immediately")
+        check(leader.sample([.init(id: 1, x: 5, y: 10)], rotating: true) == (0, 0), "Lifting resets the leading finger")
+        check(lead(0, 0, 100, 0) == (0, 0), "A new pair rebases")
+        check(lead(0, -10, 100, 10) == (0, -10), "Symmetric rotation follows the first touch instead of cancelling to zero")
+        check(leader.sample([.init(id: 1, x: 0, y: -10), .init(id: 3, x: 100, y: 10)], rotating: true) == (0, 0), "Replacing a finger resets its identity")
+        leader.reset()
+        check(lead(50, 50, 100, 100) == (0, 0), "Cancellation clears the leader")
+
+        engine.cancel()
+        events.removeAll()
+        for angle in [5.0, 10, -10, -5] {
+            engine.move(axis: 1, action: GestureAction.defaults[2], amount: abs(angle), now: 100)
+        }
+        engine.tick(now: 200)
+        check(events == ["mouse2:down"], "Unified rotation keeps MIDDLE held through direction changes and pauses")
+        engine.end(axis: 1)
+        check(events == ["mouse2:down", "mouse2:up"], "Unified rotation releases once on lift")
         print("GestureActionEngine: all checks passed")
     }
 }
