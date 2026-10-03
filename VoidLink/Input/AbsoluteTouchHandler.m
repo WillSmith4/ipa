@@ -153,11 +153,14 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     
     // Use the existing stationary-hold right click only when enabled.
     if (longPressRightClickEnabled) {
-        longPressTimer = [NSTimer scheduledTimerWithTimeInterval:LONG_PRESS_ACTIVATION_DELAY
+        longPressTimer = [NSTimer timerWithTimeInterval:LONG_PRESS_ACTIVATION_DELAY
                                                         target:self
                                                       selector:@selector(onLongPressStart:)
                                                       userInfo:nil
                                                        repeats:NO];
+        // Keep the hold deadline active while the enclosing scroll view tracks
+        // the finger, instead of waiting for the default run-loop mode to resume.
+        [[NSRunLoop mainRunLoop] addTimer:longPressTimer forMode:NSRunLoopCommonModes];
     }
     
     lastTouchDown = capturedTouch;

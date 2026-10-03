@@ -1991,7 +1991,9 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 #if !TARGET_OS_TV
     if (!cameraGestures) cameraGestures = [[StreamGestureController alloc] initWithView:self];
     TemporarySettings *snapshot = [[[DataManager alloc] init] getSettings];
-    [cameraGestures configure:snapshot enabled:touchMode != TouchDisabled && !_streamFrameVC.touchDisabled];
+    [cameraGestures configure:snapshot
+                     enabled:touchMode != TouchDisabled && !_streamFrameVC.touchDisabled
+             singlePointMode:touchMode == AbsoluteTouch];
 #endif
 }
 

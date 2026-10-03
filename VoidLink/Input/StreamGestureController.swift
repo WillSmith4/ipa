@@ -167,8 +167,8 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinched(_:)))
         rotation = StreamRotationRecognizer(target: self, action: #selector(rotated(_:)))
         swipe = StreamSwipeRecognizer(target: self, action: #selector(swiped(_:)))
-        // Hold ordinary touches until we know whether this is a configured swipe.
-        // Failed recognition still delivers taps to the existing touch handler.
+        // Configuration lets Single Point receive touch down immediately when
+        // its stationary-hold timer is enabled. Other modes retain swipe deferral.
         swipe.delaysTouchesBegan = true
         motionObserver = GestureMotionObserver(target: nil, action: nil)
         motionObserver.cancelsTouchesInView = false
@@ -200,7 +200,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         }
     }
 
-    @objc func configure(_ settings: TemporarySettings, enabled: Bool) {
+    @objc func configure(_ settings: TemporarySettings, enabled: Bool, singlePointMode: Bool) {
         cancel()
         let bindings: [String?] = [settings.pinchInAction, settings.pinchOutAction, settings.rotationAction, settings.swipeAction]
         actions = bindings
@@ -213,6 +213,10 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
                          settings.rotationMovesCursor, settings.swipeMovesCursor]
         pointerSpeed = settings.mousePointerVelocityFactor.doubleValue
         swipe.threshold = max(0, settings.relativeTouchSlideThreshold.doubleValue)
+        // A stationary finger never resolves the swipe recognizer. Deferring
+        // touch down would keep AbsoluteTouchHandler's long-press timer from
+        // starting at all. Recognition still cancels that timer before a swipe.
+        swipe.delaysTouchesBegan = !(singlePointMode && settings.singlePointLongPressRightClick)
         pinchEnabled = settings.enablePinch
         self.enabled = enabled
         updateEnabled()

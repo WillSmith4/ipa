@@ -119,8 +119,12 @@ and Left Click Delay settings unchanged. Rotation and other touch modes are unch
 - Legacy delayed tap callbacks are invalidated when a gesture takes over.
   Gesture presses run after UIKit has cancelled old touches so a stale mouse
   release cannot interrupt the new drag. The swipe recognizer delays ordinary
-  touch delivery until it knows whether the movement is a swipe; taps still
-  reach the original handler when recognition fails.
+  touch delivery until it knows whether the movement is a swipe, except in
+  Single Point with long-press right click enabled: touch down arrives immediately
+  so the existing hold timer can start. A recognized swipe still cancels the hold
+  before sending its binding. The hold timer runs in common run-loop modes so
+  scroll-view touch tracking does not suspend it. Other taps still reach the
+  original handler when recognition fails.
 - The Drawing Toolkit is included. Pencil runtime, settings and editors no
   longer consult StoreKit or reset settings after an interrupted purchase.
   Hardware/OS requirements for specific Pencil interactions still apply.
@@ -148,5 +152,8 @@ and taps/double taps when Swipe is Off and when it is enabled. In Single Point,
 verify taps no longer wait for a second tap or turn into a right click, and that
 a stationary 0.65-second hold sends one right click only when the switch is On.
 Check that movement, a second finger, lift and gesture cancellation stop the hold.
+Repeat with Swipe + MOUSE_RIGHT and Move Cursor enabled: a stationary hold must
+click without lifting; movement before the deadline must start only the swipe
+binding and must not generate another right click at the hold deadline.
 Test dragging and long press with Delay Left Click both On and Off.
 The IPA is unsigned and must be signed for installation on an iOS device.
