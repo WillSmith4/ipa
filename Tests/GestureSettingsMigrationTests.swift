@@ -18,6 +18,9 @@ struct GestureSettingsMigrationTests {
                                models: URL, stores: URL) throws {
         let old = NSManagedObjectModel(contentsOf: models.appendingPathComponent("VoidLink v\(source).mom"))!
         let current = NSManagedObjectModel(contentsOf: models.appendingPathComponent("VoidLink v1.5.mom"))!
+        let longPressAttribute = current.entitiesByName["Settings"]!.attributesByName["singlePointLongPressRightClick"]!
+        precondition(longPressAttribute.renamingIdentifier == "singlePointDoubleTapRightClick",
+                     "The compiled model must retain the previous switch name as its renaming identifier")
         for model in [old, current] {
             for entity in model.entities { entity.managedObjectClassName = "NSManagedObject" }
         }
@@ -62,8 +65,10 @@ struct GestureSettingsMigrationTests {
         let expectedRotation = source == "1.4" ? "ALT+MOUSE_MIDDLE" : (left == right ? left : "MOUSE_MIDDLE")
         precondition(result.value(forKey: "rotationAction") as? String == expectedRotation)
         precondition(result.value(forKey: "rotationMovesCursor") as? Bool == (source != "1.1" && source != "1.4" && caseID != 2))
-        precondition(result.value(forKey: "singlePointLongPressRightClick") as? Bool == (source != "1.4" || caseID != 2),
-                     "Preserve the previous switch state when renaming it; older installs default to long press On")
+        let expectedLongPress = source != "1.4" || caseID != 2
+        let actualLongPress = result.value(forKey: "singlePointLongPressRightClick") as? Bool
+        precondition(actualLongPress == expectedLongPress,
+                     "Long-press switch migration from v\(source), case \(caseID): expected \(expectedLongPress), got \(String(describing: actualLongPress))")
         precondition(result.value(forKey: "uniqueId") as? String == "gesture-migration-test")
         precondition(result.value(forKey: "pinchInAction") as? String == "CTRL+Q")
         precondition(result.value(forKey: "rotateLeftAction") as? String == left)
