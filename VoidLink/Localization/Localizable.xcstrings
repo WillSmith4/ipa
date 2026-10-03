@@ -1,36 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Double Tap Right Click Help" : {
+    "Long Press Right Click Help" : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "In Single Point mode, tap twice with one finger to send one right mouse click (press and release). Enabled by default. This fixed action cannot be remapped. A single tap waits briefly for a possible second tap before sending a left click. Turn off to restore the previous tap behavior."
+            "value": "In Single Point mode, hold one finger still for about 0.65 seconds to send a right mouse click (press and release). This switch enables or disables the existing long-press gesture. Ordinary taps do not wait for a second tap. The separate Delay Left Click settings keep their existing behavior."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "W trybie Single Point stuknij dwa razy jednym palcem, aby wysłać jedno kliknięcie prawego przycisku myszy (wciśnięcie i puszczenie). Opcja jest domyślnie włączona i nie można przypisać jej innej akcji. Pojedyncze stuknięcie czeka krótko na ewentualne drugie, zanim wyśle lewy klik. Wyłącz, aby przywrócić poprzednie działanie stuknięć."
+            "value": "W trybie Single Point przytrzymaj jeden palec w miejscu przez około 0,65 s, aby wysłać kliknięcie prawego przycisku myszy (wciśnięcie i puszczenie). Ten przełącznik włącza lub wyłącza istniejący gest przytrzymania. Zwykłe stuknięcia nie czekają na drugie stuknięcie. Osobne ustawienia opóźnienia lewego kliku zachowują dotychczasowe działanie."
           }
         }
       }
     },
-    "Double Tap Right Click" : {
+    "Long Press Right Click" : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Double Tap → Right Click"
+            "value": "Long Press → Right Click"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podwójne stuknięcie → prawy klik"
+            "value": "Przytrzymanie → prawy klik"
           }
         }
       }

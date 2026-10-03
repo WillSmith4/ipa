@@ -60,14 +60,14 @@ widget's translation/zoom, under the existing touch-mode and host-pinch priority
 rules. Turning either off retains the current framing and saved profile.
 These switches do not change host mouse or camera bindings.
 
-**Double Tap → Right Click** appears next to those viewport switches in Single
-Point mode. It defaults to On and always sends one right-button press followed
-by release, with no key/chord editor. The existing UIKit double-tap pattern is
-used: single tap waits for double tap to fail, avoiding an extra left click.
-Dragging and long press remain available. Disabling the switch restores the
-original Single Point tap path. Pencil, widgets, edge menus and other touch
-modes do not use this recognizer. Gesture takeover, input disable, profile
-changes, backgrounding and session cleanup cancel pending clicks.
+**Long Press → Right Click** appears next to those viewport switches in Single
+Point mode. It gates the existing stationary one-finger hold: after 0.65 seconds,
+the handler sends a right-button press followed by release. Disabling it prevents
+the long-press timer from starting. The default is On; upgrading preserves the
+previous switch state. There is no key/chord editor. The added double-tap
+recognizers and their wait for a second tap have been removed. Ordinary taps and
+drags use the original Single Point path, with the pre-existing Delay Left Click
+and Left Click Delay settings unchanged. Rotation and other touch modes are unchanged.
 
 ## Input and persistence
 
@@ -112,6 +112,10 @@ changes, backgrounding and session cleanup cancel pending clicks.
   cursor switch. Legacy attributes remain in the model for migration. Tests
   migrate real v1.1/v1.2/v1.3 SQLite stores using the application's initializer,
   and verify later edits and independent switches survive reopening.
+- The v1.5 model renames the Single Point switch to long-press right click using
+  Core Data's renaming identifier, preserving both On and Off from v1.4. Tests
+  also cover direct migration from v1.1/v1.2/v1.3, the default for a fresh install,
+  both switch states after reopening, and preservation of existing rotation settings.
 - Legacy delayed tap callbacks are invalidated when a gesture takes over.
   Gesture presses run after UIKit has cancelled old touches so a stale mouse
   release cannot interrupt the new drag. The swipe recognizer delays ordinary
@@ -141,7 +145,8 @@ Also check Swipe + MOUSE_MIDDLE with Move Cursor on/off, W+D, mixed chords,
 simultaneous pinch/rotation with the same button, full circles in both directions,
 vertical hand translation during rotation (vertical mouse motion with unchanged yaw),
 and taps/double taps when Swipe is Off and when it is enabled. In Single Point,
-verify double tap sends only one right click, single tap sends one left click,
-the switch Off restores previous behavior, and a cancelled tap never fires later.
+verify taps no longer wait for a second tap or turn into a right click, and that
+a stationary 0.65-second hold sends one right click only when the switch is On.
+Check that movement, a second finger, lift and gesture cancellation stop the hold.
 Test dragging and long press with Delay Left Click both On and Off.
 The IPA is unsigned and must be signed for installation on an iOS device.

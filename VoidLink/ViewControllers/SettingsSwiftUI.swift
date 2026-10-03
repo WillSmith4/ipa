@@ -208,7 +208,7 @@ private let settingsLegacyHelpByStackIdentifier: [String: SettingsLegacyHelpCont
     "relativeTouchSlideThresholdStack": .init(messageKey: "relativeTouchSlideThresholdStackTip", learnMoreURLKey: "relativeTouchSlideThresholdStackLink"),
     "localStreamPanEnabledStack": .init(messageKey: "Move Stream Image Help", learnMoreURLKey: nil),
     "localStreamZoomEnabledStack": .init(messageKey: "Zoom Stream Image Help", learnMoreURLKey: nil),
-    "singlePointDoubleTapRightClickStack": .init(messageKey: "Double Tap Right Click Help", learnMoreURLKey: nil),
+    "singlePointLongPressRightClickStack": .init(messageKey: "Long Press Right Click Help", learnMoreURLKey: nil),
     "swipeActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "pinchInMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
     "pinchOutMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
@@ -294,7 +294,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case delayLeftClick = "delayLeftClickStack"
     case localStreamPanEnabled = "localStreamPanEnabledStack"
     case localStreamZoomEnabled = "localStreamZoomEnabledStack"
-    case singlePointDoubleTapRightClick = "singlePointDoubleTapRightClickStack"
+    case singlePointLongPressRightClick = "singlePointLongPressRightClickStack"
     case passthroughGestures = "passthroughGesturesStack"
     case pinchGesture = "pinchGestureStack"
     case ctrlDownForPinch = "ctrlDownForPinchStack"
@@ -432,7 +432,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .delayLeftClick: return "Delay Left Click"
         case .localStreamPanEnabled: return "Move Stream Image"
         case .localStreamZoomEnabled: return "Zoom Stream Image"
-        case .singlePointDoubleTapRightClick: return "Double Tap Right Click"
+        case .singlePointLongPressRightClick: return "Long Press Right Click"
         case .passthroughGestures: return "Passthrough Gestures"
         case .pinchGesture: return "Pinch Gesture"
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"
@@ -1210,7 +1210,7 @@ final class SettingsItemRegistry: ObservableObject {
     let delayLeftClick = SettingsItemModel<Bool>(id: .delayLeftClick, value: true)
     let localStreamPanEnabled = SettingsItemModel<Bool>(id: .localStreamPanEnabled, value: true)
     let localStreamZoomEnabled = SettingsItemModel<Bool>(id: .localStreamZoomEnabled, value: true)
-    let singlePointDoubleTapRightClick = SettingsItemModel<Bool>(id: .singlePointDoubleTapRightClick, value: true)
+    let singlePointLongPressRightClick = SettingsItemModel<Bool>(id: .singlePointLongPressRightClick, value: true)
     let passthroughGestures = SettingsItemModel<Bool>(id: .passthroughGestures, value: true)
     let pinchGesture = SettingsItemModel<Bool>(id: .pinchGesture, value: true)
     let ctrlDownForPinch = SettingsItemModel<Bool>(id: .ctrlDownForPinch, value: false)
@@ -1352,7 +1352,7 @@ final class SettingsItemRegistry: ObservableObject {
             delayLeftClick.objectWillChange,
             localStreamPanEnabled.objectWillChange,
             localStreamZoomEnabled.objectWillChange,
-            singlePointDoubleTapRightClick.objectWillChange,
+            singlePointLongPressRightClick.objectWillChange,
             passthroughGestures.objectWillChange,
             pinchGesture.objectWillChange,
             ctrlDownForPinch.objectWillChange,
@@ -1892,7 +1892,7 @@ final class SettingsSession: NSObject, ObservableObject {
         itemRegistry.delayLeftClick.value = snapshot.delayLeftClick
         itemRegistry.localStreamPanEnabled.value = snapshot.localStreamPanEnabled
         itemRegistry.localStreamZoomEnabled.value = snapshot.localStreamZoomEnabled
-        itemRegistry.singlePointDoubleTapRightClick.value = snapshot.singlePointDoubleTapRightClick
+        itemRegistry.singlePointLongPressRightClick.value = snapshot.singlePointLongPressRightClick
         itemRegistry.passthroughGestures.value = snapshot.passthroughGestures
         itemRegistry.pinchGesture.value = snapshot.enablePinch
         itemRegistry.ctrlDownForPinch.value = snapshot.ctrlDownForPinch
@@ -2637,7 +2637,7 @@ final class SettingsSession: NSObject, ObservableObject {
             ),
             toggleItem(\.localStreamPanEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
             toggleItem(\.localStreamZoomEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
-            toggleItem(\.singlePointDoubleTapRightClick, isVisible: { !PublicUtils.isTVOS && $0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue }, hasInfo: true),
+            toggleItem(\.singlePointLongPressRightClick, isVisible: { !PublicUtils.isTVOS && $0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue }, hasInfo: true),
             toggleItem(\.pinchGesture, isVisible: { $0.cameraGesturesAvailable }),
             toggleItem(\.ctrlDownForPinch,
                        isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value },
@@ -4673,7 +4673,7 @@ final class SettingsSession: NSObject, ObservableObject {
         settings.delayLeftClick = itemRegistry.delayLeftClick.value
         settings.localStreamPanEnabled = itemRegistry.localStreamPanEnabled.value
         settings.localStreamZoomEnabled = itemRegistry.localStreamZoomEnabled.value
-        settings.singlePointDoubleTapRightClick = itemRegistry.singlePointDoubleTapRightClick.value
+        settings.singlePointLongPressRightClick = itemRegistry.singlePointLongPressRightClick.value
         settings.passthroughGestures = itemRegistry.passthroughGestures.value
         settings.enablePinch = itemRegistry.pinchGesture.value
         settings.ctrlDownForPinch = itemRegistry.ctrlDownForPinch.value

@@ -79,7 +79,7 @@
     MenuSectionView *experimentalSection;
     NSMutableSet* hiddenStacks;
     NSArray<UIStackView *> *gestureActionStacks;
-    UIStackView *singlePointDoubleTapStack;
+    UIStackView *singlePointLongPressStack;
     UIStackView *rotationSensitivityStack;
     UISlider *rotationSensitivitySlider;
 
@@ -949,7 +949,7 @@
 
     currentSettings.localStreamPanEnabled = tempSettings.localStreamPanEnabled;
     currentSettings.localStreamZoomEnabled = tempSettings.localStreamZoomEnabled;
-    currentSettings.singlePointDoubleTapRightClick = tempSettings.singlePointDoubleTapRightClick;
+    currentSettings.singlePointLongPressRightClick = tempSettings.singlePointLongPressRightClick;
     currentSettings.swipeAction = tempSettings.swipeAction;
     currentSettings.pinchInMovesCursor = tempSettings.pinchInMovesCursor;
     currentSettings.pinchOutMovesCursor = tempSettings.pinchOutMovesCursor;
@@ -1666,8 +1666,8 @@ BOOL isCustomResolution(int resolutionSelected) {
 
     [self addSetting:self.passthroughGesturesStack ofId:@"passthroughGesturesStack" to:touchControlSection];
 
-    NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled", @"singlePointDoubleTapRightClick"];
-    NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image", @"Double Tap Right Click"];
+    NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled", @"singlePointLongPressRightClick"];
+    NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image", @"Long Press Right Click"];
     for (NSInteger i = 0; i < viewportFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:viewportTitles[i]];
@@ -1681,7 +1681,7 @@ BOOL isCustomResolution(int resolutionSelected) {
         stack.spacing = self.pinchGestureStack.spacing;
         stack.alignment = self.pinchGestureStack.alignment;
         stack.hasInfoTag = YES;
-        if ([viewportFields[i] isEqualToString:@"singlePointDoubleTapRightClick"]) singlePointDoubleTapStack = stack;
+        if ([viewportFields[i] isEqualToString:@"singlePointLongPressRightClick"]) singlePointLongPressStack = stack;
         [self addSetting:stack ofId:[viewportFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
     }
     [self addSetting:self.pinchGestureStack ofId:@"pinchGestureStack" to:touchControlSection];
@@ -2563,8 +2563,8 @@ BOOL isCustomResolution(int resolutionSelected) {
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamPanEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Move Stream Image Help"];
     }
-    if ([sender.superview.accessibilityIdentifier isEqualToString:@"singlePointDoubleTapRightClickStack"]) {
-        tipText = [LocalizationHelper localizedStringForKey:@"Double Tap Right Click Help"];
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"singlePointLongPressRightClickStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Long Press Right Click Help"];
     }
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamZoomEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Zoom Stream Image Help"];
@@ -4250,7 +4250,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self setHidden:(sender.selectedSegmentIndex!=RelativeTouch
                      && sender.selectedSegmentIndex!=AbsoluteTouch) forStack:self.scrollSensitivityStack];*/
     
-    [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:singlePointDoubleTapStack];
+    [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:singlePointLongPressStack];
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:self.passthroughGesturesStack];
     UISwitch* dummySwitch = [[UISwitch alloc] init];
     [dummySwitch setOn:(sender.selectedSegmentIndex==RelativeTouch

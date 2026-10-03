@@ -263,9 +263,6 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
     (void)profile;
 #else
     touchMode = profile.touchMode;
-    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
-        [(AbsoluteTouchHandler *)sessionTouchHandler setTapInputEnabled:NO];
-    }
     switch (touchMode) {
         case NativeTouch:
             keyboardToggleRecognizer.immediateTriggering = false;
@@ -293,9 +290,6 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
             break;
     }
     sessionTouchHandler = touchHandler;
-    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
-        [(AbsoluteTouchHandler *)sessionTouchHandler setTapInputEnabled:!_streamFrameVC.touchDisabled];
-    }
     if(_streamFrameVC.touchDisabled) touchHandler = nil;
     [self configureStreamGestures];
 #endif
@@ -1238,11 +1232,6 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
         [self->touchHandler touchesBegan:targetTouches withEvent:event];
     }
     else if(![_onScreenControls handleTouchDownEvent:targetTouches]) [touchHandler touchesBegan:targetTouches withEvent:event];
-    else if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
-        // A tap waiting for its second touch must not become a mouse click
-        // after the on-screen button has released and cleared its capture set.
-        [(AbsoluteTouchHandler *)sessionTouchHandler cancelTapGestures];
-    }
 #endif
 }
 
@@ -1988,9 +1977,6 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 }
 
 - (void)toggleTouchDisabled:(bool)disabled{
-    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
-        [(AbsoluteTouchHandler *)sessionTouchHandler setTapInputEnabled:!disabled];
-    }
     touchHandler = disabled ? nil : sessionTouchHandler;
     [cameraGestures setInputEnabled:!disabled && touchMode != TouchDisabled];
 }
@@ -2018,9 +2004,6 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 
 - (void)cancelStreamGestures {
 #if !TARGET_OS_TV
-    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
-        [(AbsoluteTouchHandler *)sessionTouchHandler cancelTapGestures];
-    }
     [cameraGestures cancel];
 #endif
     [TouchPadGestureHandler cancel];
@@ -2029,9 +2012,6 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 - (void)cleanUp{
     [self cancelStreamGestures];
 #if !TARGET_OS_TV
-    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
-        [(AbsoluteTouchHandler *)sessionTouchHandler setTapInputEnabled:NO];
-    }
     [cameraGestures setInputEnabled:NO];
 #endif
 #if TARGET_OS_TV

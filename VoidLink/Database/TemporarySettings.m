@@ -20,7 +20,7 @@
     self.parent = settings;
     self.localStreamPanEnabled = settings.localStreamPanEnabled;
     self.localStreamZoomEnabled = settings.localStreamZoomEnabled;
-    self.singlePointDoubleTapRightClick = settings.singlePointDoubleTapRightClick;
+    self.singlePointLongPressRightClick = settings.singlePointLongPressRightClick;
     self.swipeAction = settings.swipeAction ?: @"NONE";
     self.pinchInMovesCursor = settings.pinchInMovesCursor;
     self.pinchOutMovesCursor = settings.pinchOutMovesCursor;
