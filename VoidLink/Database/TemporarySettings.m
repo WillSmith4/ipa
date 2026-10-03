@@ -18,6 +18,8 @@
     self = [self init];
     
     self.parent = settings;
+    self.localStreamPanEnabled = settings.localStreamPanEnabled;
+    self.localStreamZoomEnabled = settings.localStreamZoomEnabled;
     self.swipeAction = settings.swipeAction ?: @"NONE";
     self.pinchInMovesCursor = settings.pinchInMovesCursor;
     self.pinchOutMovesCursor = settings.pinchOutMovesCursor;

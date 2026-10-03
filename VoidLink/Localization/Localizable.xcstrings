@@ -1,6 +1,74 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Zoom Stream Image Help" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow local magnification of the stream image with pinch gestures where available, and with the Magnifier widget. Turn off to block this zoom. The current zoom and saved profile are retained. Existing touch-mode rules and priority of host pinch actions still apply."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwalaj na lokalne powiększanie obrazu strumienia gestem szczypania, gdy jest dostępny, oraz widżetem lupy. Wyłącz, aby zablokować to powiększanie. Aktualne powiększenie i zapisany profil zostają zachowane. Nadal obowiązują reguły trybu dotyku i pierwszeństwo akcji szczypania wysyłanych do komputera."
+          }
+        }
+      }
+    },
+    "Move Stream Image Help" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow local movement of the stream image with two fingers where supported by the current touch mode, and with the Magnifier widget. Turn off to block this movement. The current framing and saved profile are retained. This setting does not control mouse movement or camera actions sent to the host."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwalaj na lokalne przesuwanie obrazu strumienia dwoma palcami, gdy obsługuje to bieżący tryb dotyku, oraz widżetem lupy. Wyłącz, aby zablokować to przesuwanie. Aktualny kadr i zapisany profil zostają zachowane. Ta opcja nie steruje ruchem myszy ani akcjami kamery wysyłanymi do komputera."
+          }
+        }
+      }
+    },
+    "Zoom Stream Image" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoom Stream Image"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiększanie obrazu strumienia"
+          }
+        }
+      }
+    },
+    "Move Stream Image" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move Stream Image"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuwanie obrazu strumienia"
+          }
+        }
+      }
+    },
     "Swipe — Move Cursor" : {
       "extractionState": "manual",
       "localizations": {

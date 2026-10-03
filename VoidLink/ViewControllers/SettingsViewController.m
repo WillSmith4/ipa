@@ -946,6 +946,8 @@
     CGFloat streamingRadialMenuDelay = self.streamingRadialMenuDelaySlider.value;
     NSInteger backgroundSessionTimer = self.backgroundSessionTimerSlider.value == self.backgroundSessionTimerSlider.maximumValue ? (uint32_t) INT16_MAX : (uint32_t)self.backgroundSessionTimerSlider.value;
 
+    currentSettings.localStreamPanEnabled = tempSettings.localStreamPanEnabled;
+    currentSettings.localStreamZoomEnabled = tempSettings.localStreamZoomEnabled;
     currentSettings.swipeAction = tempSettings.swipeAction;
     currentSettings.pinchInMovesCursor = tempSettings.pinchInMovesCursor;
     currentSettings.pinchOutMovesCursor = tempSettings.pinchOutMovesCursor;
@@ -1663,6 +1665,24 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.delayLeftClickStack ofId:@"delayLeftClickStack" to:touchControlSection];
 
     [self addSetting:self.passthroughGesturesStack ofId:@"passthroughGesturesStack" to:touchControlSection];
+
+    NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled"];
+    NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image"];
+    for (NSInteger i = 0; i < viewportFields.count; i++) {
+        UILabel *label = [[UILabel alloc] init];
+        label.text = [LocalizationHelper localizedStringForKey:viewportTitles[i]];
+        label.font = ((UILabel *)self.pinchGestureStack.arrangedSubviews.firstObject).font;
+        UISwitch *toggle = [[UISwitch alloc] init];
+        toggle.accessibilityIdentifier = viewportFields[i];
+        toggle.on = [[tempSettings valueForKey:viewportFields[i]] boolValue];
+        [toggle addTarget:self action:@selector(localStreamViewportChanged:) forControlEvents:UIControlEventValueChanged];
+        UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[label, toggle]];
+        stack.axis = self.pinchGestureStack.axis;
+        stack.spacing = self.pinchGestureStack.spacing;
+        stack.alignment = self.pinchGestureStack.alignment;
+        stack.hasInfoTag = YES;
+        [self addSetting:stack ofId:[viewportFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
+    }
     [self addSetting:self.pinchGestureStack ofId:@"pinchGestureStack" to:touchControlSection];
 
     self.ctrlDownForPinchStack.hasInfoTag = YES;
@@ -2538,6 +2558,12 @@ BOOL isCustomResolution(int resolutionSelected) {
         tipText = [LocalizationHelper localizedStringForKey:@"relativeTouchSlideThresholdStackTip"];
         showOnlineDocAction = true;
         onlineDocLink = [LocalizationHelper localizedStringForKey:@"relativeTouchSlideThresholdStackLink"];
+    }
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamPanEnabledStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Move Stream Image Help"];
+    }
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamZoomEnabledStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Zoom Stream Image Help"];
     }
     if ([@[@"pinchInMovesCursorStack", @"pinchOutMovesCursorStack", @"rotateLeftMovesCursorStack", @"rotateRightMovesCursorStack", @"swipeMovesCursorStack"] containsObject:sender.superview.accessibilityIdentifier]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Gesture cursor help"];
@@ -4918,6 +4944,10 @@ BOOL isCustomResolution(int resolutionSelected) {
             [self refreshGestureActionSelector:selector];
         }];
     }
+}
+
+- (void)localStreamViewportChanged:(UISwitch *)sender {
+    [tempSettings setValue:@(sender.isOn) forKey:sender.accessibilityIdentifier];
 }
 
 - (void)gestureCursorChanged:(UISwitch *)sender {

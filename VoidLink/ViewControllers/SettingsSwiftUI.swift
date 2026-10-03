@@ -206,6 +206,8 @@ private let settingsLegacyHelpByStackIdentifier: [String: SettingsLegacyHelpCont
     "pointerVelocityFactorStack": .init(messageKey: "pointerVelocityFactorStackTip", learnMoreURLKey: "pointerVelocityFactorStackDoc"),
     "delayLeftClickStack": .init(messageKey: "delayLeftClickStackTip", learnMoreURLKey: nil),
     "relativeTouchSlideThresholdStack": .init(messageKey: "relativeTouchSlideThresholdStackTip", learnMoreURLKey: "relativeTouchSlideThresholdStackLink"),
+    "localStreamPanEnabledStack": .init(messageKey: "Move Stream Image Help", learnMoreURLKey: nil),
+    "localStreamZoomEnabledStack": .init(messageKey: "Zoom Stream Image Help", learnMoreURLKey: nil),
     "swipeActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "pinchInMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
     "pinchOutMovesCursorStack": .init(messageKey: "Gesture cursor help", learnMoreURLKey: nil),
@@ -291,6 +293,8 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case pointerVelocityDivider = "pointerVelocityDividerStack"
     case pointerVelocityFactor = "pointerVelocityFactorStack"
     case delayLeftClick = "delayLeftClickStack"
+    case localStreamPanEnabled = "localStreamPanEnabledStack"
+    case localStreamZoomEnabled = "localStreamZoomEnabledStack"
     case passthroughGestures = "passthroughGesturesStack"
     case pinchGesture = "pinchGestureStack"
     case ctrlDownForPinch = "ctrlDownForPinchStack"
@@ -428,6 +432,8 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .pointerVelocityDivider: return "Divider Position"
         case .pointerVelocityFactor: return "Touch Pointer Velocity"
         case .delayLeftClick: return "Delay Left Click"
+        case .localStreamPanEnabled: return "Move Stream Image"
+        case .localStreamZoomEnabled: return "Zoom Stream Image"
         case .passthroughGestures: return "Passthrough Gestures"
         case .pinchGesture: return "Pinch Gesture"
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"
@@ -1205,6 +1211,8 @@ final class SettingsItemRegistry: ObservableObject {
     let pointerVelocityDivider = SettingsItemModel<Double>(id: .pointerVelocityDivider, value: 100)
     let pointerVelocityFactor = SettingsItemModel<Double>(id: .pointerVelocityFactor, value: 100)
     let delayLeftClick = SettingsItemModel<Bool>(id: .delayLeftClick, value: true)
+    let localStreamPanEnabled = SettingsItemModel<Bool>(id: .localStreamPanEnabled, value: true)
+    let localStreamZoomEnabled = SettingsItemModel<Bool>(id: .localStreamZoomEnabled, value: true)
     let passthroughGestures = SettingsItemModel<Bool>(id: .passthroughGestures, value: true)
     let pinchGesture = SettingsItemModel<Bool>(id: .pinchGesture, value: true)
     let ctrlDownForPinch = SettingsItemModel<Bool>(id: .ctrlDownForPinch, value: false)
@@ -1346,6 +1354,8 @@ final class SettingsItemRegistry: ObservableObject {
             pointerVelocityDivider.objectWillChange,
             pointerVelocityFactor.objectWillChange,
             delayLeftClick.objectWillChange,
+            localStreamPanEnabled.objectWillChange,
+            localStreamZoomEnabled.objectWillChange,
             passthroughGestures.objectWillChange,
             pinchGesture.objectWillChange,
             ctrlDownForPinch.objectWillChange,
@@ -1885,6 +1895,8 @@ final class SettingsSession: NSObject, ObservableObject {
             for: CGFloat(snapshot.touchPointerVelocityFactor.doubleValue)
         )
         itemRegistry.delayLeftClick.value = snapshot.delayLeftClick
+        itemRegistry.localStreamPanEnabled.value = snapshot.localStreamPanEnabled
+        itemRegistry.localStreamZoomEnabled.value = snapshot.localStreamZoomEnabled
         itemRegistry.passthroughGestures.value = snapshot.passthroughGestures
         itemRegistry.pinchGesture.value = snapshot.enablePinch
         itemRegistry.ctrlDownForPinch.value = snapshot.ctrlDownForPinch
@@ -2629,6 +2641,8 @@ final class SettingsSession: NSObject, ObservableObject {
                 \.passthroughGestures,
                 isVisible: {$0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue}
             ),
+            toggleItem(\.localStreamPanEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
+            toggleItem(\.localStreamZoomEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
             toggleItem(\.pinchGesture, isVisible: { $0.cameraGesturesAvailable }),
             toggleItem(\.ctrlDownForPinch,
                        isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value },
@@ -4664,6 +4678,8 @@ final class SettingsSession: NSObject, ObservableObject {
         settings.pointerVelocityModeDivider = NSNumber(value: itemRegistry.pointerVelocityDivider.value / 100)
         settings.touchPointerVelocityFactor = NSNumber(value: settingsVelocityFactor(for: itemRegistry.pointerVelocityFactor.value))
         settings.delayLeftClick = itemRegistry.delayLeftClick.value
+        settings.localStreamPanEnabled = itemRegistry.localStreamPanEnabled.value
+        settings.localStreamZoomEnabled = itemRegistry.localStreamZoomEnabled.value
         settings.passthroughGestures = itemRegistry.passthroughGestures.value
         settings.enablePinch = itemRegistry.pinchGesture.value
         settings.ctrlDownForPinch = itemRegistry.ctrlDownForPinch.value

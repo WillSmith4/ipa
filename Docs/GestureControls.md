@@ -28,6 +28,13 @@ one cursor movement per touch sample. Adding/lifting a finger rebases tracking
 without jumping. Cursor speed uses the existing touchpad speed setting and
 retains fractional movement at low speeds.
 
+**Move Stream Image** and **Zoom Stream Image** in Touch Control independently
+enable the existing local viewport pan and zoom. Both default to On, including
+when upgrading. They gate the two-finger scroll-view gestures and the Magnifier
+widget's translation/zoom, under the existing touch-mode and host-pinch priority
+rules. Turning either off retains the current framing and saved profile.
+These switches do not change host mouse or camera bindings.
+
 ## Input and persistence
 
 - `StreamView` owns `StreamGestureController`. Its two UIKit recognizers can
@@ -55,6 +62,9 @@ retains fractional movement at low speeds.
   `TemporarySettings` carries these values into each settings/session snapshot.
 - The v1.2 model adds the swipe action and five cursor switches, preserving the
   v1.1 model and all existing bindings. Both settings front ends load/save them.
+- The v1.3 model adds the two local viewport switches. Migration tests cover
+  both v1.1 and v1.2 stores, preserve existing mouse bindings and verify that
+  pan and zoom can be saved independently across reopening the store.
 - Legacy delayed tap callbacks are invalidated when a gesture takes over.
   Gesture presses run after UIKit has cancelled old touches so a stale mouse
   release cannot interrupt the new drag. The swipe recognizer delays ordinary

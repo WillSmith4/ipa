@@ -458,13 +458,16 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
         _scrollView.allowsKeyboardScrolling = false;
 #endif
     }
-    _scrollView.scrollEnabled = interactionEnabled;
-    _scrollView.panGestureRecognizer.enabled = interactionEnabled;
+    BOOL panEnabled = interactionEnabled && _settings.localStreamPanEnabled;
+    BOOL zoomEnabled = interactionEnabled && _settings.localStreamZoomEnabled;
+    // Keep the container interactive for zoom when only panning is disabled.
+    _scrollView.scrollEnabled = panEnabled || zoomEnabled;
+    _scrollView.panGestureRecognizer.enabled = panEnabled;
 #if !TARGET_OS_TV
     BOOL remotePinchEnabled = _settings.enablePinch &&
         (![_settings.pinchInAction isEqualToString:@"NONE"] || ![_settings.pinchOutAction isEqualToString:@"NONE"] ||
          _settings.pinchInMovesCursor || _settings.pinchOutMovesCursor);
-    _scrollView.pinchGestureRecognizer.enabled = interactionEnabled && !remotePinchEnabled;
+    _scrollView.pinchGestureRecognizer.enabled = zoomEnabled && !remotePinchEnabled;
 #endif
 }
 
@@ -489,6 +492,11 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     if (!_scrollView || _streamView.superview != _scrollView) {
         return;
     }
+
+    // MAGNIFIER widgets use this path instead of UIScrollView's recognizers.
+    if (!_settings.localStreamPanEnabled) translation = CGVectorMake(0, 0);
+    if (!_settings.localStreamZoomEnabled) pinchDelta = 0;
+    if (translation.dx == 0 && translation.dy == 0 && pinchDelta == 0) return;
 
     CGFloat previousZoomScale = MAX(_scrollView.zoomScale, _scrollView.minimumZoomScale);
     CGPoint visibleCenter = CGPointMake(_scrollView.contentOffset.x + CGRectGetWidth(_scrollView.bounds) * 0.5f,
