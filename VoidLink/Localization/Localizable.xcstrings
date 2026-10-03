@@ -245,13 +245,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter a key, simultaneous keys (CTRL+Q or W+D), or MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT. Combine keyboard and mouse with +, for example CTRL+MOUSE_MIDDLE. Mouse actions stay held until the gesture ends."
+            "value": "Enter any VoidLink key name (letters, digits, SPACE, ENTER, arrows, numpad, media keys), F1-F24, a symbol such as + or -, or a combination such as CTRL+Q or W+D. + / PLUS sends Shift+=; = / EQUALS sends the unshifted key. ADD / SUBTRACT are numpad + / -. Use CTRL+PLUS or CTRL++ for Ctrl and plus. Other symbols follow the US keyboard layout. MOUSE_LEFT, MOUSE_MIDDLE and MOUSE_RIGHT can be combined with keys, e.g. CTRL+MOUSE_MIDDLE, and stay held until the gesture ends."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wpisz klawisz, kilka jednocześnie (CTRL+Q lub W+D) albo MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT. Znak + łączy też klawiaturę z myszą, np. CTRL+MOUSE_MIDDLE. Przyciski myszy są trzymane do zakończenia gestu."
+            "value": "Wpisz dowolną nazwę klawisza VoidLink (litery, cyfry, SPACE, ENTER, strzałki, klawiatura numeryczna, multimedia), F1-F24, znak np. + lub - albo kombinację np. CTRL+Q lub W+D. + / PLUS wysyła Shift+=; = / EQUALS wysyła klawisz bez Shift. ADD / SUBTRACT to + / - z klawiatury numerycznej. Ctrl i plus zapiszesz jako CTRL+PLUS lub CTRL++. Pozostałe znaki odpowiadają układowi klawiatury US. MOUSE_LEFT, MOUSE_MIDDLE i MOUSE_RIGHT można łączyć z klawiszami, np. CTRL+MOUSE_MIDDLE; pozostają wciśnięte do zakończenia gestu."
           }
         }
       }

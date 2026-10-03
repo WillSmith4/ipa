@@ -11,21 +11,82 @@ enum GestureAction {
         case mouse(Int32)
     }
 
+    // Symbol input follows the same US-keyboard combinations as KeyboardSupport.
+    // Existing named keys (including numpad ADD/SUBTRACT) keep their exact codes.
+    private static let symbolKeys: [String: [String]] = [
+        "+": ["SHIFT", "EQUALS"], "PLUS": ["SHIFT", "EQUALS"],
+        "-": ["MINUS"], "=": ["EQUALS"],
+        ",": ["COMMA"], ".": ["PERIOD"], "/": ["FORWARD_SLASH"],
+        ";": ["SEMI_COLON"], "'": ["SINGLE_QUOTE"], "`": ["GRAVE_ACCENT"],
+        "[": ["OPEN_BRACKET"], "]": ["CLOSE_BRACKET"], "\\": ["BACKSLASH"],
+        "!": ["SHIFT", "1"], "@": ["SHIFT", "2"], "#": ["SHIFT", "3"],
+        "$": ["SHIFT", "4"], "%": ["SHIFT", "5"], "^": ["SHIFT", "6"],
+        "&": ["SHIFT", "7"], "*": ["SHIFT", "8"], "(": ["SHIFT", "9"],
+        ")": ["SHIFT", "0"], "_": ["SHIFT", "MINUS"],
+        ":": ["SHIFT", "SEMI_COLON"], "\"": ["SHIFT", "SINGLE_QUOTE"],
+        "<": ["SHIFT", "COMMA"], ">": ["SHIFT", "PERIOD"],
+        "?": ["SHIFT", "FORWARD_SLASH"], "~": ["SHIFT", "GRAVE_ACCENT"],
+        "{": ["SHIFT", "OPEN_BRACKET"], "}": ["SHIFT", "CLOSE_BRACKET"],
+        "|": ["SHIFT", "BACKSLASH"]
+    ]
+
+    private static func names(in action: String) -> [String]? {
+        var remaining = action.uppercased().filter { !$0.isWhitespace }[...]
+        var names: [String] = []
+        while !remaining.isEmpty {
+            // A plus where a key is expected is the literal key: +, CTRL++,
+            // ++Q. The following plus, if any, still separates chord members.
+            if remaining.first == "+" {
+                names.append("+")
+                remaining.removeFirst()
+            } else {
+                let name = remaining.prefix { $0 != "+" }
+                names.append(String(name))
+                remaining.removeFirst(name.count)
+            }
+            if remaining.isEmpty { return names }
+            guard remaining.removeFirst() == "+", !remaining.isEmpty else { return nil }
+        }
+        return nil
+    }
+
+    private static func keyCodes(for name: String, mappings: [String: Int16]) -> [Int16]? {
+        guard name != "NULL" else { return nil }
+        if let code = mappings[name] { return [code] }
+        // Complete the function-key range without changing CommandManager's map.
+        if name.hasPrefix("F"), let number = Int(name.dropFirst()),
+           (13...24).contains(number), name == "F\(number)" {
+            return [Int16(0x6F + number)]
+        }
+        guard let expansion = symbolKeys[name] else { return nil }
+        let codes = expansion.compactMap { mappings[$0] }
+        return codes.count == expansion.count ? codes : nil
+    }
+
     static func inputs(_ action: String, mappings: [String: Int16]) -> [Input]? {
         let mouse: [String: Int32] = ["MOUSE_LEFT": 1, "MOUSE_MIDDLE": 2, "MOUSE_RIGHT": 3]
-        let names = action.uppercased().components(separatedBy: "+")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-        guard names.allSatisfy({ mouse[$0] != nil || ($0 != "NULL" && mappings[$0] != nil) }) else { return nil }
-        let keyNames = names.filter { mouse[$0] == nil }
-        let keyboard = keyNames.isEmpty ? [] : keys(keyNames.joined(separator: "+"), mappings: mappings)!
-        return keyboard.map(Input.key) + Array(Set(names.compactMap { mouse[$0] })).sorted().map(Input.mouse)
+        guard let names = names(in: action) else { return nil }
+        var keyboard: [Int16] = []
+        var buttons: [Int32] = []
+        for name in names {
+            if let button = mouse[name] { buttons.append(button) }
+            else if let codes = keyCodes(for: name, mappings: mappings) { keyboard.append(contentsOf: codes) }
+            else { return nil }
+        }
+        return orderedKeys(keyboard).map(Input.key) + Array(Set(buttons)).sorted().map(Input.mouse)
     }
 
     static func keys(_ action: String, mappings: [String: Int16]) -> [Int16]? {
-        let names = action.uppercased().components(separatedBy: "+")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-        guard !names.isEmpty, names.allSatisfy({ $0 != "NULL" && mappings[$0] != nil }) else { return nil }
-        let codes = names.compactMap { mappings[$0] }
+        guard let names = names(in: action) else { return nil }
+        var codes: [Int16] = []
+        for name in names {
+            guard let resolved = keyCodes(for: name, mappings: mappings) else { return nil }
+            codes.append(contentsOf: resolved)
+        }
+        return orderedKeys(codes)
+    }
+
+    private static func orderedKeys(_ codes: [Int16]) -> [Int16] {
         // Modifiers precede ordinary keys, irrespective of the entered order.
         let modifiers: Set<Int16> = [0x10, 0x11, 0x12, 0x5B, 0x5C, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]
         return Array(Set(codes)).sorted {

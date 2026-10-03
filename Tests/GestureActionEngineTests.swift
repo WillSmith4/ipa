@@ -3,7 +3,7 @@ import Foundation
 @main
 struct GestureActionEngineTests {
     static func main() {
-        let mappings: [String: Int16] = ["Q": 0x51, "E": 0x45, "W": 0x57, "D": 0x44, "CTRL": 0x11, "SHIFT": 0x10, "NULL": 0xFF]
+        let mappings = GestureTestKeyboard.keyboardButtonMappings
         var events: [String] = []
         var scroll: [Int16] = []
         let engine = GestureActionEngine(mappings: mappings,
@@ -78,6 +78,56 @@ struct GestureActionEngineTests {
         check(GestureAction.keys("Q+", mappings: mappings) == nil, "Reject empty chord components")
         check(GestureAction.keys("NULL", mappings: mappings) == nil, "Do not send the NULL sentinel")
         check(GestureAction.keys("UNKNOWN", mappings: mappings) == nil, "Reject unsupported keys")
+        for (name, code) in mappings where name != "NULL" {
+            check(GestureAction.inputs(name, mappings: mappings) == [.key(code)], "Keep every existing key assignable: \(name)")
+        }
+        for number in 1...24 {
+            check(GestureAction.keys("F\(number)", mappings: mappings) == [Int16(0x6F + number)], "Support all function keys")
+        }
+        for plus in ["+", "PLUS", "SHIFT+EQUALS", "SHIFT++", "+++", "PLUS+PLUS"] {
+            check(GestureAction.keys(plus, mappings: mappings) == [0x10, 0xBB], "Plus must press Shift and the equals key once: \(plus)")
+        }
+        for minus in ["-", "MINUS"] {
+            check(GestureAction.keys(minus, mappings: mappings) == [0xBD], "Minus must not add a modifier")
+        }
+        check(GestureAction.keys("CTRL++", mappings: mappings) == [0x10, 0x11, 0xBB], "Literal plus can follow a chord separator")
+        check(GestureAction.keys("++CTRL", mappings: mappings) == [0x10, 0x11, 0xBB], "Literal plus can precede a chord separator")
+        check(GestureAction.keys("CTRL+PLUS", mappings: mappings) == [0x10, 0x11, 0xBB], "PLUS is an unambiguous chord name")
+        check(GestureAction.keys("ctrl + -", mappings: mappings) == [0x11, 0xBD], "Minus works in a chord")
+        check(GestureAction.keys("=", mappings: mappings) == [0xBB], "Equals keeps the unshifted physical key available")
+        check(GestureAction.keys("ADD", mappings: mappings) == [0x6B], "Numpad plus remains distinct")
+        check(GestureAction.keys("SUBTRACT", mappings: mappings) == [0x6D], "Numpad minus remains distinct")
+        let plainSymbols: [(String, Int16)] = [(",", 0xBC), (".", 0xBE), ("/", 0xBF), (";", 0xBA),
+            ("'", 0xDE), ("`", 0xC0), ("[", 0xDB), ("]", 0xDD), ("\\", 0xDC)]
+        for (symbol, code) in plainSymbols {
+            check(GestureAction.keys(symbol, mappings: mappings) == [code], "Accept punctuation keys: \(symbol)")
+        }
+        let shiftedSymbols: [(String, Int16)] = [("!", 0x31), ("@", 0x32), ("#", 0x33), ("$", 0x34),
+            ("%", 0x35), ("^", 0x36), ("&", 0x37), ("*", 0x38), ("(", 0x39), (")", 0x30),
+            ("_", 0xBD), (":", 0xBA), ("\"", 0xDE), ("<", 0xBC), (">", 0xBE), ("?", 0xBF),
+            ("~", 0xC0), ("{", 0xDB), ("}", 0xDD), ("|", 0xDC)]
+        for (symbol, code) in shiftedSymbols {
+            check(GestureAction.keys(symbol, mappings: mappings) == [0x10, code], "Shifted symbols use the existing keyboard convention: \(symbol)")
+        }
+        for invalid in ["++", "CTRL+", "CTRL++Q", "CTRL+++", "PLUS+UNKNOWN", "F25", "F013"] {
+            check(GestureAction.inputs(invalid, mappings: mappings) == nil, "Reject malformed chords: \(invalid)")
+        }
+        check(GestureAction.inputs("MOUSE_MIDDLE++", mappings: mappings) == [.key(0x10), .key(0xBB), .mouse(2)], "Symbols also work with mouse bindings")
+        engine.cancel()
+        events.removeAll()
+        engine.move(axis: 0, action: "+", amount: 10, now: 12)
+        check(events == ["16:down", "187:down"], "Pinch plus presses the modifier before the key")
+        engine.move(axis: 0, action: "-", amount: 10, now: 12.01)
+        check(events == ["16:down", "187:down", "187:up", "16:up", "189:down"], "Pinch reversal releases plus and Shift before minus")
+        engine.end(axis: 0)
+        check(events.last == "189:up", "Finger lift releases minus")
+        events.removeAll()
+        engine.move(axis: 0, action: "+", amount: 10, now: 13)
+        engine.move(axis: 1, action: "SHIFT+Q", amount: 10, now: 13)
+        engine.end(axis: 0)
+        check(events == ["16:down", "187:down", "81:down", "187:up"], "Another gesture keeps ownership of Shift after plus ends")
+        engine.cancel()
+        check(events.suffix(2) == ["81:up", "16:up"], "Cancellation releases every remaining key")
         engine.cancel()
         events.removeAll()
         engine.move(axis: 2, action: "W+D", amount: 10, now: 20)

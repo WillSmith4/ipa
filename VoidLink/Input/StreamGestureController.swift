@@ -425,9 +425,12 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         let alert = UIAlertController(title: title, message: "Gesture key binding help".localized, preferredStyle: .alert)
         alert.addTextField {
             $0.text = GestureAction.presets.contains(current) ? "" : current
-            $0.placeholder = "W+D / CTRL+Q / MOUSE_MIDDLE"
+            $0.placeholder = "+ / - / CTRL+PLUS / MOUSE_MIDDLE"
             $0.autocapitalizationType = .allCharacters
             $0.autocorrectionType = .no
+            $0.spellCheckingType = .no
+            $0.smartDashesType = .no
+            $0.smartQuotesType = .no
         }
         alert.addAction(UIAlertAction(title: "Cancel".localized, style: .cancel) { _ in completion(current) })
         alert.addAction(UIAlertAction(title: "Save".localized, style: .default) { [weak presenter, weak alert] _ in

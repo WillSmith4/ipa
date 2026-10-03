@@ -8,6 +8,15 @@ using the existing `CommandManager` key names. `W+D` holds both keys together;
 `CTRL+Q` holds the modifier and key. `MOUSE_LEFT`, `MOUSE_MIDDLE` and `MOUSE_RIGHT`
 hold mouse buttons, and can be combined with keys, e.g. `CTRL+MOUSE_MIDDLE`.
 The Edit segment changes a chord.
+Every existing key name is accepted, including letters, digits, navigation,
+media and numpad keys, and the gesture editor also accepts F13-F24. Punctuation
+can be entered directly: `-` is MINUS, `=` is EQUALS, and `+` / `PLUS` is
+SHIFT+EQUALS, consistent with KeyboardSupport's US-symbol input. `ADD` and
+`SUBTRACT` retain their distinct numpad codes. Other shifted symbols also add
+SHIFT, e.g. `?` is SHIFT+FORWARD_SLASH. Use `CTRL+PLUS` or `CTRL++` to combine
+Ctrl with plus; `CTRL+-` combines Ctrl with minus. A trailing separator such as
+`CTRL+` is still rejected. Smart quotes/dashes are disabled in the editor so
+typed punctuation is preserved. These additions do not change existing bindings.
 Pinch and rotation have independent sensitivity controls. Ctrl-modified pinch
 scrolling remains an opt-in option.
 
@@ -157,3 +166,6 @@ click without lifting; movement before the deadline must start only the swipe
 binding and must not generate another right click at the hold deadline.
 Test dragging and long press with Delay Left Click both On and Off.
 The IPA is unsigned and must be signed for installation on an iOS device.
+The gesture tests load the actual CommandManager key map and verify that every
+existing key name still works, along with symbol parsing, F1-F24, modifier
+ordering, plus/minus reversal, cancellation and overlapping Shift ownership.
