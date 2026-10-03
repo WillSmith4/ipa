@@ -31,7 +31,10 @@ vectors drives relative horizontal mouse motion, like a camera's yaw input.
 Clockwise twist sends positive mouse X; counterclockwise sends negative X.
 A complete circle keeps the same direction throughout every quadrant. Finger
 spacing, choice of pivot and translation of the whole hand do not affect the
-amount of rotation. Crossing +/-180 degrees follows the short arc without a jump.
+horizontal rotation. During an active rotation, moving both fingers up/down
+also moves the mouse vertically, following the centre between the fingers.
+This still works while the twist angle is steady. A centred twist has no vertical
+translation. Crossing +/-180 degrees follows the short arc without a jump.
 The mapping uses 100 mouse-motion units per radian, multiplied by Rotation
 Sensitivity and the existing pointer speed (including its 1.35 factor).
 Fractional output is retained across samples. The game's mouse sensitivity and
@@ -46,7 +49,8 @@ Touch/pen rotation fields describe contact or stylus orientation, not camera yaw
 VoidLink cannot set the remote game's target_yaw or lerp_angle directly.
 
 Pinch still follows the centre between both fingers. When both cursor gestures
-are active, rotation takes priority and sends one horizontal movement per sample.
+are active, rotation takes priority and sends one combined mouse movement per sample:
+horizontal motion from twist and vertical motion from the two-finger centre.
 Adding/lifting a finger rebases tracking without jumping.
 
 **Move Stream Image** and **Zoom Stream Image** in Touch Control independently
@@ -135,7 +139,7 @@ bindings, and restart. Check native/relative/absolute modes, ordinary two-finger
 scrolling, widget/edge gestures, and a fresh install with no purchase receipt.
 Also check Swipe + MOUSE_MIDDLE with Move Cursor on/off, W+D, mixed chords,
 simultaneous pinch/rotation with the same button, full circles in both directions,
-pure hand translation (no rotation output),
+vertical hand translation during rotation (vertical mouse motion with unchanged yaw),
 and taps/double taps when Swipe is Off and when it is enabled. In Single Point,
 verify double tap sends only one right click, single tap sends one left click,
 the switch Off restores previous behavior, and a cancelled tap never fires later.

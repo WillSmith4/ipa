@@ -334,8 +334,10 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             for move in self.queuedMoves { self.applyMove(axis: move.axis, delta: move.delta) }
             self.queuedMoves.removeAll()
             if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
+                // Keep twist-driven yaw and add vertical translation of the
+                // two-finger centre, including while the twist angle is steady.
                 let motion = self.activeActions[1] != nil && self.cursorEnabled[2]
-                    ? (x: self.rotationCursorDeltaX, y: 0.0) : self.cursorDelta
+                    ? (x: self.rotationCursorDeltaX, y: self.cursorDelta.y) : self.cursorDelta
                 let delta = self.pointer.cursor(dx: motion.x, dy: motion.y, speed: self.pointerSpeed)
                 if delta.0 != 0 || delta.1 != 0 { LiSendMouseMoveEvent(delta.0, delta.1) }
             }

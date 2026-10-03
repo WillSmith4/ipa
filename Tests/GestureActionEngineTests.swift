@@ -154,20 +154,30 @@ struct GestureActionEngineTests {
         // Exercise the actual angle -> relative mouse path. Unlike following a
         // finger's XY position, a continuous twist cannot reverse direction as
         // that finger travels around the lower half of its circle.
-        func orbit(_ angles: [Double], radius: Double = 100, sensitivity: Double = 1) -> [Int] {
+        func orbit(_ angles: [Double], radius: Double = 100, sensitivity: Double = 1, vertical: Double = 0) -> [Int] {
             var twist = GestureRotationMotion()
             var mouse = GesturePointerMotion()
+            var centre = GesturePointerMotion()
             return angles.enumerated().compactMap { index, angle in
                 let radians = angle * .pi / 180
                 let x = cos(radians) * radius, y = sin(radians) * radius
                 // Move both fingers symmetrically and translate the whole hand.
                 let offset = Double(index) * 3
-                let points: [Point] = [.init(id: 1, x: offset - x, y: -offset - y),
-                                       .init(id: 2, x: offset + x, y: -offset + y)]
+                let height = Double(index) * vertical
+                let points: [Point] = [.init(id: 1, x: offset - x, y: height - y),
+                                       .init(id: 2, x: offset + x, y: height + y)]
+                let translation = centre.sample(points)
                 guard let delta = twist.sample(points) else { return nil }
                 let dx = GestureRotationMotion.mouseDeltaX(degrees: delta, sensitivity: sensitivity)
-                let movement = mouse.cursor(dx: dx, dy: 0, speed: 1)
-                check(movement.1 == 0, "Twist controls yaw without introducing pitch")
+                let movement = mouse.cursor(dx: dx, dy: translation.y, speed: 1)
+                if vertical == 0 {
+                    check(movement.1 == 0, "A centred twist cannot add vertical cursor motion")
+                } else {
+                    check(vertical < 0 ? movement.1 < 0 : movement.1 > 0,
+                          "Both fingers moving up/down must move the cursor in the same vertical direction")
+                    check(abs(Double(movement.1) - vertical * 1.35) < 1.01,
+                          "Vertical speed follows hand translation, without counting both fingers twice")
+                }
                 return Int(movement.0)
             }
         }
@@ -192,6 +202,13 @@ struct GestureActionEngineTests {
         check(abs(faster - 2 * clockwise.reduce(0, +)) <= 1, "Rotation sensitivity scales mouse distance")
         check(orbit(fullTurn, sensitivity: 0).allSatisfy { $0 == 0 }, "Zero rotation sensitivity suppresses mouse movement")
         check(orbit([45, 45, 45, 45]).allSatisfy { $0 == 0 }, "Hand translation alone does not rotate the camera")
+        for vertical in [-10.0, 10.0] {
+            let combined = orbit(fullTurn, vertical: vertical)
+            check(combined.allSatisfy { $0 > 0 } && abs(combined.reduce(0, +) - clockwise.reduce(0, +)) <= 1,
+                  "Adding vertical hand movement preserves the improved horizontal rotation")
+            check(orbit([0, 5, 5, 5], vertical: vertical).dropFirst().allSatisfy { $0 == 0 },
+                  "After rotation begins, vertical movement continues when the twist angle stops changing")
+        }
         check(GestureRotationMotion.mouseDeltaX(degrees: .nan, sensitivity: 1) == 0, "Reject invalid angles")
         check(GestureRotationMotion.mouseDeltaX(degrees: 10, sensitivity: .infinity) == 0, "Reject invalid sensitivity")
 
