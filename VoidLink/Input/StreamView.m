@@ -1238,6 +1238,11 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
         [self->touchHandler touchesBegan:targetTouches withEvent:event];
     }
     else if(![_onScreenControls handleTouchDownEvent:targetTouches]) [touchHandler touchesBegan:targetTouches withEvent:event];
+    else if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
+        // A tap waiting for its second touch must not become a mouse click
+        // after the on-screen button has released and cleared its capture set.
+        [(AbsoluteTouchHandler *)sessionTouchHandler cancelTapGestures];
+    }
 #endif
 }
 
