@@ -1124,7 +1124,8 @@ static NSMutableSet* hostList;
 }
 
 - (BOOL)isApplicationLaunchBusy {
-    return _launchLinkInProgress || [_loadingFrame isShown];
+    UIViewController *sheet = self.view.window.rootViewController.presentedViewController;
+    return _launchLinkInProgress || [_loadingFrame isShown] || sheet.isBeingPresented || sheet.isBeingDismissed;
 }
 
 - (void)launchApplicationFromURL:(NSURL *)url {
@@ -1141,11 +1142,18 @@ static NSMutableSet* hostList;
     TemporaryHost *host = nil;
     @synchronized(hostList) {
         for (TemporaryHost *candidate in hostList) {
-            if ([candidate.uuid caseInsensitiveCompare:target.hostUUID] == NSOrderedSame) { host = candidate; break; }
+            if (candidate.uuid.length && [candidate.uuid caseInsensitiveCompare:target.hostUUID] == NSOrderedSame) { host = candidate; break; }
         }
     }
     if (!host || !host.serverCert.length) {
         [ApplicationShortcutActions showMessage:@"This launch URL requires a host already paired with this device." in:self];
+        return;
+    }
+    // A cold launch can display the About sheet; a warm launch can arrive from
+    // the icon/profile flow. Dismiss those sheets before pushing the stream.
+    UIViewController *root = self.view.window.rootViewController;
+    if (root.presentedViewController) {
+        [root dismissViewControllerAnimated:NO completion:^{ [self launchApplicationFromURL:url]; }];
         return;
     }
     _launchLinkInProgress = YES;
