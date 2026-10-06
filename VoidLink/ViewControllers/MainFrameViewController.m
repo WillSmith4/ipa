@@ -26,6 +26,7 @@
 #import "TemporaryApp.h"
 #import "IdManager.h"
 #import "ConnectionHelper.h"
+#import "DiscoveryWorker.h"
 #import "LocalizationHelper.h"
 #import "Plot.h"
 #if !TARGET_OS_TV
@@ -96,6 +97,7 @@ static NSArray<UIBarButtonItem *> *VLBarButtonItems(UIBarButtonItem *first, UIBa
     id navBarAppearanceStandard;
     bool _viewJustAppeared;
     TemporaryApp * launchedApp;
+    BOOL _launchLinkInProgress;
 
     NSTimer *_foregroundHostUpdateTimer;
     
@@ -1121,6 +1123,82 @@ static NSMutableSet* hostList;
     [self performSegueWithIdentifier:@"createStreamFrame" sender:nil];
 }
 
+- (BOOL)isApplicationLaunchBusy {
+    return _launchLinkInProgress || [_loadingFrame isShown];
+}
+
+- (void)launchApplicationFromURL:(NSURL *)url {
+#if !TARGET_OS_TV
+    ApplicationLaunchLink *target = [ApplicationLaunchLink parse:url];
+    if (!target) {
+        [ApplicationShortcutActions showMessage:@"Invalid VoidLink launch URL. Copy the URL from the application's menu." in:self];
+        return;
+    }
+    if ([self isApplicationLaunchBusy] || self.revealViewController.isStreaming) {
+        [ApplicationShortcutActions showMessage:@"Finish the current connection or stream before opening another launch URL." in:self];
+        return;
+    }
+    TemporaryHost *host = nil;
+    @synchronized(hostList) {
+        for (TemporaryHost *candidate in hostList) {
+            if ([candidate.uuid caseInsensitiveCompare:target.hostUUID] == NSOrderedSame) { host = candidate; break; }
+        }
+    }
+    if (!host || !host.serverCert.length) {
+        [ApplicationShortcutActions showMessage:@"This launch URL requires a host already paired with this device." in:self];
+        return;
+    }
+    _launchLinkInProgress = YES;
+    [_appManager stopRetrieving];
+    [self closeSettingViewAnimated:NO];
+    [self showLoadingFrame:^{
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+            // Resolve the saved host's current addresses and refresh pairing and
+            // app IDs using the same certificate-pinned transport as the UI.
+            [self->_discMan pauseDiscoveryForHost:host];
+            DiscoveryWorker *worker = [[DiscoveryWorker alloc] initWithHost:host uniqueId:self->_uniqueId];
+            [worker discoverHost];
+            NSString *errorKey = nil;
+            AppListResponse *response = nil;
+            if (host.state != StateOnline) errorKey = @"The host is offline or unreachable. Turn it on and try the launch URL again.";
+            else if (host.pairState != PairStatePaired) errorKey = @"This launch URL requires a host already paired with this device.";
+            else {
+                HttpManager *manager = [[HttpManager alloc] initWithHost:host];
+                response = [[AppListResponse alloc] init];
+                [manager executeRequestSynchronously:[HttpRequest requestForResponse:response withUrlRequest:[manager newAppListRequest]]];
+                if (![response isStatusOk] || ![response getAppList]) errorKey = @"Unable to load applications from this host. Try again.";
+            }
+            [self->_discMan resumeDiscoveryForHost:host];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSString *message = errorKey;
+                TemporaryApp *app = nil;
+                if (!message) {
+                    [self updateApplist:[response getAppList] forHost:host];
+                    for (TemporaryApp *candidate in host.appList) {
+                        if ([candidate.id isEqualToString:target.appID]) { app = candidate; break; }
+                    }
+                    if (!app) message = @"This application is no longer available on the host. Copy a new launch URL.";
+                }
+                [self hideLoadingFrame:^{
+                    self->_launchLinkInProgress = NO;
+                    if (UIApplication.sharedApplication.applicationState != UIApplicationStateActive) return;
+                    if (message) { [ApplicationShortcutActions showMessage:message in:self]; return; }
+                    self->_selectedHost = host;
+                    [self updateAppsForHost:host];
+                    TemporaryApp *running = [self findRunningApp:host];
+                    if (host.currentGame.intValue != 0 && ![host.currentGame isEqualToString:app.id]) {
+                        if (running) [self appLongClicked:app view:self.view];
+                        else [ApplicationShortcutActions showMessage:@"Another application is running on the host. Close it before using this launch URL." in:self];
+                    } else {
+                        [self launchApp:app];
+                    }
+                }];
+            });
+        });
+    }];
+#endif
+}
+
 - (void)appLongClicked:(TemporaryApp *)app view:(UIView *)view {
     Log(LOG_D, @"Long clicked app: %@", app.name);
     
@@ -1224,6 +1302,9 @@ static NSMutableSet* hostList;
         }]];
     }
     
+#if !TARGET_OS_TV
+    [ApplicationShortcutActions addActionsTo:alertController app:app presenter:self];
+#endif
     [alertController addAction:[UIAlertAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"Cancel"] style:UIAlertActionStyleCancel handler:nil]];
 
     // these two lines are required for iPad support of UIAlertSheet
@@ -2303,6 +2384,7 @@ static NSMutableSet* hostList;
 
 -(void)beginForegroundRefresh
 {
+    if (_launchLinkInProgress) return;
     if (!_background || _viewJustAppeared) {
         // This will kick off box art caching
 
@@ -2359,6 +2441,9 @@ static NSMutableSet* hostList;
 {
     _background = NO;
     [self applyThemeToNavigationControls];
+#if !TARGET_OS_TV
+    [ApplicationLaunchRouter.shared drain];
+#endif
     
     [self beginForegroundRefresh];
     
@@ -2449,6 +2534,9 @@ static NSMutableSet* hostList;
         if(ControllerNavigator.enabled) [ControllerNavigator start];
 
     }
+#if !TARGET_OS_TV
+    [ApplicationLaunchRouter.shared attach:self];
+#endif
 }
 
 - (void)viewWillDisappear:(BOOL)animated{

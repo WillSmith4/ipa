@@ -299,6 +299,10 @@
 		CA6100000000000000000003 /* GestureActionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6100000000000000000001 /* GestureActionEngine.swift */; };
 		CA6100000000000000000012 /* StreamGestureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6100000000000000000011 /* StreamGestureController.swift */; };
 		CA6100000000000000000013 /* StreamGestureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6100000000000000000011 /* StreamGestureController.swift */; };
+		CA6200000000000000000112 /* ApplicationShortcutModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6200000000000000000111 /* ApplicationShortcutModels.swift */; };
+		CA6200000000000000000212 /* ApplicationLaunchRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6200000000000000000211 /* ApplicationLaunchRouter.swift */; };
+		CA6200000000000000000312 /* ApplicationShortcutActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6200000000000000000311 /* ApplicationShortcutActions.swift */; };
+		CA6200000000000000000412 /* WebClipProfileServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6200000000000000000411 /* WebClipProfileServer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -590,6 +594,10 @@
 		CA6100000000000000000024 /* VoidLink v1.4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.4.xcdatamodel"; sourceTree = "<group>"; };
 		CA6100000000000000000025 /* VoidLink v1.5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.5.xcdatamodel"; sourceTree = "<group>"; };
 		CA6100000000000000000026 /* VoidLink v1.6.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.6.xcdatamodel"; sourceTree = "<group>"; };
+		CA6200000000000000000111 /* ApplicationShortcutModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationShortcutModels.swift; sourceTree = "<group>"; };
+		CA6200000000000000000211 /* ApplicationLaunchRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationLaunchRouter.swift; sourceTree = "<group>"; };
+		CA6200000000000000000311 /* ApplicationShortcutActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationShortcutActions.swift; sourceTree = "<group>"; };
+		CA6200000000000000000411 /* WebClipProfileServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebClipProfileServer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -875,6 +883,10 @@
 		FB290CF919B2C406004C83CF /* VoidLink */ = {
 			isa = PBXGroup;
 			children = (
+				CA6200000000000000000411 /* WebClipProfileServer.swift */,
+				CA6200000000000000000311 /* ApplicationShortcutActions.swift */,
+				CA6200000000000000000211 /* ApplicationLaunchRouter.swift */,
+				CA6200000000000000000111 /* ApplicationShortcutModels.swift */,
 				97E20DEB2E21654B000D5DCA /* Stats */,
 				97E20DE82E216532000D5DCA /* SceneDelegate.h */,
 				97E20DE92E216532000D5DCA /* SceneDelegate.m */,
@@ -1521,6 +1533,10 @@
 				18951D1D2EBB6D2300A86E12 /* TouchPadGestureHandler.swift in Sources */,
 				CA6100000000000000000012 /* StreamGestureController.swift in Sources */,
 				CA6100000000000000000002 /* GestureActionEngine.swift in Sources */,
+				CA6200000000000000000412 /* WebClipProfileServer.swift in Sources */,
+				CA6200000000000000000312 /* ApplicationShortcutActions.swift in Sources */,
+				CA6200000000000000000212 /* ApplicationLaunchRouter.swift in Sources */,
+				CA6200000000000000000112 /* ApplicationShortcutModels.swift in Sources */,
 				97E20DE12E2164A9000D5DCA /* FloatBuffer.m in Sources */,
 				18FCADAF2ECAC23200787A96 /* PencilHandler.swift in Sources */,
 				97E20DE22E2164A9000D5DCA /* PaddedLabel.m in Sources */,

@@ -32,6 +32,9 @@ jobs:
       - name: Test localization fallback and pairing PIN
         run: bash BuildScripts/test-localization.sh
 
+      - name: Test app launch URLs, icons and Web Clips
+        run: bash BuildScripts/test-app-shortcuts.sh
+
       - name: Build unsigned device archive
         run: |
           set -o pipefail

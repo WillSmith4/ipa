@@ -93,9 +93,15 @@ static NSString* DB_NAME = @"Limelight_iOS.sqlite";
         [self.window makeKeyAndVisible];
     }
     
+    NSURL *launchURL = launchOptions[UIApplicationLaunchOptionsURLKey];
+    if (launchURL) [ApplicationLaunchRouter.shared receive:launchURL];
     return YES;
 }
 
+
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options {
+    return [ApplicationLaunchRouter.shared receive:url];
+}
 
 - (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL succeeded))completionHandler {
     _pcUuidToLoad = (NSString*)[shortcutItem.userInfo objectForKey:@"UUID"];
@@ -152,6 +158,9 @@ static NSString* DB_NAME = @"Limelight_iOS.sqlite";
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
+#if !TARGET_OS_TV
+    [ApplicationLaunchRouter.shared drain];
+#endif
     // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
 }
 

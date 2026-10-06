@@ -47,6 +47,8 @@
 - (void)quitApp:(TemporaryApp* )app;
 - (void)quitLaunchedApp;
 - (void)launchApp:(TemporaryApp *)app;
+- (void)launchApplicationFromURL:(NSURL *)url NS_SWIFT_NAME(launchApplication(from:));
+- (BOOL)isApplicationLaunchBusy;
 - (void)quitRunningAppAndStart:(TemporaryApp *)app;
 - (NSInteger)requestForBitrate:(NSInteger)bitrateKbps;
 

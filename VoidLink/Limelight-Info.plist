@@ -28,6 +28,17 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.voidlink.launch</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>voidlink</string></array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+		</dict>
+	</array>
 	<key>GCSupportedGameControllers</key>
 	<array>
 		<dict>

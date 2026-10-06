@@ -1,6 +1,448 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "App icon ready. Choose where to save the PNG file.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App icon ready. Choose where to save the PNG file."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikona jest gotowa. Wybierz miejsce zapisu pliku PNG."
+          }
+        }
+      }
+    },
+    "Copy Launch URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Launch URL"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiuj URL uruchamiania"
+          }
+        }
+      }
+    },
+    "Save App Icon": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save App Icon"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz ikonę aplikacji"
+          }
+        }
+      }
+    },
+    "Create App Clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create App Clip"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stwórz Wycinek Aplikacji"
+          }
+        }
+      }
+    },
+    "Launch URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch URL"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL uruchamiania"
+          }
+        }
+      }
+    },
+    "Launch Application in VoidLink": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch Application in VoidLink"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchom aplikację w VoidLink"
+          }
+        }
+      }
+    },
+    "Launch application at ${launchURL}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch application at ${launchURL}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchom aplikację przez ${launchURL}"
+          }
+        }
+      }
+    },
+    "Launch an application on a paired host. In VoidLink, hold its banner and choose Copy Launch URL, then paste that URL here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch an application on a paired host. In VoidLink, hold its banner and choose Copy Launch URL, then paste that URL here."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchom aplikację na sparowanym hoście. W VoidLink przytrzymaj jej baner i wybierz Kopiuj URL uruchamiania, a następnie wklej tutaj ten URL."
+          }
+        }
+      }
+    },
+    "Launch URL copied. Paste it into the Launch Application in VoidLink action in Shortcuts, or use Open URLs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch URL copied. Paste it into the Launch Application in VoidLink action in Shortcuts, or use Open URLs."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL uruchamiania skopiowany. Wklej go do akcji Uruchom aplikację w VoidLink w Skrótach lub użyj akcji Otwórz adresy URL."
+          }
+        }
+      }
+    },
+    "Invalid VoidLink launch URL. Copy the URL from the application's menu.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid VoidLink launch URL. Copy the URL from the application's menu."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieprawidłowy URL uruchamiania VoidLink. Skopiuj URL z menu aplikacji."
+          }
+        }
+      }
+    },
+    "Unable to download the app icon. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to download the app icon. Check your connection and try again."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się pobrać ikony aplikacji. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "No matching cover was found in GameDB. Choose an image from Files to use as the app icon.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching cover was found in GameDB. Choose an image from Files to use as the app icon."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie znaleziono pasującej okładki w GameDB. Wybierz zdjęcie z Plików jako ikonę aplikacji."
+          }
+        }
+      }
+    },
+    "The downloaded app icon is not a valid image.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded app icon is not a valid image."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik ikony nie zawiera poprawnego obrazu lub jest zbyt duży."
+          }
+        }
+      }
+    },
+    "Unable to open the Web Clip profile. Please try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to open the Web Clip profile. Please try again."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się otworzyć profilu wycinka aplikacji. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Launch %@ in VoidLink.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch %@ in VoidLink."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchamia %@ w VoidLink."
+          }
+        }
+      }
+    },
+    "Finish the current connection or stream before opening another launch URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish the current connection or stream before opening another launch URL."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ bieżące łączenie lub strumień przed otwarciem kolejnego URL uruchamiania."
+          }
+        }
+      }
+    },
+    "This launch URL requires a host already paired with this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This launch URL requires a host already paired with this device."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten URL wymaga hosta sparowanego wcześniej z tym urządzeniem."
+          }
+        }
+      }
+    },
+    "The host is offline or unreachable. Turn it on and try the launch URL again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The host is offline or unreachable. Turn it on and try the launch URL again."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Host jest wyłączony lub niedostępny. Włącz go i ponownie otwórz URL uruchamiania."
+          }
+        }
+      }
+    },
+    "Unable to load applications from this host. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to load applications from this host. Try again."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się pobrać listy aplikacji z hosta. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "This application is no longer available on the host. Copy a new launch URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This application is no longer available on the host. Copy a new launch URL."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta aplikacja nie jest już dostępna na hoście. Skopiuj nowy URL uruchamiania."
+          }
+        }
+      }
+    },
+    "Another application is running on the host. Close it before using this launch URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another application is running on the host. Close it before using this launch URL."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na hoście działa inna aplikacja. Zamknij ją przed użyciem tego URL uruchamiania."
+          }
+        }
+      }
+    },
+    "Finding the app icon automatically…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding the app icon automatically…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatyczne wyszukiwanie ikony aplikacji…"
+          }
+        }
+      }
+    },
+    "Install Web Clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install Web Clip"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zainstaluj wycinek aplikacji"
+          }
+        }
+      }
+    },
+    "Save Web Clip Profile": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Web Clip Profile"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz profil wycinka aplikacji"
+          }
+        }
+      }
+    },
+    "Choose Image": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Image"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz zdjęcie"
+          }
+        }
+      }
+    },
+    "The Web Clip opens this application in VoidLink. Tap Install Web Clip, allow the profile download, then open Settings > Profile Downloaded > Install. You can remove the icon or profile later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Web Clip opens this application in VoidLink. Tap Install Web Clip, allow the profile download, then open Settings > Profile Downloaded > Install. You can remove the icon or profile later."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycinek uruchomi tę aplikację w VoidLink. Wybierz Zainstaluj wycinek aplikacji, zezwól na pobranie profilu, a następnie otwórz Ustawienia > Profil pobrany > Zainstaluj. Ikonę lub profil możesz później usunąć."
+          }
+        }
+      }
+    },
     "Long Press Action Help" : {
       "extractionState": "manual",
       "localizations": {

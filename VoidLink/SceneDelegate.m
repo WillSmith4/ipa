@@ -1,5 +1,6 @@
 #import "SceneDelegate.h"
 #import "StreamFrameViewController.h"
+#import "VoidLink-Swift.h"
 #import <GameController/GameController.h>
 #if TARGET_OS_IOS && !TARGET_OS_MACCATALYST && !TARGET_OS_VISION && __has_include(<UIKit/UISceneAccessory.h>)
 #import <UIKit/UISceneAccessory.h>
@@ -303,6 +304,11 @@ static BOOL VLIsExternalDisplaySession(UISceneSession *session) {
         }
 #endif
         Log(LOG_I, @"SceneDelegate: Main app scene connected.");
+#if !TARGET_OS_TV
+        for (UIOpenURLContext *context in connectionOptions.URLContexts) {
+            [ApplicationLaunchRouter.shared receive:context.URL];
+        }
+#endif
 
     } else if (VLIsExternalDisplaySession(session)) {
         Log(LOG_I, @"SceneDelegate: External display scene connecting for screen: %@", ((UIWindowScene *)scene).screen.description);
@@ -379,10 +385,21 @@ static BOOL VLIsExternalDisplaySession(UISceneSession *session) {
 }
 
 - (void)sceneDidBecomeActive:(UIScene *)scene {
+#if !TARGET_OS_TV
+    if (scene == self.window.windowScene) [ApplicationLaunchRouter.shared drain];
+#endif
 #if TARGET_OS_TV
     if (scene == self.window.windowScene &&
         [self.window.rootViewController isKindOfClass:[VoidLinkControllerRootViewController class]]) {
         [(VoidLinkControllerRootViewController *)self.window.rootViewController forceFocusSinkUpdate];
+    }
+#endif
+}
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts {
+#if !TARGET_OS_TV
+    for (UIOpenURLContext *context in URLContexts) {
+        [ApplicationLaunchRouter.shared receive:context.URL];
     }
 #endif
 }
