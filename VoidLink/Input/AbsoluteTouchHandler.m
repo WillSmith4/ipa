@@ -63,6 +63,11 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     
     bool longPressTriggered;
     GestureLongPressAction *longPressAction;
+    GestureDoubleTapDragAction *doubleTapDragAction;
+    NSTimeInterval doubleTapTimestamp;
+    CGPoint doubleTapLocation;
+    BOOL pendingLeftClick;
+    BOOL pendingLeftRelease;
 }
 
 - (id)initWithView:(StreamView*)view andSettings:(TemporarySettings*)settings {
@@ -74,6 +79,7 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     
     _delayMouseLeftClick = settings.delayLeftClick;
     longPressAction = [[GestureLongPressAction alloc] initWithAction:settings.longPressAction ?: @"MOUSE_RIGHT"];
+    doubleTapDragAction = [[GestureDoubleTapDragAction alloc] initWithAction:settings.doubleTapDragAction ?: @"MOUSE_LEFT"];
     // _delayMouseLeftClick = true;
     dragButtonDown = false;
     
@@ -88,6 +94,23 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     leftClickDelay = ((CGFloat)settings.leftClickDelayMs.intValue)/1000;
     
     return self;
+}
+
+- (BOOL)isDoubleTapDragging {
+    return doubleTapDragAction.dragging;
+}
+
+- (void)beginDoubleTapDrag {
+    // Complete a delayed first click before starting the second touch's input.
+    // Its queued release must never interrupt the new drag or custom chord.
+    if (pendingLeftClick) LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
+    if (pendingLeftClick || pendingLeftRelease) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
+    pendingLeftClick = pendingLeftRelease = NO;
+    inputGeneration++;
+    [longPressTimer invalidate];
+    longPressTimer = nil;
+    [longPressAction cancel];
+    [doubleTapDragAction begin];
 }
 
 - (void)onLongPressStart:(NSTimer*)timer {
@@ -112,6 +135,8 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     longPressTriggered = false;
 
     if([UITouchUtil touchesIn:streamView from:event].count>=2){
+        [doubleTapDragAction cancel];
+        doubleTapTimestamp = 0;
         multiTouchesDetected = true;
         [longPressTimer invalidate];
         longPressTimer = nil;
@@ -134,6 +159,11 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     
     capturedTouch = [touches anyObject];
     CGPoint touchLocation = [capturedTouch locationInView:streamView];
+    NSTimeInterval now = CACurrentMediaTime();
+    BOOL doubleTapDrag = doubleTapDragAction.enabled &&
+        [GestureDoubleTapDetection isQuickTapFrom:doubleTapLocation to:touchLocation elapsed:now - doubleTapTimestamp];
+    doubleTapTimestamp = now;
+    doubleTapLocation = touchLocation;
     
     touchBeganTimeStamp = capturedTouch.timestamp;
     
@@ -145,12 +175,15 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     }
     
     // Press the left button down
-    if(!_delayMouseLeftClick){
+    if(doubleTapDrag) {
+        [self beginDoubleTapDrag];
+    }
+    else if(!_delayMouseLeftClick){
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT); //deprecated
     }
     
     // Off disables the existing stationary-hold timer.
-    if (longPressAction.enabled) {
+    if (longPressAction.enabled && !doubleTapDrag) {
         longPressTimer = [NSTimer timerWithTimeInterval:LONG_PRESS_ACTIVATION_DELAY
                                                         target:self
                                                       selector:@selector(onLongPressStart:)
@@ -201,6 +234,12 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     if(![currentTouches containsObject:capturedTouch]) return;
     
     movingTouchLocation = [capturedTouch locationInView:streamView];
+    if (doubleTapDragAction.dragging) {
+        // Single Point keeps absolute pointer movement, with the selected drag
+        // input already held. Do not start a second long-press/swipe action.
+        [streamView updateCursorLocation:movingTouchLocation isMouse:NO];
+        return;
+    }
     
     if (sqrt(pow((movingTouchLocation.x / streamView.bounds.size.width) - (lastTouchDownLocation.x / streamView.bounds.size.width), 2) +
              pow((movingTouchLocation.y / streamView.bounds.size.height) - (lastTouchDownLocation.y / streamView.bounds.size.height), 2)) > LONG_PRESS_ACTIVATION_DELTA) {
@@ -223,6 +262,14 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     [longPressAction cancel];
     [longPressTimer invalidate];
     longPressTimer = nil;
+    if (doubleTapDragAction.dragging && [touches containsObject:capturedTouch]) {
+        [doubleTapDragAction cancel];
+        lastTouchUp = capturedTouch;
+        lastTouchUpLocation = [capturedTouch locationInView:streamView];
+        capturedTouch = nil;
+        dragButtonDown = false;
+        return;
+    }
     
     
     if(touchPointSpawnedAtUpperScreenEdge) return; // we're done here. this touch event will not be sent to the remote PC.
@@ -272,6 +319,9 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
     inputGeneration++;
+    [doubleTapDragAction cancel];
+    doubleTapTimestamp = 0;
+    pendingLeftClick = pendingLeftRelease = NO;
     [longPressAction cancel];
     // Recognition of a camera gesture is a cancellation, never a click.
     [longPressTimer invalidate];
@@ -287,13 +337,17 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 
 - (void)sendShortMouseLeftButtonClickEvent{
     NSUInteger generation = inputGeneration;
+    pendingLeftClick = YES;
     dispatch_time_t delayShort = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(leftClickDelay * NSEC_PER_SEC));
     dispatch_time_t delayLong = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.03 * NSEC_PER_SEC));
     dispatch_after(delayShort, dispatch_get_main_queue(), ^{
         if (generation != self->inputGeneration) return;
+        self->pendingLeftClick = NO;
+        self->pendingLeftRelease = YES;
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
         dispatch_after(delayLong, dispatch_get_main_queue(), ^{
             if (generation != self->inputGeneration) return;
+            self->pendingLeftRelease = NO;
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
         });

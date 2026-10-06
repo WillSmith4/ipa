@@ -21,6 +21,7 @@
     self.localStreamPanEnabled = settings.localStreamPanEnabled;
     self.localStreamZoomEnabled = settings.localStreamZoomEnabled;
     self.longPressAction = settings.longPressAction ?: @"MOUSE_RIGHT";
+    self.doubleTapDragAction = settings.doubleTapDragAction ?: @"MOUSE_LEFT";
     self.swipeAction = settings.swipeAction ?: @"NONE";
     self.pinchInAction = settings.pinchInAction ?: @"SCROLL_DOWN";
     self.pinchOutAction = settings.pinchOutAction ?: @"SCROLL_UP";

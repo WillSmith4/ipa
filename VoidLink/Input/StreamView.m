@@ -262,7 +262,8 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
     sessionTouchHandler = nil;
     (void)profile;
 #else
-    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
+    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]] ||
+        [sessionTouchHandler isKindOfClass:[RelativeTouchHandler class]]) {
         [sessionTouchHandler touchesCancelled:[NSSet set] withEvent:nil];
     }
     touchMode = profile.touchMode;
@@ -1982,7 +1983,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 - (void)toggleTouchDisabled:(bool)disabled{
     if (disabled) [self cancelMouseTouchesForGesture];
     touchHandler = disabled ? nil : sessionTouchHandler;
-    [cameraGestures setInputEnabled:!disabled && touchMode != TouchDisabled];
+    [cameraGestures setInputEnabled:!disabled && (touchMode == RelativeTouch || touchMode == AbsoluteTouch)];
 }
 
 - (BOOL)isMultipleTouchEnabled {
@@ -1996,7 +1997,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
     if (!cameraGestures) cameraGestures = [[StreamGestureController alloc] initWithView:self];
     TemporarySettings *snapshot = [[[DataManager alloc] init] getSettings];
     [cameraGestures configure:snapshot
-                     enabled:touchMode != TouchDisabled && !_streamFrameVC.touchDisabled
+                     enabled:(touchMode == RelativeTouch || touchMode == AbsoluteTouch) && !_streamFrameVC.touchDisabled
              singlePointMode:touchMode == AbsoluteTouch];
 #endif
 }
@@ -2006,6 +2007,18 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
         [touchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
         [touchHandler touchesCancelled:[NSSet set] withEvent:nil];
     }
+}
+
+- (BOOL)isDoubleTapDragging {
+#if !TARGET_OS_TV
+    if ([touchHandler isKindOfClass:[RelativeTouchHandler class]])
+        return [(RelativeTouchHandler *)touchHandler isDoubleTapDragging];
+    if ([touchHandler isKindOfClass:[AbsoluteTouchHandler class]])
+        return [(AbsoluteTouchHandler *)touchHandler isDoubleTapDragging];
+    return NO;
+#else
+    return NO;
+#endif
 }
 
 - (void)cancelStreamGestures {

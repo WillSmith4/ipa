@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface AbsoluteTouchHandler : UIResponder
+- (BOOL)isDoubleTapDragging;
 @property (class, nonatomic, assign) int mouseButtonForCursorMove;
 
 - (id)initWithView:(StreamView*)view andSettings:(TemporarySettings*)settings;

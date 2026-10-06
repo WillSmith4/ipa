@@ -65,5 +65,90 @@ struct LongPressActionTests {
         precondition(RecordedInput.events == ["key18:down", "key81:down", "key81:up", "key18:up"],
                      "Destroying the handler cannot leave a modifier or key held")
         print("Long press: configured keyboard/mouse pulses, Off and cleanup passed")
+        testDoubleTapDrag()
+    }
+
+    static func testDoubleTapDrag() {
+        precondition(GestureDoubleTapDetection.isQuickTap(from: .zero, to: CGPoint(x: 180, y: 240), elapsed: 0.19))
+        precondition(!GestureDoubleTapDetection.isQuickTap(from: .zero, to: .zero, elapsed: GestureDoubleTapDetection.interval))
+        precondition(!GestureDoubleTapDetection.isQuickTap(from: .zero, to: CGPoint(x: 301, y: 0), elapsed: 0.1))
+        precondition(GestureDoubleTapDetection.isQuickTap(from: CGPoint(x: 320, y: 200), to: CGPoint(x: 20, y: 200), elapsed: 0.1))
+
+        // A normal tap still presses immediately, then releases at the original
+        // handler's deadline. It is never postponed to wait for a second tap.
+        for binding in ["MOUSE_LEFT", "NONE", "CTRL++", "MOUSE_RIGHT"] {
+            RecordedInput.events = []
+            let action = GestureDoubleTapDragAction(action: binding)
+            action.firstTap()
+            precondition(RecordedInput.events == ["mouse1:down"])
+            action.expireFirstTap()
+            precondition(RecordedInput.events == ["mouse1:down", "mouse1:up"])
+            precondition(!action.dragging)
+        }
+
+        RecordedInput.events = []
+        let left = GestureDoubleTapDragAction(action: "MOUSE_LEFT")
+        left.firstTap()
+        left.begin()
+        left.expireFirstTap()
+        left.begin()
+        precondition(left.dragging && left.usesLeftButton)
+        precondition(RecordedInput.events == ["mouse1:down"],
+                     "The default drag continues the first click with no release/repress")
+        left.cancel()
+        left.cancel()
+        precondition(RecordedInput.events == ["mouse1:down", "mouse1:up"])
+
+        for (binding, down, up) in [
+            ("MOUSE_RIGHT", ["mouse3:down"], ["mouse3:up"]),
+            ("MOUSE_MIDDLE", ["mouse2:down"], ["mouse2:up"]),
+            ("CTRL+MOUSE_LEFT", ["key17:down", "mouse1:down"], ["mouse1:up", "key17:up"]),
+            ("CTRL++", ["key16:down", "key17:down", "key187:down"], ["key187:up", "key17:up", "key16:up"]),
+            ("-", ["key189:down"], ["key189:up"])
+        ] {
+            RecordedInput.events = []
+            let action = GestureDoubleTapDragAction(action: binding)
+            action.firstTap()
+            action.begin()
+            let pressed = ["mouse1:down", "mouse1:up"] + down
+            precondition(RecordedInput.events == pressed,
+                         "Second touch must replace the first tap's left hold with \(binding)")
+            action.expireFirstTap()
+            action.firstTap() // delayed first-tap callback must not interrupt the drag
+            action.begin()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.5))
+            precondition(action.dragging && RecordedInput.events == pressed,
+                         "Even keyboard-only drag bindings remain held during a stationary second touch")
+            action.cancel()
+            action.cancel()
+            action.expireFirstTap()
+            precondition(!action.dragging && RecordedInput.events == pressed + up,
+                         "Lift/cancel/profile change releases the whole drag input exactly once")
+        }
+
+        for binding in ["NONE", "UNKNOWN"] {
+            RecordedInput.events = []
+            let action = GestureDoubleTapDragAction(action: binding)
+            action.firstTap()
+            action.begin()
+            precondition(!action.enabled && !action.dragging)
+            precondition(RecordedInput.events == ["mouse1:down", "mouse1:up"],
+                         "Off ends the ordinary first click instead of turning it into a drag")
+            action.expireFirstTap()
+            action.cancel()
+            precondition(RecordedInput.events.count == 2)
+        }
+
+        for binding in ["MOUSE_LEFT", "CTRL+MOUSE_LEFT"] {
+            RecordedInput.events = []
+            var action: GestureDoubleTapDragAction? = GestureDoubleTapDragAction(action: binding)
+            action?.firstTap()
+            action?.begin()
+            action = nil
+            let expected = binding == "MOUSE_LEFT" ? ["mouse1:down", "mouse1:up"] :
+                ["mouse1:down", "mouse1:up", "key17:down", "mouse1:down", "mouse1:up", "key17:up"]
+            precondition(RecordedInput.events == expected, "Destroying the touchpad releases drag inputs")
+        }
+        print("Double-tap drag: immediate clicks, uninterrupted left drag, custom holds, Off and cleanup passed")
     }
 }

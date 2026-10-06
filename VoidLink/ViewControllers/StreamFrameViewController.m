@@ -458,13 +458,13 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
         _scrollView.allowsKeyboardScrolling = false;
 #endif
     }
-    BOOL panEnabled = interactionEnabled && _settings.localStreamPanEnabled;
-    BOOL zoomEnabled = interactionEnabled && _settings.localStreamZoomEnabled;
+    BOOL panEnabled = interactionEnabled && (_oscProfile.touchMode != AbsoluteTouch || _settings.localStreamPanEnabled);
+    BOOL zoomEnabled = interactionEnabled && (_oscProfile.touchMode != AbsoluteTouch || _settings.localStreamZoomEnabled);
     // Keep the container interactive for zoom when only panning is disabled.
     _scrollView.scrollEnabled = panEnabled || zoomEnabled;
     _scrollView.panGestureRecognizer.enabled = panEnabled;
 #if !TARGET_OS_TV
-    BOOL remotePinchEnabled = _settings.enablePinch &&
+    BOOL remotePinchEnabled = (_oscProfile.touchMode == RelativeTouch || _oscProfile.touchMode == AbsoluteTouch) &&
         (![_settings.pinchInAction isEqualToString:@"NONE"] || ![_settings.pinchOutAction isEqualToString:@"NONE"]);
     _scrollView.pinchGestureRecognizer.enabled = zoomEnabled && !remotePinchEnabled;
 #endif
@@ -493,8 +493,8 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     }
 
     // MAGNIFIER widgets use this path instead of UIScrollView's recognizers.
-    if (!_settings.localStreamPanEnabled) translation = CGVectorMake(0, 0);
-    if (!_settings.localStreamZoomEnabled) pinchDelta = 0;
+    if (_oscProfile.touchMode == AbsoluteTouch && !_settings.localStreamPanEnabled) translation = CGVectorMake(0, 0);
+    if (_oscProfile.touchMode == AbsoluteTouch && !_settings.localStreamZoomEnabled) pinchDelta = 0;
     if (translation.dx == 0 && translation.dy == 0 && pinchDelta == 0) return;
 
     CGFloat previousZoomScale = MAX(_scrollView.zoomScale, _scrollView.minimumZoomScale);
@@ -705,7 +705,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     TouchPadGestureHandler.displayLinkRate = _settings.framerate.intValue;
     [_streamView configureStreamGestures];
     
-    [self setMagnifierViewportInteractionEnabled:_oscProfile.touchMode == AbsoluteTouch && !_settings.passthroughGestures && !_settings.enablePinch];
+    [self setMagnifierViewportInteractionEnabled:_oscProfile.touchMode == AbsoluteTouch && !_settings.passthroughGestures];
     
     GenericUtils.globeAsEscape = _settings.globeAsEscape;
     

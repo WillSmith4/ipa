@@ -80,6 +80,8 @@
     NSMutableSet* hiddenStacks;
     NSArray<UIStackView *> *gestureActionStacks;
     UIStackView *longPressActionStack;
+    UIStackView *doubleTapDragActionStack;
+    NSMutableArray<UIStackView *> *viewportActionStacks;
     UIStackView *rotationSensitivityStack;
     UISlider *rotationSensitivitySlider;
 
@@ -950,6 +952,7 @@
     currentSettings.localStreamPanEnabled = tempSettings.localStreamPanEnabled;
     currentSettings.localStreamZoomEnabled = tempSettings.localStreamZoomEnabled;
     currentSettings.longPressAction = tempSettings.longPressAction;
+    currentSettings.doubleTapDragAction = tempSettings.doubleTapDragAction;
     currentSettings.swipeAction = tempSettings.swipeAction;
     currentSettings.pinchInAction = tempSettings.pinchInAction;
     currentSettings.pinchOutAction = tempSettings.pinchOutAction;
@@ -1663,6 +1666,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.passthroughGesturesStack ofId:@"passthroughGesturesStack" to:touchControlSection];
 
     NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled"];
+    viewportActionStacks = [NSMutableArray array];
     NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image"];
     for (NSInteger i = 0; i < viewportFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
@@ -1678,21 +1682,19 @@ BOOL isCustomResolution(int resolutionSelected) {
         stack.alignment = self.pinchGestureStack.alignment;
         stack.hasInfoTag = YES;
         [self addSetting:stack ofId:[viewportFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
+        [viewportActionStacks addObject:stack];
     }
-    [self addSetting:self.pinchGestureStack ofId:@"pinchGestureStack" to:touchControlSection];
 
     self.ctrlDownForPinchStack.hasInfoTag = YES;
     [self addSetting:self.ctrlDownForPinchStack ofId:@"ctrlDownForPinchStack" to:touchControlSection];
 
-    self.scrollSensitivityStack.hasDynamicLabel = YES;
-    [self addSetting:self.scrollSensitivityStack ofId:@"scrollSensitivityStack" to:touchControlSection];
 
     self.pinchSensitivityStack.hasDynamicLabel = YES;
     [self addSetting:self.pinchSensitivityStack ofId:@"pinchSensitivityStack" to:touchControlSection];
 
     NSMutableArray *actionStacks = [NSMutableArray array];
-    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotationAction", @"swipeAction", @"longPressAction"];
-    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotation", @"Swipe", @"Long Press"];
+    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotationAction", @"swipeAction", @"longPressAction", @"doubleTapDragAction"];
+    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotation", @"Swipe", @"Long Press", @"Double Tap and Hold to Drag"];
     for (NSInteger i = 0; i < gestureFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:gestureTitles[i]];
@@ -1713,6 +1715,7 @@ BOOL isCustomResolution(int resolutionSelected) {
         stack.hasInfoTag = YES;
         [self addSetting:stack ofId:[gestureFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
         if ([gestureFields[i] isEqualToString:@"longPressAction"]) longPressActionStack = stack;
+        else if ([gestureFields[i] isEqualToString:@"doubleTapDragAction"]) doubleTapDragActionStack = stack;
         else [actionStacks addObject:stack];
     }
     gestureActionStacks = actionStacks;
@@ -2543,6 +2546,9 @@ BOOL isCustomResolution(int resolutionSelected) {
     }
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"longPressActionStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Long Press Action Help"];
+    }
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"doubleTapDragActionStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Double Tap Drag Help"];
     }
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamZoomEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Zoom Stream Image Help"];
@@ -4226,11 +4232,9 @@ BOOL isCustomResolution(int resolutionSelected) {
                      && sender.selectedSegmentIndex!=AbsoluteTouch) forStack:self.scrollSensitivityStack];*/
     
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:longPressActionStack];
+    [self setHidden:sender.selectedSegmentIndex!=RelativeTouch && sender.selectedSegmentIndex!=AbsoluteTouch forStack:doubleTapDragActionStack];
+    for (UIStackView *stack in viewportActionStacks) [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:stack];
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:self.passthroughGesturesStack];
-    UISwitch* dummySwitch = [[UISwitch alloc] init];
-    [dummySwitch setOn:(sender.selectedSegmentIndex==RelativeTouch
-                        || (sender.selectedSegmentIndex==AbsoluteTouch && _passthroughGesturesSwitch.isOn))];
-    [self.passthroughGesturesSwitch sendActionsForControlEvents:UIControlEventValueChanged];
     
     /*
     [self setHidden:((sender.selectedSegmentIndex!=RelativeTouch
@@ -4250,21 +4254,14 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:self.delayLeftClickStack];
     
     
-    bool gesturePassthroughUnavailable = sender.selectedSegmentIndex==NativeTouch
-    || sender.selectedSegmentIndex==TouchDisabled
-    || (sender.selectedSegmentIndex==AbsoluteTouch && !_passthroughGesturesSwitch.isOn);
-    
-    [self setHidden:sender.selectedSegmentIndex==TouchDisabled forStack:self.pinchGestureStack];
-    for (UIStackView *stack in gestureActionStacks) [self setHidden:sender.selectedSegmentIndex==TouchDisabled forStack:stack];
-    [self setHidden:sender.selectedSegmentIndex==TouchDisabled forStack:rotationSensitivityStack];
-    [self setHidden:gesturePassthroughUnavailable forStack:self.scrollSensitivityStack];
+    BOOL cameraGesturesUnavailable = sender.selectedSegmentIndex != RelativeTouch && sender.selectedSegmentIndex != AbsoluteTouch;
+    [self setHidden:YES forStack:self.pinchGestureStack];
+    for (UIStackView *stack in gestureActionStacks) [self setHidden:cameraGesturesUnavailable forStack:stack];
+    [self setHidden:cameraGesturesUnavailable forStack:rotationSensitivityStack];
+    [self setHidden:YES forStack:self.scrollSensitivityStack];
 
-    [self setHidden:sender.selectedSegmentIndex==TouchDisabled
-     || !_pinchGestureSwitch.isOn
-    forStack:self.ctrlDownForPinchStack];
-    [self setHidden:sender.selectedSegmentIndex==TouchDisabled
-     || !_pinchGestureSwitch.isOn
-    forStack:self.pinchSensitivityStack];
+    [self setHidden:cameraGesturesUnavailable forStack:self.ctrlDownForPinchStack];
+    [self setHidden:cameraGesturesUnavailable forStack:self.pinchSensitivityStack];
 
     [self handleOswGestureChange];
 }
@@ -4318,10 +4315,7 @@ BOOL isCustomResolution(int resolutionSelected) {
 }
 
 - (void)passthroughGesturesSwitchFlipped:(UISwitch* )sender{
-
-    [self setHidden:!sender.isOn forStack:_scrollSensitivityStack];
-    if(!sender.isOn) [self.pinchGestureSwitch sendActionsForControlEvents:UIControlEventValueChanged];
-    else [_pinchGestureSwitch sendActionsForControlEvents:UIControlEventValueChanged];
+    [self touchModeChanged:self.touchModeSelector1];
 }
 
 - (void)softKeyboardHeightSwitchFlipped:(UISwitch* )sender{
@@ -4363,8 +4357,8 @@ BOOL isCustomResolution(int resolutionSelected) {
 
 
 - (void)pinchGestureSwitchFlipped:(UISwitch* )sender{
-    [self setHidden:!sender.isOn forStack:_pinchSensitivityStack];
-    [self setHidden:!sender.isOn forStack:_ctrlDownForPinchStack];
+    // The retired storyboard switch no longer controls the gesture selectors.
+    [self touchModeChanged:self.touchModeSelector1];
 }
 
 - (void)highlightEmergingStack:(UIStackView* )stack{

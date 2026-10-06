@@ -121,8 +121,8 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     override func reset() { super.reset(); finger = nil; delta = .zero }
 }
 
-/// Two-finger camera gestures on the stream surface, including native touch
-/// mode. UIKit cancels the underlying touch handler once a gesture is recognized.
+/// Camera gestures for Single Point and Touchpad. UIKit cancels the underlying
+/// mouse handler once a gesture is recognized; Native Touch stays native.
 @objc final class StreamGestureController: NSObject, UIGestureRecognizerDelegate {
     private weak var view: UIView?
     private var pinch: UIPinchGestureRecognizer!
@@ -152,7 +152,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var lastPinch = 1.0
     private var pending = [0.0, 0.0, 0.0]
     private var enabled = true
-    private var pinchEnabled = true
+    private var singlePointMode = false
     private lazy var engine = GestureActionEngine(
         mappings: CommandManager.keyboardButtonMappings,
         sendKey: { key, down in
@@ -226,8 +226,10 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         // A stationary finger never resolves the swipe recognizer. Deferring
         // touch down would keep AbsoluteTouchHandler's long-press timer from
         // starting at all. Recognition still cancels that timer before a swipe.
-        swipe.delaysTouchesBegan = !(singlePointMode && settings.longPressAction != "NONE")
-        pinchEnabled = settings.enablePinch
+        // Touchpad must receive the second tap immediately so its original
+        // double-tap drag can take priority over the one-finger swipe.
+        swipe.delaysTouchesBegan = singlePointMode && settings.longPressAction == "NONE" && settings.doubleTapDragAction == "NONE"
+        self.singlePointMode = singlePointMode
         self.enabled = enabled
         updateEnabled()
     }
@@ -239,9 +241,10 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 
     private func updateEnabled() {
-        pinch.isEnabled = enabled && pinchEnabled && (0...1).contains { actions[$0] != "NONE" || cursorEnabled[$0] }
+        pinch.isEnabled = enabled && (0...1).contains { actions[$0] != "NONE" }
         rotation.isEnabled = enabled && (actions[2] != "NONE" || cursorEnabled[2])
-        swipe.isEnabled = enabled && (actions[3] != "NONE" || cursorEnabled[3])
+        // With Swipe Off, preserve the original relative touchpad movement.
+        swipe.isEnabled = enabled && (actions[3] != "NONE" || singlePointMode)
         motionObserver.isEnabled = enabled
     }
 
@@ -371,7 +374,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         let index = axis == 2 ? 3 : (axis == 1 ? 2 : (amount > 0 ? 1 : 0))
         activeActions[axis] = index
         let action = actions[index]
-        if action != "NONE" || cursorEnabled[index],
+        if (axis != 2 || singlePointMode), (action != "NONE" || cursorEnabled[index]),
            let origin = cursorAnchor.takeOrigin(fingerCount: fingerCount) {
             // Use the original down position (the midpoint for two fingers),
             // after legacy cancellation and before the first button/key/scroll.
@@ -400,6 +403,9 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer === swipe, (view as? StreamView)?.isDoubleTapDragging() == true {
+            return false
+        }
         guard (gestureRecognizer === swipe || gestureRecognizer.numberOfTouches == 2),
               OnScreenControls.touchesCapturedByOnScreenControls().count == 0 else { return false }
         TouchPadGestureHandler.cancel()
@@ -453,6 +459,67 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
     @objc func cancel() { engine.cancel() }
     deinit { engine.cancel() }
+}
+
+/// Input ownership for the existing touchpad double-tap detector. Recognition
+/// and its 0.2-second click timer stay in RelativeTouchHandler.
+@objc final class GestureDoubleTapDetection: NSObject {
+    // Preserve RelativeTouchHandler's original Float interval and 300-point
+    // adjacency test in both mouse modes. No recognizer waits for a second tap.
+    @objc static let interval = Double(Float(0.2))
+    @objc(isQuickTapFrom:to:elapsed:)
+    static func isQuickTap(from previous: CGPoint, to current: CGPoint, elapsed: Double) -> Bool {
+        elapsed < interval && hypotf(Float(current.x - previous.x), Float(current.y - previous.y)) <= 300
+    }
+}
+
+@objc final class GestureDoubleTapDragAction: NSObject {
+    private let input: GestureLongPressAction
+    private var leftHeld = false
+    @objc private(set) var dragging = false
+    @objc let usesLeftButton: Bool
+    @objc var enabled: Bool { input.enabled }
+
+    @objc init(action: String) {
+        input = GestureLongPressAction(action: action)
+        usesLeftButton = action == "MOUSE_LEFT"
+        super.init()
+    }
+
+    private func setLeftHeld(_ held: Bool) {
+        guard held != leftHeld else { return }
+        leftHeld = held
+        LiSendMouseButtonEvent(CChar(held ? BUTTON_ACTION_PRESS : BUTTON_ACTION_RELEASE), 1)
+    }
+
+    @objc func firstTap() {
+        // A queued first-tap callback must not press left over a custom drag.
+        guard !dragging else { return }
+        setLeftHeld(true)
+    }
+
+    @objc func begin() {
+        guard !dragging else { return }
+        if !enabled || !usesLeftButton { setLeftHeld(false) }
+        guard enabled else { return }
+        dragging = true
+        if usesLeftButton { setLeftHeld(true) }
+        else { input.press() }
+    }
+
+    @objc func expireFirstTap() {
+        // The original timer may fire during the second touch. It must not
+        // release either the default left drag or a custom chord containing it.
+        if !dragging { setLeftHeld(false) }
+    }
+
+    @objc func cancel() {
+        dragging = false
+        input.cancel()
+        setLeftHeld(false)
+    }
+
+    deinit { input.cancel(); setLeftHeld(false) }
 }
 
 /// Shared editor for stateful keyboard/mouse chords in both settings front ends.

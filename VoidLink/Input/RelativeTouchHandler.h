@@ -22,6 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) CustomTapGestureRecognizer* mouseRightClickTapRecognizer; // this object will be passed to onscreencontrol class for areVirtualControllerTaps flag setting
 
 - (id)initWithView:(StreamView*)view andSettings:(TemporarySettings*)settings;
+- (BOOL)isDoubleTapDragging;
 
 @end
 

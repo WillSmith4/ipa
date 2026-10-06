@@ -51,6 +51,7 @@
 - (void)cancelStreamGestures;
 - (void)cancelMouseTouchesForGesture;
 - (void)configureStreamGestures;
+- (BOOL)isDoubleTapDragging;
 
 - (void) reloadLegacyWidgets:(OSCProfile* )profile;
 - (void) setOnScreenControls;

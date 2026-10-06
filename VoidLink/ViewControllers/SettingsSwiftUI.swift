@@ -209,6 +209,7 @@ private let settingsLegacyHelpByStackIdentifier: [String: SettingsLegacyHelpCont
     "localStreamPanEnabledStack": .init(messageKey: "Move Stream Image Help", learnMoreURLKey: nil),
     "localStreamZoomEnabledStack": .init(messageKey: "Zoom Stream Image Help", learnMoreURLKey: nil),
     "longPressActionStack": .init(messageKey: "Long Press Action Help", learnMoreURLKey: nil),
+    "doubleTapDragActionStack": .init(messageKey: "Double Tap Drag Help", learnMoreURLKey: nil),
     "swipeActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "pinchInActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
     "pinchOutActionStack": .init(messageKey: "Camera gesture help", learnMoreURLKey: nil),
@@ -291,8 +292,8 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case localStreamPanEnabled = "localStreamPanEnabledStack"
     case localStreamZoomEnabled = "localStreamZoomEnabledStack"
     case longPressAction = "longPressActionStack"
+    case doubleTapDragAction = "doubleTapDragActionStack"
     case passthroughGestures = "passthroughGesturesStack"
-    case pinchGesture = "pinchGestureStack"
     case ctrlDownForPinch = "ctrlDownForPinchStack"
     case scrollSensitivity = "scrollSensitivityStack"
     case pinchSensitivity = "pinchSensitivityStack"
@@ -425,8 +426,8 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .localStreamPanEnabled: return "Move Stream Image"
         case .localStreamZoomEnabled: return "Zoom Stream Image"
         case .longPressAction: return "Long Press"
+        case .doubleTapDragAction: return "Double Tap and Hold to Drag"
         case .passthroughGestures: return "Passthrough Gestures"
-        case .pinchGesture: return "Pinch Gesture"
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"
         case .scrollSensitivity: return "Scroll Sensitivity"
         case .pinchSensitivity: return "Pinch Sensitivity"
@@ -1199,8 +1200,8 @@ final class SettingsItemRegistry: ObservableObject {
     let localStreamPanEnabled = SettingsItemModel<Bool>(id: .localStreamPanEnabled, value: true)
     let localStreamZoomEnabled = SettingsItemModel<Bool>(id: .localStreamZoomEnabled, value: true)
     let longPressAction = SettingsItemModel<String>(id: .longPressAction, value: "MOUSE_RIGHT")
+    let doubleTapDragAction = SettingsItemModel<String>(id: .doubleTapDragAction, value: "MOUSE_LEFT")
     let passthroughGestures = SettingsItemModel<Bool>(id: .passthroughGestures, value: true)
-    let pinchGesture = SettingsItemModel<Bool>(id: .pinchGesture, value: true)
     let ctrlDownForPinch = SettingsItemModel<Bool>(id: .ctrlDownForPinch, value: false)
     let scrollSensitivity = SettingsItemModel<Double>(id: .scrollSensitivity, value: 1)
     let pinchSensitivity = SettingsItemModel<Double>(id: .pinchSensitivity, value: 1)
@@ -1337,8 +1338,8 @@ final class SettingsItemRegistry: ObservableObject {
             localStreamPanEnabled.objectWillChange,
             localStreamZoomEnabled.objectWillChange,
             longPressAction.objectWillChange,
+            doubleTapDragAction.objectWillChange,
             passthroughGestures.objectWillChange,
-            pinchGesture.objectWillChange,
             ctrlDownForPinch.objectWillChange,
             scrollSensitivity.objectWillChange,
             pinchSensitivity.objectWillChange,
@@ -1873,8 +1874,8 @@ final class SettingsSession: NSObject, ObservableObject {
         itemRegistry.localStreamPanEnabled.value = snapshot.localStreamPanEnabled
         itemRegistry.localStreamZoomEnabled.value = snapshot.localStreamZoomEnabled
         itemRegistry.longPressAction.value = snapshot.longPressAction ?? "MOUSE_RIGHT"
+        itemRegistry.doubleTapDragAction.value = snapshot.doubleTapDragAction ?? "MOUSE_LEFT"
         itemRegistry.passthroughGestures.value = snapshot.passthroughGestures
-        itemRegistry.pinchGesture.value = snapshot.enablePinch
         itemRegistry.ctrlDownForPinch.value = snapshot.ctrlDownForPinch
         itemRegistry.scrollSensitivity.value = snapshot.scrollSensitivity.doubleValue
         itemRegistry.pinchSensitivity.value = snapshot.pinchSensitivity.doubleValue
@@ -2504,7 +2505,8 @@ final class SettingsSession: NSObject, ObservableObject {
     }
 
     private var cameraGesturesAvailable: Bool {
-        !PublicUtils.isTVOS && itemRegistry.touchMode.value != TouchMode.TouchDisabled.rawValue
+        !PublicUtils.isTVOS && (itemRegistry.touchMode.value == TouchMode.RelativeTouch.rawValue ||
+            itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue)
     }
 
     private func gestureActionItem(_ keyPath: KeyPath<SettingsItemRegistry, SettingsItemModel<String>>) -> SettingsItemDescriptor {
@@ -2614,25 +2616,17 @@ final class SettingsSession: NSObject, ObservableObject {
                 \.passthroughGestures,
                 isVisible: {$0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue}
             ),
-            toggleItem(\.localStreamPanEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
-            toggleItem(\.localStreamZoomEnabled, isVisible: { _ in !PublicUtils.isTVOS }, hasInfo: true),
+            toggleItem(\.localStreamPanEnabled, isVisible: { !PublicUtils.isTVOS && $0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue }, hasInfo: true),
+            toggleItem(\.localStreamZoomEnabled, isVisible: { !PublicUtils.isTVOS && $0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue }, hasInfo: true),
             gestureActionItem(\.longPressAction),
-            toggleItem(\.pinchGesture, isVisible: { $0.cameraGesturesAvailable }),
+            gestureActionItem(\.doubleTapDragAction),
             toggleItem(\.ctrlDownForPinch,
-                       isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value },
+                       isVisible: { $0.cameraGesturesAvailable },
                        hasInfo: true),
-            sliderItem(
-                \.scrollSensitivity,
-                range: 0...3,
-                clampedTo: 0...3,
-                valueText: { _, model in "\(Int((model.value * 100).rounded()))%" },
-                isVisible: {$0.itemRegistry.touchMode.value == TouchMode.RelativeTouch.rawValue || ($0.itemRegistry.touchMode.value == TouchMode.AbsoluteTouch.rawValue
-                    && $0.itemRegistry.passthroughGestures.value)}
-            ),
             sliderItem(
                 \.pinchSensitivity, range: 0...3, clampedTo: 0...3,
                 valueText: { _, model in "\(Int((model.value * 100).rounded()))%" },
-                isVisible: { $0.cameraGesturesAvailable && $0.itemRegistry.pinchGesture.value }
+                isVisible: { $0.cameraGesturesAvailable }
             ),
             gestureActionItem(\.swipeAction),
             gestureActionItem(\.pinchInAction),
@@ -4649,8 +4643,8 @@ final class SettingsSession: NSObject, ObservableObject {
         settings.localStreamPanEnabled = itemRegistry.localStreamPanEnabled.value
         settings.localStreamZoomEnabled = itemRegistry.localStreamZoomEnabled.value
         settings.longPressAction = itemRegistry.longPressAction.value
+        settings.doubleTapDragAction = itemRegistry.doubleTapDragAction.value
         settings.passthroughGestures = itemRegistry.passthroughGestures.value
-        settings.enablePinch = itemRegistry.pinchGesture.value
         settings.ctrlDownForPinch = itemRegistry.ctrlDownForPinch.value
         settings.scrollSensitivity = NSNumber(value: itemRegistry.scrollSensitivity.value)
         settings.pinchSensitivity = NSNumber(value: itemRegistry.pinchSensitivity.value)

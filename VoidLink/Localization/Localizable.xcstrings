@@ -443,6 +443,40 @@
         }
       }
     },
+    "Double Tap and Hold to Drag": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double Tap and Hold to Drag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podwójne tapnięcie i przeciąganie"
+          }
+        }
+      }
+    },
+    "Double Tap Drag Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Touchpad or Single Point mode, tap twice quickly and keep the second touch down to drag with the selected input. The default is MOUSE_LEFT. Off disables the hold; Edit assigns a key, chord or mouse button. The original 0.2-second detection is preserved, without an added tap delay. Touchpad moves the cursor relatively; Single Point follows the touch position. Lifting or cancelling releases the input."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W trybie Touchpad lub Single Point szybko dotknij ekranu dwa razy i pozostaw drugi dotyk, aby przeciągać z wybranym inputem. Domyślnie: MOUSE_LEFT. Off wyłącza przytrzymanie, Edit pozwala przypisać klawisz, kombinację lub przycisk myszy. Zachowane jest oryginalne wykrywanie w oknie 0,2 s, bez dodatkowego opóźnienia tapnięć. Touchpad porusza kursorem względnie, Single Point prowadzi go po pozycji palca. Podniesienie palca lub anulowanie zwalnia input."
+          }
+        }
+      }
+    },
     "Long Press Action Help" : {
       "extractionState": "manual",
       "localizations": {
@@ -517,13 +551,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Allow local magnification of the stream image with pinch gestures where available, and with the Magnifier widget. Turn off to block this zoom. The current zoom and saved profile are retained. Existing touch-mode rules and priority of host pinch actions still apply."
+            "value": "In Single Point, allow local magnification of the stream image with pinch gestures where available, and with the Magnifier widget. Turn off to block this zoom. The current zoom and saved profile are retained. Existing touch-mode rules and priority of host pinch actions still apply."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zezwalaj na lokalne powiększanie obrazu strumienia gestem szczypania, gdy jest dostępny, oraz widżetem lupy. Wyłącz, aby zablokować to powiększanie. Aktualne powiększenie i zapisany profil zostają zachowane. Nadal obowiązują reguły trybu dotyku i pierwszeństwo akcji szczypania wysyłanych do komputera."
+            "value": "W Single Point zezwalaj na lokalne powiększanie obrazu strumienia gestem szczypania, gdy jest dostępny, oraz widżetem lupy. Wyłącz, aby zablokować to powiększanie. Aktualne powiększenie i zapisany profil zostają zachowane. Nadal obowiązują reguły trybu dotyku i pierwszeństwo akcji szczypania wysyłanych do komputera."
           }
         }
       }
@@ -534,13 +568,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Allow local movement of the stream image with two fingers where supported by the current touch mode, and with the Magnifier widget. Turn off to block this movement. The current framing and saved profile are retained. This setting does not control mouse movement or camera actions sent to the host."
+            "value": "In Single Point, allow local movement of the stream image with two fingers where supported by the current touch mode, and with the Magnifier widget. Turn off to block this movement. The current framing and saved profile are retained. This setting does not control mouse movement or camera actions sent to the host."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zezwalaj na lokalne przesuwanie obrazu strumienia dwoma palcami, gdy obsługuje to bieżący tryb dotyku, oraz widżetem lupy. Wyłącz, aby zablokować to przesuwanie. Aktualny kadr i zapisany profil zostają zachowane. Ta opcja nie steruje ruchem myszy ani akcjami kamery wysyłanymi do komputera."
+            "value": "W Single Point zezwalaj na lokalne przesuwanie obrazu strumienia dwoma palcami, gdy obsługuje to bieżący tryb dotyku, oraz widżetem lupy. Wyłącz, aby zablokować to przesuwanie. Aktualny kadr i zapisany profil zostają zachowane. Ta opcja nie steruje ruchem myszy ani akcjami kamery wysyłanymi do komputera."
           }
         }
       }
@@ -670,13 +704,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Assign scrolling, keys or mouse buttons. Swipe and Rotation always move the cursor; Pinch In, Pinch Out and Long Press do not continuously move it. Swipe first places the cursor at touch down. Pinch and Rotation place it once at the midpoint where the two-finger gesture started, before sending the assigned input. Simultaneous pinch and rotation share that initial position. Keyboard hold duration follows movement; mouse drags stay held until fingers lift or the gesture is cancelled."
+            "value": "Assign scrolling, keys or mouse buttons. Swipe and Rotation always move the cursor; Pinch In, Pinch Out and Long Press do not continuously move it. In Single Point, Swipe first places the cursor at touch down. Touchpad one-finger movement stays relative without teleporting. Pinch and Rotation place it once at the midpoint where the two-finger gesture started, before sending the assigned input. Simultaneous pinch and rotation share that initial position. Keyboard hold duration follows movement; mouse drags stay held until fingers lift or the gesture is cancelled."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przypisz przewijanie, klawisze lub przyciski myszy. Przesuwanie jednym palcem i Obrót zawsze poruszają kursorem; Ściśnięcie palców, Rozsunięcie palców i Przytrzymanie nie prowadzą kursora. Przesuwanie najpierw ustawia kursor w miejscu dotknięcia. Szczypanie i Obrót jednorazowo ustawiają go na środku między palcami z początku gestu, przed wysłaniem przypisanej akcji. Równoczesne szczypanie i obrót współdzielą tę pozycję startową. Czas trzymania klawiszy zależy od ruchu; przyciski myszy są trzymane do podniesienia palców lub anulowania gestu."
+            "value": "Przypisz przewijanie, klawisze lub przyciski myszy. Przesuwanie jednym palcem i Obrót zawsze poruszają kursorem; Ściśnięcie palców, Rozsunięcie palców i Przytrzymanie nie prowadzą kursora. W Single Point przesuwanie najpierw ustawia kursor w miejscu dotknięcia. W Touchpad ruch jednym palcem pozostaje względny, bez teleportowania. Szczypanie i Obrót jednorazowo ustawiają go na środku między palcami z początku gestu, przed wysłaniem przypisanej akcji. Równoczesne szczypanie i obrót współdzielą tę pozycję startową. Czas trzymania klawiszy zależy od ruchu; przyciski myszy są trzymane do podniesienia palców lub anulowania gestu."
           }
         }
       }
