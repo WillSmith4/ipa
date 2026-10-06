@@ -79,7 +79,7 @@
     MenuSectionView *experimentalSection;
     NSMutableSet* hiddenStacks;
     NSArray<UIStackView *> *gestureActionStacks;
-    UIStackView *singlePointLongPressStack;
+    UIStackView *longPressActionStack;
     UIStackView *rotationSensitivityStack;
     UISlider *rotationSensitivitySlider;
 
@@ -949,12 +949,8 @@
 
     currentSettings.localStreamPanEnabled = tempSettings.localStreamPanEnabled;
     currentSettings.localStreamZoomEnabled = tempSettings.localStreamZoomEnabled;
-    currentSettings.singlePointLongPressRightClick = tempSettings.singlePointLongPressRightClick;
+    currentSettings.longPressAction = tempSettings.longPressAction;
     currentSettings.swipeAction = tempSettings.swipeAction;
-    currentSettings.pinchInMovesCursor = tempSettings.pinchInMovesCursor;
-    currentSettings.pinchOutMovesCursor = tempSettings.pinchOutMovesCursor;
-    currentSettings.rotationMovesCursor = tempSettings.rotationMovesCursor;
-    currentSettings.swipeMovesCursor = tempSettings.swipeMovesCursor;
     currentSettings.pinchInAction = tempSettings.pinchInAction;
     currentSettings.pinchOutAction = tempSettings.pinchOutAction;
     currentSettings.rotationAction = tempSettings.rotationAction;
@@ -1666,8 +1662,8 @@ BOOL isCustomResolution(int resolutionSelected) {
 
     [self addSetting:self.passthroughGesturesStack ofId:@"passthroughGesturesStack" to:touchControlSection];
 
-    NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled", @"singlePointLongPressRightClick"];
-    NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image", @"Long Press Right Click"];
+    NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled"];
+    NSArray *viewportTitles = @[@"Move Stream Image", @"Zoom Stream Image"];
     for (NSInteger i = 0; i < viewportFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:viewportTitles[i]];
@@ -1681,7 +1677,6 @@ BOOL isCustomResolution(int resolutionSelected) {
         stack.spacing = self.pinchGestureStack.spacing;
         stack.alignment = self.pinchGestureStack.alignment;
         stack.hasInfoTag = YES;
-        if ([viewportFields[i] isEqualToString:@"singlePointLongPressRightClick"]) singlePointLongPressStack = stack;
         [self addSetting:stack ofId:[viewportFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
     }
     [self addSetting:self.pinchGestureStack ofId:@"pinchGestureStack" to:touchControlSection];
@@ -1696,8 +1691,8 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.pinchSensitivityStack ofId:@"pinchSensitivityStack" to:touchControlSection];
 
     NSMutableArray *actionStacks = [NSMutableArray array];
-    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotationAction", @"swipeAction"];
-    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotation", @"Swipe"];
+    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotationAction", @"swipeAction", @"longPressAction"];
+    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotation", @"Swipe", @"Long Press"];
     for (NSInteger i = 0; i < gestureFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:gestureTitles[i]];
@@ -1717,25 +1712,8 @@ BOOL isCustomResolution(int resolutionSelected) {
         stack.alignment = self.pinchGestureStack.alignment;
         stack.hasInfoTag = YES;
         [self addSetting:stack ofId:[gestureFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
-        [actionStacks addObject:stack];
-    }
-    NSArray *cursorFields = @[@"pinchInMovesCursor", @"pinchOutMovesCursor", @"rotationMovesCursor", @"swipeMovesCursor"];
-    NSArray *cursorTitles = @[@"Pinch In — Move Cursor", @"Pinch Out — Move Cursor", @"Rotation — Move Cursor", @"Swipe — Move Cursor"];
-    for (NSInteger i = 0; i < cursorFields.count; i++) {
-        UILabel *label = [[UILabel alloc] init];
-        label.text = [LocalizationHelper localizedStringForKey:cursorTitles[i]];
-        label.font = ((UILabel *)self.pinchGestureStack.arrangedSubviews.firstObject).font;
-        UISwitch *toggle = [[UISwitch alloc] init];
-        toggle.accessibilityIdentifier = cursorFields[i];
-        toggle.on = [[tempSettings valueForKey:cursorFields[i]] boolValue];
-        [toggle addTarget:self action:@selector(gestureCursorChanged:) forControlEvents:UIControlEventValueChanged];
-        UIStackView *stack = [[UIStackView alloc] initWithArrangedSubviews:@[label, toggle]];
-        stack.axis = self.pinchGestureStack.axis;
-        stack.spacing = self.pinchGestureStack.spacing;
-        stack.alignment = self.pinchGestureStack.alignment;
-        stack.hasInfoTag = YES;
-        [self addSetting:stack ofId:[cursorFields[i] stringByAppendingString:@"Stack"] to:touchControlSection];
-        [actionStacks addObject:stack];
+        if ([gestureFields[i] isEqualToString:@"longPressAction"]) longPressActionStack = stack;
+        else [actionStacks addObject:stack];
     }
     gestureActionStacks = actionStacks;
     UILabel *rotationLabel = [[UILabel alloc] init];
@@ -2563,14 +2541,11 @@ BOOL isCustomResolution(int resolutionSelected) {
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamPanEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Move Stream Image Help"];
     }
-    if ([sender.superview.accessibilityIdentifier isEqualToString:@"singlePointLongPressRightClickStack"]) {
-        tipText = [LocalizationHelper localizedStringForKey:@"Long Press Right Click Help"];
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"longPressActionStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Long Press Action Help"];
     }
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamZoomEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Zoom Stream Image Help"];
-    }
-    if ([@[@"pinchInMovesCursorStack", @"pinchOutMovesCursorStack", @"rotationMovesCursorStack", @"swipeMovesCursorStack"] containsObject:sender.superview.accessibilityIdentifier]) {
-        tipText = [LocalizationHelper localizedStringForKey:@"Gesture cursor help"];
     }
     if ([@[@"pinchInActionStack", @"pinchOutActionStack", @"rotationActionStack", @"swipeActionStack"] containsObject:sender.superview.accessibilityIdentifier]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Camera gesture help"];
@@ -4250,7 +4225,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self setHidden:(sender.selectedSegmentIndex!=RelativeTouch
                      && sender.selectedSegmentIndex!=AbsoluteTouch) forStack:self.scrollSensitivityStack];*/
     
-    [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:singlePointLongPressStack];
+    [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:longPressActionStack];
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:self.passthroughGesturesStack];
     UISwitch* dummySwitch = [[UISwitch alloc] init];
     [dummySwitch setOn:(sender.selectedSegmentIndex==RelativeTouch
@@ -4952,10 +4927,6 @@ BOOL isCustomResolution(int resolutionSelected) {
 }
 
 - (void)localStreamViewportChanged:(UISwitch *)sender {
-    [tempSettings setValue:@(sender.isOn) forKey:sender.accessibilityIdentifier];
-}
-
-- (void)gestureCursorChanged:(UISwitch *)sender {
     [tempSettings setValue:@(sender.isOn) forKey:sender.accessibilityIdentifier];
 }
 

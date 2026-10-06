@@ -14,10 +14,10 @@
 
 #include <Limelight.h>
 
-// How long the fingers must be stationary to start a right click
+// How long the finger must be stationary to trigger the assigned action
 #define LONG_PRESS_ACTIVATION_DELAY 0.650f
 
-// How far the finger can move before it cancels a right click
+// How far the finger can move before it cancels the pending hold
 #define LONG_PRESS_ACTIVATION_DELTA 0.02f
 
 // How long the double tap deadzone stays in effect between touch up and touch down
@@ -61,8 +61,8 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     bool dragButtonDown;
     UInt8 currentTouchesCount;
     
-    bool rightButtonClicked;
-    BOOL longPressRightClickEnabled;
+    bool longPressTriggered;
+    GestureLongPressAction *longPressAction;
 }
 
 - (id)initWithView:(StreamView*)view andSettings:(TemporarySettings*)settings {
@@ -73,7 +73,7 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
     passthroughGestures = settings.passthroughGestures;
     
     _delayMouseLeftClick = settings.delayLeftClick;
-    longPressRightClickEnabled = settings.singlePointLongPressRightClick;
+    longPressAction = [[GestureLongPressAction alloc] initWithAction:settings.longPressAction ?: @"MOUSE_RIGHT"];
     // _delayMouseLeftClick = true;
     dragButtonDown = false;
     
@@ -92,26 +92,24 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 
 - (void)onLongPressStart:(NSTimer*)timer {
     NSUInteger generation = inputGeneration;
-    // Raise the left click and start a right click
-    if (!longPressRightClickEnabled || multiTouchesDetected) return;
+    // Raise the legacy drag and send the selected stationary-hold action.
+    if (!longPressAction.enabled || multiTouchesDetected) return;
     
     if([self touchDidntMoveOnScreen:movingTouchLocation]){
-        if(_delayMouseLeftClick){
-            LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
-            if(mouseButtonForCursorMove!=BUTTON_LEFT) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, mouseButtonForCursorMove);
-        }
-        LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_RIGHT);
+        LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
+        if(mouseButtonForCursorMove!=BUTTON_LEFT) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, mouseButtonForCursorMove);
+        longPressTriggered = true;
+        [longPressAction press];
         dispatch_time_t delayShort = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC));
         dispatch_after(delayShort, dispatch_get_main_queue(), ^{
             if (generation != self->inputGeneration) return;
-            LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
-            self->rightButtonClicked = true;
+            [self->longPressAction cancel];
         });
     }
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-    rightButtonClicked = false;
+    longPressTriggered = false;
 
     if([UITouchUtil touchesIn:streamView from:event].count>=2){
         multiTouchesDetected = true;
@@ -151,8 +149,8 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT); //deprecated
     }
     
-    // Use the existing stationary-hold right click only when enabled.
-    if (longPressRightClickEnabled) {
+    // Off disables the existing stationary-hold timer.
+    if (longPressAction.enabled) {
         longPressTimer = [NSTimer timerWithTimeInterval:LONG_PRESS_ACTIVATION_DELAY
                                                         target:self
                                                       selector:@selector(onLongPressStart:)
@@ -218,10 +216,11 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
         }
     }
     
-   if(!rightButtonClicked) [streamView updateCursorLocation:movingTouchLocation isMouse:NO];
+   if(!longPressTriggered) [streamView updateCursorLocation:movingTouchLocation isMouse:NO];
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+    [longPressAction cancel];
     [longPressTimer invalidate];
     longPressTimer = nil;
     
@@ -248,9 +247,9 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
             if(CACurrentMediaTime()-touchBeganTimeStamp<leftClickTimeThreshold) {
                 if(CACurrentMediaTime()-lastTouchUp.timestamp<0.15
                    && ![self isAdjacentPoints:touchEndLocation from:lastTouchUpLocation tolerance:30]) [streamView updateCursorLocation:touchEndLocation isMouse:NO];
-                if([self touchDidntMoveOnScreen:touchEndLocation] && !rightButtonClicked) [self sendShortMouseLeftButtonClickEvent];
+                if([self touchDidntMoveOnScreen:touchEndLocation] && !longPressTriggered) [self sendShortMouseLeftButtonClickEvent];
             }
-            else if(!rightButtonClicked){
+            else if(!longPressTriggered){
                     LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
                     if(mouseButtonForCursorMove!=BUTTON_LEFT) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, mouseButtonForCursorMove);
                     LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
@@ -273,6 +272,7 @@ static int mouseButtonForCursorMove = BUTTON_LEFT;
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
     inputGeneration++;
+    [longPressAction cancel];
     // Recognition of a camera gesture is a cancellation, never a click.
     [longPressTimer invalidate];
     longPressTimer = nil;

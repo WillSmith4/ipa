@@ -465,8 +465,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
     _scrollView.panGestureRecognizer.enabled = panEnabled;
 #if !TARGET_OS_TV
     BOOL remotePinchEnabled = _settings.enablePinch &&
-        (![_settings.pinchInAction isEqualToString:@"NONE"] || ![_settings.pinchOutAction isEqualToString:@"NONE"] ||
-         _settings.pinchInMovesCursor || _settings.pinchOutMovesCursor);
+        (![_settings.pinchInAction isEqualToString:@"NONE"] || ![_settings.pinchOutAction isEqualToString:@"NONE"]);
     _scrollView.pinchGestureRecognizer.enabled = zoomEnabled && !remotePinchEnabled;
 #endif
 }

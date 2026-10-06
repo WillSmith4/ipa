@@ -1,36 +1,36 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Long Press Right Click Help" : {
+    "Long Press Action Help" : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "In Single Point mode, hold one finger still for about 0.65 seconds to send a right mouse click (press and release). This switch enables or disables the existing long-press gesture. Ordinary taps do not wait for a second tap. The separate Delay Left Click settings keep their existing behavior."
+            "value": "In Single Point mode, hold one finger still for 0.65 seconds to send the selected key, keyboard combination or mouse click once. The default is MOUSE_RIGHT (right click). Choose Off to disable the gesture or Edit to assign another input. Long Press does not continuously move the cursor. Movement, another finger or cancellation stops the pending hold. Ordinary taps keep their existing behavior."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "W trybie Single Point przytrzymaj jeden palec w miejscu przez około 0,65 s, aby wysłać kliknięcie prawego przycisku myszy (wciśnięcie i puszczenie). Ten przełącznik włącza lub wyłącza istniejący gest przytrzymania. Zwykłe stuknięcia nie czekają na drugie stuknięcie. Osobne ustawienia opóźnienia lewego kliku zachowują dotychczasowe działanie."
+            "value": "W trybie Single Point przytrzymaj jeden palec nieruchomo przez 0,65 s, aby jednorazowo wysłać wybrany klawisz, kombinację lub kliknięcie myszy. Domyślnie jest to MOUSE_RIGHT (prawy klik). Off wyłącza gest, a Edit pozwala przypisać inny input. Przytrzymanie nie prowadzi kursora. Ruch palca, dołożenie kolejnego palca lub anulowanie przerywa oczekiwanie. Zwykłe tapnięcia działają jak dotychczas."
           }
         }
       }
     },
-    "Long Press Right Click" : {
+    "Long Press" : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Long Press → Right Click"
+            "value": "Long Press"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przytrzymanie → prawy klik"
+            "value": "Przytrzymanie"
           }
         }
       }
@@ -228,13 +228,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Assign wheel scrolling, a key, simultaneous keys (W+D, CTRL+Q), or mouse buttons (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT). Swipe starts after the touchpad movement threshold. Enable Move Cursor for any gesture to move and hold its action together. Keyboard hold duration follows movement; mouse drags remain held through pauses. Lifting fingers or cancelling releases the action."
+            "value": "Assign scrolling, keys or mouse buttons. Swipe and Rotation always move the cursor; Pinch In, Pinch Out and Long Press do not continuously move it. Swipe first places the cursor at touch down. Pinch and Rotation place it once at the midpoint where the two-finger gesture started, before sending the assigned input. Simultaneous pinch and rotation share that initial position. Keyboard hold duration follows movement; mouse drags stay held until fingers lift or the gesture is cancelled."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przypisz przewijanie, klawisz, kombinację (W+D, CTRL+Q) lub przyciski myszy (MOUSE_LEFT, MOUSE_MIDDLE, MOUSE_RIGHT). Przesuwanie zaczyna się po przekroczeniu progu ruchu touchpada. Włącz ruch kursora dla gestu, aby poruszać myszą z przytrzymaną akcją. Czas trzymania klawiszy zależy od ruchu; przyciski myszy pozostają wciśnięte podczas przerw. Podniesienie palców lub anulowanie zwalnia akcję."
+            "value": "Przypisz przewijanie, klawisze lub przyciski myszy. Przesuwanie jednym palcem i Obrót zawsze poruszają kursorem; Ściśnięcie palców, Rozsunięcie palców i Przytrzymanie nie prowadzą kursora. Przesuwanie najpierw ustawia kursor w miejscu dotknięcia. Szczypanie i Obrót jednorazowo ustawiają go na środku między palcami z początku gestu, przed wysłaniem przypisanej akcji. Równoczesne szczypanie i obrót współdzielą tę pozycję startową. Czas trzymania klawiszy zależy od ruchu; przyciski myszy są trzymane do podniesienia palców lub anulowania gestu."
           }
         }
       }
@@ -245,13 +245,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter any VoidLink key name (letters, digits, SPACE, ENTER, arrows, numpad, media keys), F1-F24, a symbol such as + or -, or a combination such as CTRL+Q or W+D. + / PLUS sends Shift+=; = / EQUALS sends the unshifted key. ADD / SUBTRACT are numpad + / -. Use CTRL+PLUS or CTRL++ for Ctrl and plus. Other symbols follow the US keyboard layout. MOUSE_LEFT, MOUSE_MIDDLE and MOUSE_RIGHT can be combined with keys, e.g. CTRL+MOUSE_MIDDLE, and stay held until the gesture ends."
+            "value": "Enter any VoidLink key name (letters, digits, SPACE, ENTER, arrows, numpad, media keys), F1-F24, a symbol such as + or -, or a combination such as CTRL+Q or W+D. + / PLUS sends Shift+=; = / EQUALS sends the unshifted key. ADD / SUBTRACT are numpad + / -. Use CTRL+PLUS or CTRL++ for Ctrl and plus. Other symbols follow the US keyboard layout. MOUSE_LEFT, MOUSE_MIDDLE and MOUSE_RIGHT can be combined with keys, e.g. CTRL+MOUSE_MIDDLE, and stay held during moving gestures. Long Press sends one short click/key combination after the hold."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wpisz dowolną nazwę klawisza VoidLink (litery, cyfry, SPACE, ENTER, strzałki, klawiatura numeryczna, multimedia), F1-F24, znak np. + lub - albo kombinację np. CTRL+Q lub W+D. + / PLUS wysyła Shift+=; = / EQUALS wysyła klawisz bez Shift. ADD / SUBTRACT to + / - z klawiatury numerycznej. Ctrl i plus zapiszesz jako CTRL+PLUS lub CTRL++. Pozostałe znaki odpowiadają układowi klawiatury US. MOUSE_LEFT, MOUSE_MIDDLE i MOUSE_RIGHT można łączyć z klawiszami, np. CTRL+MOUSE_MIDDLE; pozostają wciśnięte do zakończenia gestu."
+            "value": "Wpisz dowolną nazwę klawisza VoidLink (litery, cyfry, SPACE, ENTER, strzałki, klawiatura numeryczna, multimedia), F1-F24, znak np. + lub - albo kombinację np. CTRL+Q lub W+D. + / PLUS wysyła Shift+=; = / EQUALS wysyła klawisz bez Shift. ADD / SUBTRACT to + / - z klawiatury numerycznej. Ctrl i plus zapiszesz jako CTRL+PLUS lub CTRL++. Pozostałe znaki odpowiadają układowi klawiatury US. MOUSE_LEFT, MOUSE_MIDDLE i MOUSE_RIGHT można łączyć z klawiszami, np. CTRL+MOUSE_MIDDLE; pozostają wciśnięte podczas gestów ruchowych. Przytrzymanie wysyła jedno krótkie kliknięcie lub kombinację po upływie czasu przytrzymania."
           }
         }
       }
@@ -262,13 +262,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "During rotation, the signed twist angle controls horizontal mouse motion: clockwise moves right, counterclockwise moves left. Finger spacing and moving the whole hand do not change horizontal rotation. During an active rotation, moving both fingers up or down also moves the cursor vertically, even while the twist angle is steady. Rotation Sensitivity and pointer speed control its strength; the game determines the resulting camera angle. Assign MOUSE_MIDDLE and enable Rotation — Move Cursor for games using middle-button camera orbit. Pinch follows the centre between the fingers. Swipe first places the cursor at the original touch position, then moves it relatively. Mouse buttons remain held through pauses until fingers lift."
+            "value": "Swipe and Rotation always move the cursor. Rotation uses twist for horizontal motion and movement of both fingers for vertical motion. Pinch only sends its assigned action. Swipe starts at the initial touch position; Pinch and Rotation start at the original midpoint between two fingers. Simultaneous two-finger gestures teleport only once. Long Press has no continuous cursor motion."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podczas obrotu kąt skrętu palców steruje poziomym ruchem myszy: zgodnie z ruchem wskazówek zegara w prawo, przeciwnie w lewo. Rozstaw palców i przesunięcie całej dłoni nie zmieniają obrotu w poziomie. Podczas aktywnego obrotu przesunięcie obu palców w górę lub w dół przesuwa też kursor pionowo, nawet gdy kąt skrętu pozostaje stały. Czułość obrotu i prędkość kursora określają siłę ruchu; wynikowy kąt kamery zależy od gry. W grach obracających kamerę środkowym przyciskiem przypisz MOUSE_MIDDLE i włącz Obrót — ruch kursora. Szczypanie śledzi środek między palcami. Przesuwanie jednym palcem najpierw ustawia kursor w miejscu pierwszego dotknięcia, a potem przesuwa go względnie. Przyciski myszy pozostają wciśnięte podczas przerw aż do podniesienia palców."
+            "value": "Przesuwanie jednym palcem i Obrót zawsze poruszają kursorem. Obrót wykorzystuje skręt palców do ruchu poziomego, a przesunięcie obu palców do pionowego. Szczypanie wysyła tylko przypisaną akcję. Przesuwanie zaczyna się w miejscu dotknięcia, a Szczypanie i Obrót na początkowym środku między palcami. Równoczesne gesty dwoma palcami przestawiają kursor tylko raz. Przytrzymanie nie prowadzi kursora."
           }
         }
       }

@@ -14,6 +14,16 @@ pathlib.Path(sys.argv[1]).write_text('enum GestureTestKeyboard {\n' + declaratio
 PY
 swiftc VoidLink/Input/GestureActionEngine.swift "$test_dir/GestureTestKeyboard.swift" Tests/GestureActionEngineTests.swift -o "$test_dir/gesture-tests"
 "$test_dir/gesture-tests"
+python3 - "$test_dir/GestureLongPressAction.swift" <<'PY'
+import pathlib, sys
+source = pathlib.Path('VoidLink/Input/StreamGestureController.swift').read_text(encoding='utf-8')
+start = source.index('@objc final class GestureLongPressAction:')
+end = source.index('/// Shared editor', start)
+pathlib.Path(sys.argv[1]).write_text('import Foundation\nimport QuartzCore\n' + source[start:end], encoding='utf-8')
+PY
+swiftc VoidLink/Input/GestureActionEngine.swift "$test_dir/GestureTestKeyboard.swift" \
+  "$test_dir/GestureLongPressAction.swift" Tests/LongPressActionTests.swift -o "$test_dir/long-press-tests"
+"$test_dir/long-press-tests"
 xcrun momc VoidLink/Limelight.xcdatamodeld "$test_dir/Limelight.momd"
 swiftc Tests/GestureSettingsMigrationTests.swift -import-objc-header VoidLink/Database/GestureSettingsMigration.h -parse-as-library -o "$test_dir/migration-tests"
 "$test_dir/migration-tests" "$test_dir/Limelight.momd" "$test_dir"

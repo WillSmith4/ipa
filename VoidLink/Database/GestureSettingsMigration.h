@@ -12,3 +12,10 @@ static inline void InitializeUnifiedRotationSettings(NSManagedObject *settings) 
                        [[settings valueForKey:@"rotateRightMovesCursor"] boolValue];
     [settings setValue:@(movesCursor) forKey:@"rotationMovesCursor"];
 }
+
+// Convert the previous on/off choice once. A fresh install defaults to right click.
+static inline void InitializeLongPressSettings(NSManagedObject *settings) {
+    if ([settings valueForKey:@"longPressAction"] != nil) return;
+    [settings setValue:([[settings valueForKey:@"singlePointLongPressRightClick"] boolValue]
+                        ? @"MOUSE_RIGHT" : @"NONE") forKey:@"longPressAction"];
+}

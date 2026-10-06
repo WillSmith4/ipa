@@ -5,6 +5,7 @@ import UIKit.UIGestureRecognizerSubclass
 /// Observes physical motion without competing with gesture recognition. Cursor
 /// output is deferred until UIKit has delivered cancellation to old handlers.
 private final class GestureMotionObserver: UIGestureRecognizer {
+    var onSample: (([GesturePointerMotion.Point]) -> Void)?
     var onMotion: ((Double, Double) -> Void)?
     var onCountChanged: ((Int) -> Void)?
     private var fingers: [UITouch: Int] = [:]
@@ -18,6 +19,7 @@ private final class GestureMotionObserver: UIGestureRecognizer {
             let p = touch.location(in: view)
             return .init(id: id, x: Double(p.x), y: Double(p.y))
         }
+        onSample?(points)
         let delta = motion.sample(points)
         if delta.x != 0 || delta.y != 0 { onMotion?(delta.x, delta.y) }
     }
@@ -127,12 +129,12 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var rotation: StreamRotationRecognizer!
     private var swipe: StreamSwipeRecognizer!
     private var motionObserver: GestureMotionObserver!
-    private var cursorEnabled = Array(repeating: false, count: 4)
+    private let cursorEnabled = GestureAction.cursorMovement
     private var pointerSpeed = 1.0
     private var pointer = GesturePointerMotion()
     private var cursorDelta = (x: 0.0, y: 0.0)
     private var rotationCursorDeltaX = 0.0
-    private var swipeCursorOrigin: CGPoint?
+    private var cursorAnchor = GestureCursorAnchor()
     private var queuedMoves: [(axis: Int, delta: Double)] = []
     private var endingAxes: Set<Int> = []
     private var activeActions: [Int: Int] = [:]
@@ -172,6 +174,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         swipe.delaysTouchesBegan = true
         motionObserver = GestureMotionObserver(target: nil, action: nil)
         motionObserver.cancelsTouchesInView = false
+        motionObserver.onSample = { [weak self] points in self?.cursorAnchor.sample(points) }
         motionObserver.onMotion = { [weak self] x, y in
             guard let self else { return }
             self.cursorDelta.x += x
@@ -195,6 +198,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         }
         notificationTokens = [UIApplication.willResignActiveNotification, UIApplication.didEnterBackgroundNotification].map { name in
             NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                (self?.view as? StreamView)?.cancelMouseTouchesForGesture()
                 self?.cancel()
             }
         }
@@ -202,6 +206,14 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
 
     @objc func configure(_ settings: TemporarySettings, enabled: Bool, singlePointMode: Bool) {
         cancel()
+        // The live settings reload removes recognizers from StreamView. Reattach
+        // this controller's recognizers before applying the updated bindings.
+        if let view {
+            let recognizers: [UIGestureRecognizer] = [motionObserver, pinch, rotation, swipe]
+            for recognizer in recognizers where recognizer.view !== view {
+                view.addGestureRecognizer(recognizer)
+            }
+        }
         let bindings: [String?] = [settings.pinchInAction, settings.pinchOutAction, settings.rotationAction, settings.swipeAction]
         actions = bindings
             .enumerated().map { $0.element ?? GestureAction.defaults[$0.offset] }
@@ -209,14 +221,12 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         rotationSensitivity = settings.rotationSensitivity.doubleValue
         controlScroll = settings.ctrlDownForPinch
         edgeTolerance = CGFloat(settings.edgeSlidingSensitivity.doubleValue)
-        cursorEnabled = [settings.pinchInMovesCursor, settings.pinchOutMovesCursor,
-                         settings.rotationMovesCursor, settings.swipeMovesCursor]
         pointerSpeed = settings.mousePointerVelocityFactor.doubleValue
         swipe.threshold = max(0, settings.relativeTouchSlideThreshold.doubleValue)
         // A stationary finger never resolves the swipe recognizer. Deferring
         // touch down would keep AbsoluteTouchHandler's long-press timer from
         // starting at all. Recognition still cancels that timer before a swipe.
-        swipe.delaysTouchesBegan = !(singlePointMode && settings.singlePointLongPressRightClick)
+        swipe.delaysTouchesBegan = !(singlePointMode && settings.longPressAction != "NONE")
         pinchEnabled = settings.enablePinch
         self.enabled = enabled
         updateEnabled()
@@ -246,7 +256,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         activeActions.removeAll()
         cursorDelta = (0, 0)
         rotationCursorDeltaX = 0
-        swipeCursorOrigin = nil
+        cursorAnchor.reset()
         pointer.reset()
         pending = [0, 0, 0]
         hasRecognizedGesture = false
@@ -309,11 +319,9 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         if recognizer.state == .began || recognizer.state == .changed {
             if recognizer.state == .began {
                 endingAxes.remove(2)
-                if cursorEnabled[3] { swipeCursorOrigin = recognizer.origin }
             }
             move(axis: 2, delta: hypot(Double(recognizer.delta.x), Double(recognizer.delta.y)))
         } else {
-            if recognizer.state == .cancelled || recognizer.state == .failed { swipeCursorOrigin = nil }
             endingAxes.insert(2)
             scheduleFlush()
         }
@@ -326,13 +334,6 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         DispatchQueue.main.async { [weak self] in
             guard let self, self.generation == currentGeneration else { return }
             self.flushScheduled = false
-            if let origin = self.swipeCursorOrigin, self.fingerCount == 1 {
-                // Reuse Single Point's video-area mapping. Position first, before
-                // pressing a drag button, then continue with relative movement.
-                (self.view as? StreamView)?.updateCursorLocation(origin, isMouse: false)
-                self.pointer.reset()
-            }
-            self.swipeCursorOrigin = nil
             // All legacy touchesCancelled callbacks finish before a new mouse
             // hold starts, and both simultaneous recognizers share one cursor move.
             for move in self.queuedMoves { self.applyMove(axis: move.axis, delta: move.delta) }
@@ -370,6 +371,13 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         let index = axis == 2 ? 3 : (axis == 1 ? 2 : (amount > 0 ? 1 : 0))
         activeActions[axis] = index
         let action = actions[index]
+        if action != "NONE" || cursorEnabled[index],
+           let origin = cursorAnchor.takeOrigin(fingerCount: fingerCount) {
+            // Use the original down position (the midpoint for two fingers),
+            // after legacy cancellation and before the first button/key/scroll.
+            (view as? StreamView)?.updateCursorLocation(CGPoint(x: origin.x, y: origin.y), isMouse: false)
+            pointer.reset()
+        }
         engine.move(axis: axis, action: action, amount: abs(amount), now: CACurrentMediaTime(),
                     controlScroll: axis == 0 && controlScroll)
         if engine.hasTimedHolds && timer == nil {
@@ -417,6 +425,35 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 }
 #endif
+
+/// Reuses the gesture binding parser and ordered key/button release for the
+/// existing Single Point hold timer. AbsoluteTouchHandler controls pulse timing.
+@objc final class GestureLongPressAction: NSObject {
+    private let action: String
+    private let engine = GestureActionEngine(
+        mappings: CommandManager.keyboardButtonMappings,
+        sendKey: { key, down in
+            LiSendKeyboardEvent(Int16(bitPattern: 0x8000 | UInt16(bitPattern: key)),
+                                CChar(down ? KEY_ACTION_DOWN : KEY_ACTION_UP), 0)
+        },
+        sendScroll: { LiSendHighResScrollEvent($0) },
+        sendMouse: { LiSendMouseButtonEvent(CChar($1 ? BUTTON_ACTION_PRESS : BUTTON_ACTION_RELEASE), $0) }
+    )
+
+    @objc init(action: String) { self.action = action; super.init() }
+    @objc var enabled: Bool {
+        action != "NONE" && (GestureAction.presets.contains(action) ||
+            GestureAction.inputs(action, mappings: CommandManager.keyboardButtonMappings) != nil)
+    }
+    @objc func press() {
+        guard enabled else { return }
+        // A selected wheel action is one notch; keys/buttons keep the old pulse.
+        let amount = action == "SCROLL_UP" || action == "SCROLL_DOWN" ? 120.0 / 7.0 : 1
+        engine.move(axis: 0, action: action, amount: amount, now: CACurrentMediaTime())
+    }
+    @objc func cancel() { engine.cancel() }
+    deinit { engine.cancel() }
+}
 
 /// Shared editor for stateful keyboard/mouse chords in both settings front ends.
 @objc final class GestureActionEditor: NSObject {

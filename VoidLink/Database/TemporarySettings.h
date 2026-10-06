@@ -97,13 +97,9 @@
 @property (nonatomic) BOOL muteInBackground;
 @property (nonatomic) BOOL localStreamPanEnabled;
 @property (nonatomic) BOOL localStreamZoomEnabled;
-@property (nonatomic) BOOL singlePointLongPressRightClick;
+@property (nonatomic, copy) NSString * longPressAction;
 @property (nonatomic) BOOL enablePinch;
 @property (nonatomic, copy) NSString * swipeAction;
-@property (nonatomic) BOOL pinchInMovesCursor;
-@property (nonatomic) BOOL pinchOutMovesCursor;
-@property (nonatomic) BOOL rotationMovesCursor;
-@property (nonatomic) BOOL swipeMovesCursor;
 @property (nonatomic, copy) NSString * pinchInAction;
 @property (nonatomic, copy) NSString * pinchOutAction;
 @property (nonatomic, copy) NSString * rotationAction;

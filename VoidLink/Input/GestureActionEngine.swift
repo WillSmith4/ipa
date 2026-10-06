@@ -5,6 +5,8 @@ import Foundation
 enum GestureAction {
     static let defaults = ["SCROLL_DOWN", "SCROLL_UP", "MOUSE_MIDDLE", "NONE"]
     static let presets = ["NONE", "SCROLL_DOWN", "SCROLL_UP"]
+    // Pinch only sends its binding; rotation and swipe always move the cursor.
+    static let cursorMovement = [false, false, true, true]
 
     enum Input: Equatable {
         case key(Int16)
@@ -188,6 +190,33 @@ final class GestureActionEngine {
         case .mouse(let button): sendMouse(button, down)
         }
     }
+}
+
+/// Captures the start of a one/two-finger sequence. Simultaneous gestures share
+/// one anchor so starting rotation during a pinch cannot teleport a second time.
+struct GestureCursorAnchor {
+    struct Position: Equatable { let x: Double; let y: Double }
+    private var fingerIDs: Set<Int> = []
+    private var origin: Position?
+
+    mutating func sample(_ points: [GesturePointerMotion.Point]) {
+        let ids = Set(points.map(\.id))
+        guard (1...2).contains(points.count), ids.count == points.count,
+              points.allSatisfy({ $0.x.isFinite && $0.y.isFinite }) else { reset(); return }
+        guard ids != fingerIDs else { return }
+        fingerIDs = ids
+        let count = Double(points.count)
+        origin = Position(x: points.reduce(0) { $0 + $1.x / count },
+                          y: points.reduce(0) { $0 + $1.y / count })
+    }
+
+    mutating func takeOrigin(fingerCount: Int) -> Position? {
+        guard fingerIDs.count == fingerCount else { return nil }
+        defer { origin = nil }
+        return origin
+    }
+
+    mutating func reset() { fingerIDs.removeAll(); origin = nil }
 }
 
 /// Tracks the centre of all fingers, matching translation of the whole hand.

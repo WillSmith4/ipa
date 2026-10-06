@@ -262,6 +262,9 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
     sessionTouchHandler = nil;
     (void)profile;
 #else
+    if ([sessionTouchHandler isKindOfClass:[AbsoluteTouchHandler class]]) {
+        [sessionTouchHandler touchesCancelled:[NSSet set] withEvent:nil];
+    }
     touchMode = profile.touchMode;
     switch (touchMode) {
         case NativeTouch:
@@ -1977,6 +1980,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 }
 
 - (void)toggleTouchDisabled:(bool)disabled{
+    if (disabled) [self cancelMouseTouchesForGesture];
     touchHandler = disabled ? nil : sessionTouchHandler;
     [cameraGestures setInputEnabled:!disabled && touchMode != TouchDisabled];
 }
@@ -2005,6 +2009,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 }
 
 - (void)cancelStreamGestures {
+    [self cancelMouseTouchesForGesture];
 #if !TARGET_OS_TV
     [cameraGestures cancel];
 #endif

@@ -310,6 +310,7 @@
         settings.rotateRightAction = @"E";
     }
     InitializeUnifiedRotationSettings(settings);
+    InitializeLongPressSettings(settings);
 }
 
 - (void) removeApp:(TemporaryApp*)app {

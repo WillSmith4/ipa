@@ -156,6 +156,29 @@ struct GestureActionEngineTests {
             check(GestureAction.inputs(invalid, mappings: mappings) == nil, "Reject invalid or non-stateful mouse actions: \(invalid)")
         }
 
+        var anchor = GestureCursorAnchor()
+        anchor.sample([.init(id: 1, x: 50, y: 60)])
+        anchor.sample([.init(id: 1, x: 80, y: 90)])
+        check(anchor.takeOrigin(fingerCount: 2) == nil, "An unmatched gesture cannot consume the start position")
+        check(anchor.takeOrigin(fingerCount: 1) == .init(x: 50, y: 60), "Swipe anchors at touch down, not the recognition location")
+        anchor.sample([.init(id: 1, x: 100, y: 90)])
+        check(anchor.takeOrigin(fingerCount: 1) == nil, "Continuing a gesture must not warp again")
+        anchor.sample([.init(id: 1, x: 100, y: 90), .init(id: 2, x: 200, y: 110)])
+        anchor.sample([.init(id: 2, x: 230, y: 140), .init(id: 1, x: 90, y: 80)])
+        check(anchor.takeOrigin(fingerCount: 2) == .init(x: 150, y: 100), "Two-finger gestures anchor at the original midpoint")
+        check(anchor.takeOrigin(fingerCount: 2) == nil, "Simultaneous pinch and rotation share one initial teleport")
+        anchor.sample([])
+        anchor.sample([.init(id: 3, x: 10, y: 20), .init(id: 4, x: 30, y: 40)])
+        check(anchor.takeOrigin(fingerCount: 2) == .init(x: 20, y: 30), "The next gesture gets its own midpoint")
+        anchor.sample([.init(id: 5, x: 10, y: 20), .init(id: 6, x: 30, y: 40)])
+        anchor.reset()
+        check(anchor.takeOrigin(fingerCount: 2) == nil, "Cancellation discards a pending teleport")
+        anchor.sample([.init(id: 5, x: 10, y: 20), .init(id: 6, x: 30, y: 40)])
+        anchor.sample([.init(id: 5, x: 10, y: 20), .init(id: 6, x: 30, y: 40), .init(id: 7, x: 50, y: 60)])
+        check(anchor.takeOrigin(fingerCount: 2) == nil, "A third finger invalidates the two-finger anchor")
+        anchor.sample([.init(id: 1, x: .nan, y: 0)])
+        check(anchor.takeOrigin(fingerCount: 1) == nil, "Invalid positions cannot teleport the cursor")
+
         var pointer = GesturePointerMotion()
         typealias Point = GesturePointerMotion.Point
         func sample(_ points: [Point]) -> (Double, Double) { pointer.sample(points) }

@@ -589,6 +589,7 @@
 		CA6100000000000000000023 /* VoidLink v1.3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.3.xcdatamodel"; sourceTree = "<group>"; };
 		CA6100000000000000000024 /* VoidLink v1.4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.4.xcdatamodel"; sourceTree = "<group>"; };
 		CA6100000000000000000025 /* VoidLink v1.5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.5.xcdatamodel"; sourceTree = "<group>"; };
+		CA6100000000000000000026 /* VoidLink v1.6.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "VoidLink v1.6.xcdatamodel"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -2275,9 +2276,10 @@
 				CA6100000000000000000023 /* VoidLink v1.3.xcdatamodel */,
 				CA6100000000000000000024 /* VoidLink v1.4.xcdatamodel */,
 				CA6100000000000000000025 /* VoidLink v1.5.xcdatamodel */,
+				CA6100000000000000000026 /* VoidLink v1.6.xcdatamodel */,
 				FB290D0619B2C406004C83CF /* Limelight.xcdatamodel */,
 			);
-			currentVersion = CA6100000000000000000025 /* VoidLink v1.5.xcdatamodel */;
+			currentVersion = CA6100000000000000000026 /* VoidLink v1.6.xcdatamodel */;
 			path = Limelight.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
