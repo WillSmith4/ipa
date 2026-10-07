@@ -14,6 +14,7 @@
 #import "VoidLink-Swift.h"
 
 #include <Limelight.h>
+#include <math.h>
 
 @implementation NativeTouchHandler {
     __weak StreamView* streamView;
@@ -219,12 +220,21 @@
     CGFloat normalizedX = location.x / videoSize.width;
     CGFloat normalizedY = location.y / videoSize.height;
     uint8_t pointerId = [self retrievePointerIdFromDict:touch];
+    BOOL fingerContact = touch.type == UITouchTypeDirect &&
+        (touchType == LI_TOUCH_EVENT_DOWN || touchType == LI_TOUCH_EVENT_MOVE);
+    float pressure = (touch.force / touch.maximumPossibleForce) / sin(touch.altitudeAngle);
+    if (touch.type == UITouchTypeDirect) {
+        // Moonlight permits zero for unknown pressure, but some hosts/emulators
+        // interpret it as hover. Keep finger contacts positive, and release at zero.
+        pressure = fingerContact ? (isfinite(pressure) && pressure > 0 ? fminf(pressure, 1.0f) : 0.5f) : 0.0f;
+    }
 
     NativeTouchPointer *pointer = [self getPointerObjFromDict:touch];
-    if(pointer != nil && pointer.needResetCoords){ // access whether the current pointer has reached the boundary, and need a coord reset.
+    if(pointer != nil && pointer.needResetCoords &&
+       (touch.type != UITouchTypeDirect || fingerContact)){ // Never restart a lifted finger at the boundary.
         LiSendTouchEvent(LI_TOUCH_EVENT_UP, pointerId, normalizedX, normalizedY, 0, 0, 0, 0);  //event must sent from the lowest level directy by LiSendTouchEvent to simulate continous dragging to another point on screen
-        LiSendTouchEvent(LI_TOUCH_EVENT_DOWN, pointerId, 0.3, 0.4, 0, 0, 0, 0);
-    }else LiSendTouchEvent(touchType, pointerId, normalizedX, normalizedY,(touch.force / touch.maximumPossibleForce) / sin(touch.altitudeAngle),0.0f, 0.0f,[self getRotationFromAzimuthAngle:[touch azimuthAngleInView:streamView]]);
+        LiSendTouchEvent(LI_TOUCH_EVENT_DOWN, pointerId, 0.3, 0.4, fingerContact ? pressure : 0.0f, 0, 0, 0);
+    }else LiSendTouchEvent(touchType, pointerId, normalizedX, normalizedY,pressure,0.0f, 0.0f,[self getRotationFromAzimuthAngle:[touch azimuthAngleInView:streamView]]);
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
