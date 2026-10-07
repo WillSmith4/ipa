@@ -44,11 +44,21 @@ Simultaneous pinch and rotation share one anchor; cancellation discards it.
 
 For free camera orbit, set **Swipe → Edit → MOUSE_MIDDLE**. Move your finger
 horizontally or vertically to produce the same input as dragging a mouse with
-its middle button held. The game's own camera controls determine the result.
+its middle button held. Swipe uses the same input owner as Double Tap and Hold
+to Drag, starting directly when the existing swipe threshold is crossed. It holds
+the selected key/chord or mouse button through stationary pauses until lift or
+cancellation. Single Point follows the finger's absolute position through the
+same updateCursorLocation path as double-tap drag, rather than sending free
+relative cursor motion. Touchpad stays relative. Wheel bindings retain their
+existing proportional scrolling. Transitioning to two fingers releases Swipe
+before a pinch/rotation binding can acquire the same button. The game's own
+camera controls determine the result.
 
 For **Rotation**, the signed angle between consecutive two-finger
 vectors drives relative horizontal mouse motion, like a camera's yaw input.
-Clockwise twist sends positive mouse X; counterclockwise sends negative X.
+Clockwise twist sends negative mouse X; counterclockwise sends positive X. Only
+the horizontal output sign is reversed; angle detection, gain and vertical
+translation are unchanged.
 A complete circle keeps the same direction throughout every quadrant. Finger
 spacing, choice of pivot and translation of the whole hand do not affect the
 horizontal rotation. During an active rotation, moving both fingers up/down
@@ -213,3 +223,8 @@ click methods and verifies that neither a pending click nor a stale release can
 interrupt the drag. On device, test both mouse modes with Swipe mapped and Off,
 Double Tap Drag mapped and Off, plus Delay Left Click enabled/disabled; Native
 and Disabled must show only their allowed settings and must not emit custom gestures.
+
+Swipe regression tests start the shared drag input without a preceding tap and
+verify held mouse/key/chord inputs through pauses, Off and a same-button handoff
+to Rotation. Rotation tests cover reversed horizontal output for full turns,
+angle-boundary crossings, equal magnitude and unchanged vertical translation.

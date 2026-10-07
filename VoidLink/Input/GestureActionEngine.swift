@@ -264,7 +264,8 @@ struct GestureRotationMotion {
     /// GesturePointerMotion supplies pointer speed and fractional accumulation.
     static func mouseDeltaX(degrees: Double, sensitivity: Double) -> Double {
         guard degrees.isFinite, sensitivity.isFinite, sensitivity >= 0 else { return 0 }
-        return degrees * .pi / 180 * 100 * sensitivity
+        // Reverse horizontal camera direction without changing angle detection.
+        return -degrees * .pi / 180 * 100 * sensitivity
     }
 
     mutating func sample(_ points: [GesturePointerMotion.Point]) -> Double? {

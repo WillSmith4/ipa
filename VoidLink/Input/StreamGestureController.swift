@@ -135,6 +135,8 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var cursorDelta = (x: 0.0, y: 0.0)
     private var rotationCursorDeltaX = 0.0
     private var cursorAnchor = GestureCursorAnchor()
+    private var swipeLocation: CGPoint?
+    private var swipeDrag = GestureDoubleTapDragAction(action: "NONE")
     private var queuedMoves: [(axis: Int, delta: Double)] = []
     private var endingAxes: Set<Int> = []
     private var activeActions: [Int: Int] = [:]
@@ -174,7 +176,11 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         swipe.delaysTouchesBegan = true
         motionObserver = GestureMotionObserver(target: nil, action: nil)
         motionObserver.cancelsTouchesInView = false
-        motionObserver.onSample = { [weak self] points in self?.cursorAnchor.sample(points) }
+        motionObserver.onSample = { [weak self] points in
+            guard let self else { return }
+            self.cursorAnchor.sample(points)
+            self.swipeLocation = points.count == 1 ? CGPoint(x: points[0].x, y: points[0].y) : nil
+        }
         motionObserver.onMotion = { [weak self] x, y in
             guard let self else { return }
             self.cursorDelta.x += x
@@ -217,6 +223,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         let bindings: [String?] = [settings.pinchInAction, settings.pinchOutAction, settings.rotationAction, settings.swipeAction]
         actions = bindings
             .enumerated().map { $0.element ?? GestureAction.defaults[$0.offset] }
+        swipeDrag = GestureDoubleTapDragAction(action: actions[3])
         pinchSensitivity = settings.pinchSensitivity.doubleValue
         rotationSensitivity = settings.rotationSensitivity.doubleValue
         controlScroll = settings.ctrlDownForPinch
@@ -249,6 +256,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 
     @objc func cancel() {
+        swipeDrag.cancel()
         engine.cancel()
         timer?.invalidate()
         timer = nil
@@ -260,6 +268,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         cursorDelta = (0, 0)
         rotationCursorDeltaX = 0
         cursorAnchor.reset()
+        swipeLocation = nil
         pointer.reset()
         pending = [0, 0, 0]
         hasRecognizedGesture = false
@@ -339,9 +348,16 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             self.flushScheduled = false
             // All legacy touchesCancelled callbacks finish before a new mouse
             // hold starts, and both simultaneous recognizers share one cursor move.
+            // Release the one-finger drag before a two-finger gesture can press
+            // the same button; a late release must not interrupt that new hold.
+            if self.endingAxes.contains(2) && self.fingerCount != 1 { self.swipeDrag.cancel() }
             for move in self.queuedMoves { self.applyMove(axis: move.axis, delta: move.delta) }
             self.queuedMoves.removeAll()
-            if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
+            if self.singlePointMode, self.fingerCount == 1, self.activeActions[2] != nil,
+               let location = self.swipeLocation {
+                // Same absolute drag path as AbsoluteTouchHandler's double tap.
+                (self.view as? StreamView)?.updateCursorLocation(location, isMouse: false)
+            } else if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
                 // Keep twist-driven yaw and add vertical translation of the
                 // two-finger centre, including while the twist angle is steady.
                 let motion = self.activeActions[1] != nil && self.cursorEnabled[2]
@@ -352,6 +368,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             self.cursorDelta = (0, 0)
             self.rotationCursorDeltaX = 0
             for axis in self.endingAxes {
+                if axis == 2 { self.swipeDrag.cancel() }
                 self.engine.end(axis: axis)
                 self.activeActions.removeValue(forKey: axis)
                 self.pending[axis] = 0
@@ -381,8 +398,14 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             (view as? StreamView)?.updateCursorLocation(CGPoint(x: origin.x, y: origin.y), isMouse: false)
             pointer.reset()
         }
-        engine.move(axis: axis, action: action, amount: abs(amount), now: CACurrentMediaTime(),
-                    controlScroll: axis == 0 && controlScroll)
+        if axis == 2 && action != "SCROLL_UP" && action != "SCROLL_DOWN" {
+            // Reuse double-tap drag ownership: one press, hold through pauses,
+            // release on lift/cancel. Wheel bindings retain proportional scroll.
+            swipeDrag.begin()
+        } else {
+            engine.move(axis: axis, action: action, amount: abs(amount), now: CACurrentMediaTime(),
+                        controlScroll: axis == 0 && controlScroll)
+        }
         if engine.hasTimedHolds && timer == nil {
             let timer = Timer(timeInterval: 1.0 / 120, repeats: true) { [weak self] timer in
                 guard let self else { timer.invalidate(); return }
@@ -425,6 +448,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 
     deinit {
+        swipeDrag.cancel()
         engine.cancel()
         timer?.invalidate()
         notificationTokens.forEach { NotificationCenter.default.removeObserver($0) }

@@ -256,10 +256,10 @@ struct GestureActionEngineTests {
         }
         let fullTurn = Array(stride(from: 0.0, through: 360.0, by: 5.0))
         let clockwise = orbit(fullTurn)
-        check(clockwise.allSatisfy { $0 > 0 }, "A clockwise full circle always sends positive mouse X, across every quadrant")
-        check(abs(clockwise.reduce(0, +) - 848) <= 1, "Mouse distance is proportional to accumulated angle")
+        check(clockwise.allSatisfy { $0 < 0 }, "A clockwise full circle now sends negative mouse X, across every quadrant")
+        check(abs(clockwise.reduce(0, +) + 848) <= 1, "Reversing direction preserves mouse distance per accumulated angle")
         let counterclockwise = orbit(fullTurn.map { -$0 })
-        check(counterclockwise.allSatisfy { $0 < 0 }, "Counterclockwise twist always sends negative mouse X")
+        check(counterclockwise.allSatisfy { $0 > 0 }, "Counterclockwise twist now sends positive mouse X")
         check(abs(clockwise.reduce(0, +) + counterclockwise.reduce(0, +)) <= 1, "Opposite turns have equal strength")
         for radius in [5.0, 1000.0] {
             check(abs(orbit(fullTurn, radius: radius).reduce(0, +) - clockwise.reduce(0, +)) <= 1,
@@ -269,7 +269,7 @@ struct GestureActionEngineTests {
         check(slowTurn.contains(0), "Subpixel angle increments are accumulated")
         check(abs(slowTurn.reduce(0, +) - clockwise.reduce(0, +)) <= 1, "Sampling frequency cannot change total rotation")
         let boundary = orbit([179, -179, 179])
-        check(boundary[0] > 0 && boundary[1] < 0 && abs(boundary.reduce(0, +)) <= 1,
+        check(boundary[0] < 0 && boundary[1] > 0 && abs(boundary.reduce(0, +)) <= 1,
               "The short arc across +/-180 reverses immediately without a jump")
         let faster = orbit(fullTurn, sensitivity: 2).reduce(0, +)
         check(abs(faster - 2 * clockwise.reduce(0, +)) <= 1, "Rotation sensitivity scales mouse distance")
@@ -277,7 +277,7 @@ struct GestureActionEngineTests {
         check(orbit([45, 45, 45, 45]).allSatisfy { $0 == 0 }, "Hand translation alone does not rotate the camera")
         for vertical in [-10.0, 10.0] {
             let combined = orbit(fullTurn, vertical: vertical)
-            check(combined.allSatisfy { $0 > 0 } && abs(combined.reduce(0, +) - clockwise.reduce(0, +)) <= 1,
+            check(combined.allSatisfy { $0 < 0 } && abs(combined.reduce(0, +) - clockwise.reduce(0, +)) <= 1,
                   "Adding vertical hand movement preserves the improved horizontal rotation")
             check(orbit([0, 5, 5, 5], vertical: vertical).dropFirst().allSatisfy { $0 == 0 },
                   "After rotation begins, vertical movement continues when the twist angle stops changing")

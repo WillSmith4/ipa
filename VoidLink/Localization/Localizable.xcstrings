@@ -704,13 +704,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Assign scrolling, keys or mouse buttons. Swipe and Rotation always move the cursor; Pinch In, Pinch Out and Long Press do not continuously move it. In Single Point, Swipe first places the cursor at touch down. Touchpad one-finger movement stays relative without teleporting. Pinch and Rotation place it once at the midpoint where the two-finger gesture started, before sending the assigned input. Simultaneous pinch and rotation share that initial position. Keyboard hold duration follows movement; mouse drags stay held until fingers lift or the gesture is cancelled."
+            "value": "Assign scrolling, keys or mouse buttons. Swipe and Rotation always move the cursor; Pinch In, Pinch Out and Long Press do not continuously move it. In Single Point, Swipe first places the cursor at touch down. Touchpad one-finger movement stays relative without teleporting. Pinch and Rotation place it once at the midpoint where the two-finger gesture started, before sending the assigned input. Simultaneous pinch and rotation share that initial position. Swipe uses the same hold as Double Tap and Hold to Drag: keys and mouse buttons stay down until lift or cancellation. In Single Point the cursor follows the finger position; Touchpad stays relative. Pinch and Rotation keep their existing hold behavior."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przypisz przewijanie, klawisze lub przyciski myszy. Przesuwanie jednym palcem i Obrót zawsze poruszają kursorem; Ściśnięcie palców, Rozsunięcie palców i Przytrzymanie nie prowadzą kursora. W Single Point przesuwanie najpierw ustawia kursor w miejscu dotknięcia. W Touchpad ruch jednym palcem pozostaje względny, bez teleportowania. Szczypanie i Obrót jednorazowo ustawiają go na środku między palcami z początku gestu, przed wysłaniem przypisanej akcji. Równoczesne szczypanie i obrót współdzielą tę pozycję startową. Czas trzymania klawiszy zależy od ruchu; przyciski myszy są trzymane do podniesienia palców lub anulowania gestu."
+            "value": "Przypisz przewijanie, klawisze lub przyciski myszy. Przesuwanie jednym palcem i Obrót zawsze poruszają kursorem; Ściśnięcie palców, Rozsunięcie palców i Przytrzymanie nie prowadzą kursora. W Single Point przesuwanie najpierw ustawia kursor w miejscu dotknięcia. W Touchpad ruch jednym palcem pozostaje względny, bez teleportowania. Szczypanie i Obrót jednorazowo ustawiają go na środku między palcami z początku gestu, przed wysłaniem przypisanej akcji. Równoczesne szczypanie i obrót współdzielą tę pozycję startową. Przesuwanie używa tego samego przytrzymania co podwójne tapnięcie i przeciąganie: klawisze i przyciski myszy pozostają wciśnięte do podniesienia palca lub anulowania. W Single Point kursor podąża za pozycją palca, a w Touchpad ruch pozostaje względny. Szczypanie i Obrót zachowują dotychczasową obsługę przytrzymania."
           }
         }
       }

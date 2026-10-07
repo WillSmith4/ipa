@@ -66,6 +66,47 @@ struct LongPressActionTests {
                      "Destroying the handler cannot leave a modifier or key held")
         print("Long press: configured keyboard/mouse pulses, Off and cleanup passed")
         testDoubleTapDrag()
+        testSwipeDrag()
+    }
+
+    static func testSwipeDrag() {
+        // Swipe enters the same drag owner directly, without generating a tap
+        // first. Every selected key/button stays down while the finger pauses.
+        for (binding, down, up) in [
+            ("MOUSE_LEFT", ["mouse1:down"], ["mouse1:up"]),
+            ("MOUSE_RIGHT", ["mouse3:down"], ["mouse3:up"]),
+            ("MOUSE_MIDDLE", ["mouse2:down"], ["mouse2:up"]),
+            ("W+D", ["key68:down", "key87:down"], ["key87:up", "key68:up"]),
+            ("CTRL+MOUSE_LEFT", ["key17:down", "mouse1:down"], ["mouse1:up", "key17:up"])
+        ] {
+            RecordedInput.events = []
+            let swipe = GestureDoubleTapDragAction(action: binding)
+            swipe.begin()
+            swipe.begin()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.5))
+            precondition(swipe.dragging && RecordedInput.events == down,
+                         "Swipe must hold \(binding) without a first tap, repeats or idle release")
+            swipe.cancel()
+            swipe.cancel()
+            precondition(RecordedInput.events == down + up)
+        }
+        RecordedInput.events = []
+        let off = GestureDoubleTapDragAction(action: "NONE")
+        off.begin()
+        off.cancel()
+        precondition(RecordedInput.events.isEmpty, "Swipe Off must not acquire a default left hold")
+
+        RecordedInput.events = []
+        let swipe = GestureDoubleTapDragAction(action: "MOUSE_MIDDLE")
+        let rotation = GestureLongPressAction(action: "MOUSE_MIDDLE")
+        swipe.begin()
+        swipe.cancel() // adding the second finger ends Swipe before Rotation
+        rotation.press()
+        swipe.cancel() // end-of-frame cleanup must not release Rotation's hold
+        precondition(RecordedInput.events == ["mouse2:down", "mouse2:up", "mouse2:down"])
+        rotation.cancel()
+        precondition(RecordedInput.events.last == "mouse2:up")
+        print("Swipe drag: shared double-tap holds, no synthetic tap, Off and two-finger handoff passed")
     }
 
     static func testDoubleTapDrag() {
