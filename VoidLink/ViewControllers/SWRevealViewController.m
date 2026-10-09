@@ -1134,6 +1134,24 @@ const int FrontViewPositionNone = 0xff;
         [self favoriteSettingSelected];
     }];
 }
+
+- (void)restoreSessionDefaults {
+    if (self.isStreaming && [self.navBarMenuDelegate respondsToSelector:@selector(restoreSessionDefaults)]) {
+        [self.navBarMenuDelegate restoreSessionDefaults];
+    }
+}
+
+- (UIMenu *)settingsMenuWithActions:(NSArray<UIMenuElement *> *)actions API_AVAILABLE(ios(13.0)) {
+    NSMutableArray *items = [actions mutableCopy];
+    if (self.isStreaming) {
+        [items addObject:[UIAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"Restore Defaults"]
+                                           image:[UIImage systemImageNamed:@"arrow.uturn.backward"]
+                                      identifier:nil handler:^(__kindof UIAction *action) {
+            [self restoreSessionDefaults];
+        }]];
+    }
+    return [UIMenu menuWithTitle:@"" children:items];
+}
 - (UIAction* )getAllSettingMenuAction API_AVAILABLE(ios(13.0)){
     return [UIAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"All Settings"] image:[UIImage systemImageNamed:@"circle.grid.3x3"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
         [self allSettingSelected];
@@ -1157,7 +1175,7 @@ const int FrontViewPositionNone = 0xff;
     if (@available(iOS 13.0, *)) {
         // UIAction* action1 = [self getAllSettingMenuAction];
         UIAction* action1 = [self getDoneRemoveSettingAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1]];
     }
 
     if ([self.navBarMenuDelegate respondsToSelector:@selector(enterRemoveSettingItemMode)]) {
@@ -1169,7 +1187,7 @@ const int FrontViewPositionNone = 0xff;
     if (@available(iOS 13.0, *)) {
         UIAction* action1 = [self getAllSettingMenuAction];
         UIAction* action2 = [self getRemoveSettingItemAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1, action2]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1, action2]];
     }
 
     if ([self.navBarMenuDelegate respondsToSelector:@selector(doneRemoveSettingItem)]) {
@@ -1193,10 +1211,10 @@ const int FrontViewPositionNone = 0xff;
         // 创建菜单
         switch ([self getSettingsMenuMode]) {
             case AllSettings:
-                menu = [UIMenu menuWithTitle:@"" children:@[[self getFavoriteMenuAction]]];
+                menu = [self settingsMenuWithActions:@[[self getFavoriteMenuAction]]];
                 break;
             case FavoriteSettings:
-                menu = [UIMenu menuWithTitle:@"" children:@[action1, action2]];
+                menu = [self settingsMenuWithActions:@[action1, action2]];
                 break;
             default:
                 break;
@@ -1245,6 +1263,12 @@ const int FrontViewPositionNone = 0xff;
         default:
             break;
     }
+    if (self.isStreaming) {
+        [actionSheet addAction:[UIAlertAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"Restore Defaults"]
+                                                       style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+            [self restoreSessionDefaults];
+        }]];
+    }
     actionSheet.popoverPresentationController.sourceView = _contentView.rearNavView; // center of the view;
     actionSheet.popoverPresentationController.sourceRect = CGRectMake(_rearViewRevealWidth + _moreButton.imageInsets.right - _moreButton.image.size.width/2, _contentView.rearNavView.bounds.size.height+_contentView.safeAreaInsets.top, 1.0, 1.0);
     [self presentViewController:actionSheet animated:NO completion:nil];
@@ -1264,7 +1288,7 @@ const int FrontViewPositionNone = 0xff;
     if (@available(iOS 13.0, *)) {
         UIAction* action1 = [self getAllSettingMenuAction];
         UIAction* action2 = [self getRemoveSettingItemAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1, action2]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1, action2]];
     }
     if ([self.navBarMenuDelegate respondsToSelector:@selector(switchToFavoriteSettings)]) {
         [self.navBarMenuDelegate switchToFavoriteSettings];
@@ -1274,7 +1298,7 @@ const int FrontViewPositionNone = 0xff;
 - (void)allSettingSelected {
     if (@available(iOS 13.0, *)) {
         UIAction* action1 = [self getFavoriteMenuAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1]];
     }
     if ([self.navBarMenuDelegate respondsToSelector:@selector(switchToAllSettings)]) {
         [self.navBarMenuDelegate switchToAllSettings];
@@ -1282,10 +1306,12 @@ const int FrontViewPositionNone = 0xff;
 }
 
 - (void)buttonsInStreaming{
+    [self setupMoreButtonMenu];
     _navItem.rightBarButtonItems = SWBarButtonItems(_disconnectButton, _moreButton);
 }
 
 - (void)buttonsNotInStreaming{
+    [self setupMoreButtonMenu];
     _navItem.rightBarButtonItems = SWBarButtonItems(_moreButton, nil);
 }
 

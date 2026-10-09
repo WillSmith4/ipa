@@ -129,6 +129,23 @@ class OSCProfilesManager: NSObject {
             index = profiles.index(of: profile)
         }
 
+        let store = ApplicationSettingsStore.shared
+        if let sessionID = store.sessionIdentifier,
+           let globalProfile = profiles[index] as? OSCProfile {
+            let keys = ApplicationSettingsStore.profileKeys()
+            let globalValues = globalProfile.dictionaryWithValues(forKeys: keys)
+            store.stageValues(newProfile.dictionaryWithValues(forKeys: keys),
+                              previousValues: store.values(forDomain: "profile", defaults: globalValues),
+                              domain: "profile", sessionIdentifier: sessionID)
+            // Widget layout persistence keeps its existing behavior. Only the
+            // controls edited in Settings belong to the application override.
+            let sharedProfile = newProfile.mutableCopy() as! OSCProfile
+            sharedProfile.setValuesForKeys(globalValues)
+            if index > 0 || overwriteDefault { profiles.replaceObject(at: index, with: sharedProfile) }
+            persistProfiles(profiles)
+            return
+        }
+
         if index > 0 || overwriteDefault {
             profiles.replaceObject(at: index, with: newProfile)
         }
@@ -349,7 +366,13 @@ class OSCProfilesManager: NSObject {
         }
 
         
-        return profiles[Int(selectedIndex)] as! OSCProfile
+        let profile = profiles[Int(selectedIndex)] as! OSCProfile
+        if ApplicationSettingsStore.shared.active {
+            let keys = ApplicationSettingsStore.profileKeys()
+            profile.setValuesForKeys(ApplicationSettingsStore.shared.values(
+                forDomain: "profile", defaults: profile.dictionaryWithValues(forKeys: keys)))
+        }
+        return profile
 
         // return (profiles.firstObject as? OSCProfile) ?? OSCProfile(name: "", buttonStates: NSMutableArray(), isSelected: false)
     }

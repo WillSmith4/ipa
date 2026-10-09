@@ -1,6 +1,40 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Restore Defaults": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Defaults"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywróć domyślne"
+          }
+        }
+      }
+    },
+    "The running app changed. Connect again from the app list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The running app changed. Connect again from the app list."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchomiona aplikacja się zmieniła. Połącz się ponownie z listy aplikacji."
+          }
+        }
+      }
+    },
     "App icon ready. Choose where to save the PNG file.": {
       "extractionState": "manual",
       "localizations": {

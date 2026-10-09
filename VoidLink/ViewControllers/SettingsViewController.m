@@ -16,6 +16,7 @@
 #endif
 #import "TemporarySettings.h"
 #import "DataManager.h"
+#import "ApplicationSettingsStore.h"
 #import "VoidLink-Swift.h"
 #import "Connection.h"
 #import "Plot.h"
@@ -601,6 +602,28 @@
 #endif
 }
 
+- (void)reloadSessionSettings {
+    if (!self.isViewLoaded) return;
+    tempSettings = [dataMan getSettings];
+    if (@available(iOS 14.0, *)) {
+        if (self.usesSwiftUISettings) {
+            [self reloadSwiftUISettingsForSession];
+            return;
+        }
+    }
+#if !TARGET_OS_TV
+    [self restoreCoreDataSettingsForUIKitMenu:tempSettings];
+    [self reloadGameProfileConfigsUIKit];
+#endif
+}
+
+- (void)restoreSessionDefaults {
+    if (!self.mainFrameViewController.settingsExpandedInStreamView ||
+        !ApplicationSettingsStore.shared.active) return;
+    [ApplicationSettingsStore.shared restoreDefaults];
+    [self reloadSessionSettings];
+}
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
@@ -843,12 +866,13 @@
     
     CGFloat settingsMenuOffset = _rememberFoldStateSwitch.isOn ? _scrollView.contentOffset.y : 0;
     
-    CMVideoDimensions dimensions;
-    if (self.mainFrameViewController.isStreaming) {
-        dimensions.width = (int32_t)currentSettings.width.intValue;
-        dimensions.height = (int32_t)currentSettings.height.intValue;
-    } else {
-        dimensions = [self getChosenStreamDimensions];
+    CMVideoDimensions dimensions = [self getChosenStreamDimensions];
+    NSInteger chosenResolution = self.customResolutionSwitch.isOn ? RESOLUTION_TABLE_CUSTOM_INDEX : self.resolutionSelector.selectedSegmentIndex;
+    if (self.mainFrameViewController.isStreaming && chosenResolution == tempSettings.resolutionSelected.integerValue &&
+        (chosenResolution != RESOLUTION_TABLE_CUSTOM_INDEX ||
+         (dimensions.width == tempSettings.width.intValue && dimensions.height == tempSettings.height.intValue))) {
+        dimensions.width = currentSettings.width.intValue;
+        dimensions.height = currentSettings.height.intValue;
     }
     NSInteger height = dimensions.height;
     NSInteger width = dimensions.width;

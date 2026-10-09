@@ -33,6 +33,7 @@
 @interface StreamFrameViewController : GCEventViewController <ConnectionCallbacks, ControllerSupportDelegate, UserInteractionDelegate, UIScrollViewDelegate, AVPictureInPictureControllerDelegate>
 #endif
 @property (nonatomic, strong) StreamManager* streamMan;
+@property (nonatomic, assign) BOOL endingForReconnect;
 @property (nonatomic) StreamConfiguration* streamConfig;
 @property (nonatomic, strong) AVPictureInPictureController *pipController API_AVAILABLE(ios(9.0));
 @property (nonatomic, strong) AVPictureInPictureControllerContentSource *pipContentSource API_AVAILABLE(ios(15.0)); // Needed for iOS 15+ layer-based PiP

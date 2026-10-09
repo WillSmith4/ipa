@@ -1785,6 +1785,9 @@ final class SettingsSession: NSObject, ObservableObject {
 
     private(set) var customWidth: Int
     private(set) var customHeight: Int
+    private var loadedResolutionSelection = 0
+    private var loadedCustomWidth = 0
+    private var loadedCustomHeight = 0
     private var lastPresetResolution: Int
     private var loadedRenderingBackend: Int
     private var loadedUnlockDisplayOrientation: Bool
@@ -1847,6 +1850,9 @@ final class SettingsSession: NSObject, ObservableObject {
         lastPresetResolution = persistedResolution == 5 ? 1 : min(max(persistedResolution, 0), 4)
         customWidth = snapshot.width.intValue
         customHeight = snapshot.height.intValue
+        loadedResolutionSelection = persistedResolution
+        loadedCustomWidth = customWidth
+        loadedCustomHeight = customHeight
         itemRegistry.frameRate.value = [30, 60, 120].contains(snapshot.framerate.intValue) ? snapshot.framerate.intValue : 60
         let bitrateIndex = settingsBitrateIndex(for: Double(snapshot.bitrate.intValue))
         itemRegistry.bitrate.value = settingsBitrateTable[bitrateIndex]
@@ -2350,7 +2356,6 @@ final class SettingsSession: NSObject, ObservableObject {
                 },
                 options: { $0.resolutionOptions },
                 distribution: .proportionalToContent,
-                isVisible: { !$0.isStreaming },
                 dynamicText: { $0.resolutionText }
             ),
             toggleItem(
@@ -2358,8 +2363,7 @@ final class SettingsSession: NSObject, ObservableObject {
                 setValue: { session, _, newValue in
                     session.setCustomResolution(newValue)
                 },
-                isAvailable: !PublicUtils.isTVOS,
-                isVisible: { !$0.isStreaming }
+                isAvailable: !PublicUtils.isTVOS
             ),
             pickerItem(
                 \.frameRate,
@@ -2369,8 +2373,7 @@ final class SettingsSession: NSObject, ObservableObject {
                         session.updateBitrateForCurrentResolutionAndFrameRate()
                 },
                 options: { $0.frameRateOptions },
-                distribution: .equal,
-                isVisible: { !$0.isStreaming }
+                distribution: .equal
             ),
             sliderItem(
                 \.bitrateSliderPosition,
@@ -4614,10 +4617,13 @@ final class SettingsSession: NSObject, ObservableObject {
 
         // MARK: Video
 
-        if !isStreaming {
+        let resolutionSelection = itemRegistry.usesCustomResolution.value ? 5 : itemRegistry.resolution.value
+        let resolutionEdited = resolutionSelection != loadedResolutionSelection ||
+            (resolutionSelection == 5 && (customWidth != loadedCustomWidth || customHeight != loadedCustomHeight))
+        if !isStreaming || resolutionEdited {
             settings.width = NSNumber(value: chosenWidth)
             settings.height = NSNumber(value: chosenHeight)
-            settings.resolutionSelected = NSNumber(value: itemRegistry.usesCustomResolution.value ? 5 : itemRegistry.resolution.value)
+            settings.resolutionSelected = NSNumber(value: resolutionSelection)
         }
         
         settings.framerate = NSNumber(value: itemRegistry.frameRate.value)
@@ -4738,6 +4744,9 @@ final class SettingsSession: NSObject, ObservableObject {
                 }
             }
         }
+        loadedResolutionSelection = resolutionSelection
+        loadedCustomWidth = customWidth
+        loadedCustomHeight = customHeight
     }
 
     fileprivate func markGameProfileItemChanged(_ item: SettingsItemDescriptor) {
@@ -7643,6 +7652,16 @@ extension SettingsViewController {
 
     @objc func reloadSwiftUISettings() {
         swiftUISettingsStore?.reloadFromPersistence()
+    }
+
+    @objc func reloadSwiftUISettingsForSession() {
+        guard let host = swiftUISettingsHost as? UIHostingController<SettingsRootView> else { return }
+        let store = SettingsSession(presentingController: self)
+        store.reloadFromPersistence()
+        store.updateStreamingState(ApplicationSettingsStore.shared.active, menuIsOpening: false)
+        swiftUISettingsStore = store
+        host.rootView = SettingsRootView(store: store)
+        updateSwiftUIContentInsets()
     }
 
     @objc func refreshSwiftUISettingsGeometry() {

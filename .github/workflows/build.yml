@@ -38,6 +38,9 @@ jobs:
       - name: Test app launch URLs, icons and Web Clips
         run: bash BuildScripts/test-app-shortcuts.sh
 
+      - name: Test per-application session settings
+        run: bash BuildScripts/test-app-settings.sh
+
       - name: Build unsigned device archive
         run: |
           set -o pipefail

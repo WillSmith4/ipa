@@ -14,6 +14,7 @@
 #import "OnScreenControls.h"
 #import "OnScreenButtonState.h"
 #import "DataManager.h"
+#import "ApplicationSettingsStore.h"
 #import "AppAssetManager.h"
 #import "LocalizationHelper.h"
 #import "OSCProfile.h"

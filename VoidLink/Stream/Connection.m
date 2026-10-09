@@ -33,6 +33,7 @@
     char _appVersionString[32];
     char _gfeVersionString[32];
     char _rtspSessionUrl[128];
+    dispatch_group_t _terminationGroup;
 }
 
 static NSLock* initLock;
@@ -639,6 +640,21 @@ void ClDs5HapticsIrV2(const LI_DS5_HAPTICS_IR_FRAME_V2* frame)
 
 -(void) terminate
 {
+    [self terminateWithCompletion:nil];
+}
+
+- (void)terminateWithCompletion:(void (^)(void))completion {
+    BOOL shouldTerminate = NO;
+    @synchronized (self) {
+        if (!_terminationGroup) {
+            _terminationGroup = dispatch_group_create();
+            dispatch_group_enter(_terminationGroup);
+            shouldTerminate = YES;
+        }
+        if (completion) dispatch_group_notify(_terminationGroup, dispatch_get_main_queue(), completion);
+    }
+    if (!shouldTerminate) return;
+    [self cancel];
     // Interrupt any action blocking LiStartConnection(). This is
     // thread-safe and done outside initLock on purpose, since we
     // won't be able to acquire it if LiStartConnection is in
@@ -656,6 +672,7 @@ void ClDs5HapticsIrV2(const LI_DS5_HAPTICS_IR_FRAME_V2* frame)
         [initLock lock];
         LiStopConnection();
         [initLock unlock];
+        dispatch_group_leave(self->_terminationGroup);
     });
 }
 
@@ -819,6 +836,10 @@ void ClDs5HapticsIrV2(const LI_DS5_HAPTICS_IR_FRAME_V2* frame)
 -(void) main
 {
     [initLock lock];
+    if (self.isCancelled) {
+        [initLock unlock];
+        return;
+    }
     LiStartConnection(&_serverInfo,
                       &_streamConfig,
                       &_clCallbacks,

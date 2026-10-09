@@ -303,6 +303,8 @@
 		CA6200000000000000000212 /* ApplicationLaunchRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6200000000000000000211 /* ApplicationLaunchRouter.swift */; };
 		CA6200000000000000000312 /* ApplicationShortcutActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6200000000000000000311 /* ApplicationShortcutActions.swift */; };
 		CA6200000000000000000412 /* WebClipProfileServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6200000000000000000411 /* WebClipProfileServer.swift */; };
+		CA6300000000000000000002 /* ApplicationSettingsStore.m in Sources */ = {isa = PBXBuildFile; fileRef = CA6300000000000000000001 /* ApplicationSettingsStore.m */; };
+		CA6300000000000000000003 /* ApplicationSettingsStore.m in Sources */ = {isa = PBXBuildFile; fileRef = CA6300000000000000000001 /* ApplicationSettingsStore.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -599,6 +601,8 @@
 		CA6200000000000000000211 /* ApplicationLaunchRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationLaunchRouter.swift; sourceTree = "<group>"; };
 		CA6200000000000000000311 /* ApplicationShortcutActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationShortcutActions.swift; sourceTree = "<group>"; };
 		CA6200000000000000000411 /* WebClipProfileServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebClipProfileServer.swift; sourceTree = "<group>"; };
+		CA6300000000000000000001 /* ApplicationSettingsStore.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ApplicationSettingsStore.m; path = Database/ApplicationSettingsStore.m; sourceTree = "<group>"; };
+		CA6300000000000000000004 /* ApplicationSettingsStore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ApplicationSettingsStore.h; path = Database/ApplicationSettingsStore.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -1193,6 +1197,8 @@
 			children = (
 				FBD349601A0089F6002D2A60 /* DataManager.h */,
 				FBD349611A0089F6002D2A60 /* DataManager.m */,
+				CA6300000000000000000001 /* ApplicationSettingsStore.m */,
+				CA6300000000000000000004 /* ApplicationSettingsStore.h */,
 				9832D1341BBCD5C50036EF48 /* TemporaryApp.h */,
 				9832D1351BBCD5C50036EF48 /* TemporaryApp.m */,
 				98D5856B1C0EA79600F6CC00 /* TemporaryHost.h */,
@@ -1503,6 +1509,7 @@
 				A70100000000000000000063 /* AppAssetResponse.m in Sources */,
 				A70100000000000000000064 /* AboutViewController.swift in Sources */,
 				A70100000000000000000065 /* DataManager.m in Sources */,
+				CA6300000000000000000003 /* ApplicationSettingsStore.m in Sources */,
 				A70100000000000000000066 /* ImGuiRenderer.mm in Sources */,
 				A70100000000000000000067 /* InertialScroller.swift in Sources */,
 				A70100000000000000000068 /* UIStackExtension.swift in Sources */,
@@ -1638,6 +1645,7 @@
 				FB9AFD3D1A7E111600872C98 /* AppAssetResponse.m in Sources */,
 				1888C1922E24C33100108730 /* AboutViewController.swift in Sources */,
 				FBD349621A0089F6002D2A60 /* DataManager.m in Sources */,
+				CA6300000000000000000002 /* ApplicationSettingsStore.m in Sources */,
 				97E20DE72E216510000D5DCA /* ImGuiRenderer.mm in Sources */,
 				18B317032EE67A3A009B62C2 /* InertialScroller.swift in Sources */,
 				2AC1EAFC2F922889004EDA80 /* UIStackExtension.swift in Sources */,

@@ -360,6 +360,7 @@ typedef enum
 - (void)enterRemoveSettingItemMode;
 - (void)doneRemoveSettingItem;
 - (void)layoutSettingsView;
+- (void)restoreSessionDefaults;
 @end
 
 

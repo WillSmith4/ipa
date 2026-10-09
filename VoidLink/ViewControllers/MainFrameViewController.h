@@ -20,6 +20,7 @@
 @class SettingsViewController;
 @class TemporaryApp;
 @class HostCollectionViewController;
+@class StreamFrameViewController;
 
 @interface MainFrameViewController : UICollectionViewController <DiscoveryCallback, PairCallback, AppAssetCallback, NSURLConnectionDelegate, SWRevealViewControllerDelegate, UITextFieldDelegate>
 
@@ -40,6 +41,7 @@
 - (void)expandSettingsView;
 - (void)closeSettingViewAnimated:(BOOL)anaimated;
 - (void)reloadStreamConfig;
+- (void)streamSettingsSessionEndedFromController:(StreamFrameViewController *)controller;
 - (bool)isIPhonePortrait;
 - (bool)isInAppView;
 - (bool)isStreaming;

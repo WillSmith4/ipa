@@ -87,6 +87,14 @@
     // Populate the config's version fields from serverinfo
     _config.appVersion = appversion;
     _config.gfeVersion = gfeVersion;
+
+    if (self.isCancelled) return;
+    if (_config.reconnectExistingApp &&
+        (![serverState hasSuffix:@"_SERVER_BUSY"] ||
+         ![[_config appID] isEqualToString:[serverInfoResp getStringTag:@"currentgame"]])) {
+        [_callbacks launchFailed:[LocalizationHelper localizedStringForKey:@"The running app changed. Connect again from the app list."]];
+        return;
+    }
     
     // resumeApp and launchApp handle calling launchFailed
     NSString* sessionUrl;
@@ -107,6 +115,7 @@
     
     // Initializing the renderer must be done on the main thread
     dispatch_async(dispatch_get_main_queue(), ^{
+        if (self.isCancelled) return;
         self->_videoRenderer = [[VideoDecoderRenderer alloc] initWithView:self->_renderView callbacks:self->_callbacks streamAspectRatio:(float)self->_config.width / (float)self->_config.height];
 
         self->_connection = [[Connection alloc] initWithConfig:self->_config renderer:self->_videoRenderer connectionCallbacks:self->_callbacks];
@@ -123,8 +132,23 @@
 
 - (void) stopStream
 {
+    [self stopStreamWithCompletion:nil];
+}
+
+- (void)stopStreamWithCompletion:(void (^)(void))completion {
+    [self cancel];
     [_connection terminate];
     _callbacks = nil;
+    if (!completion) return;
+    // Wait for an in-flight launch operation as well as LiStopConnection().
+    // A new connection must not overlap the old connection's global C state.
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        [self waitUntilFinished];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (self->_connection) [self->_connection terminateWithCompletion:completion];
+            else completion();
+        });
+    });
 }
 
 - (BOOL) launchApp:(HttpManager*)hMan receiveSessionUrl:(NSString**)sessionUrl {

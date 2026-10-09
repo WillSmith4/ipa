@@ -12,6 +12,8 @@
 @interface StreamConfiguration : NSObject
 
 @property NSString* host;
+@property NSString* hostUUID;
+@property BOOL reconnectExistingApp;
 @property unsigned short httpsPort;
 @property NSString* appVersion;
 @property NSString* gfeVersion;
