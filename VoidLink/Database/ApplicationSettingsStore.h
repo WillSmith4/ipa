@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithDefaults:(NSUserDefaults *)defaults;
 - (void)beginWithHostUUID:(NSString *)hostUUID appID:(NSString *)appID;
 - (void)endSession;
-- (NSDictionary *)valuesForDomain:(NSString *)domain defaults:(NSDictionary *)defaults;
+- (NSDictionary<NSString *, id> *)valuesForDomain:(NSString *)domain defaults:(NSDictionary<NSString *, id> *)defaults;
 - (void)stageValues:(NSDictionary *)values previousValues:(NSDictionary *)previous
             domain:(NSString *)domain sessionIdentifier:(nullable NSString *)identifier;
 - (void)commitWithSettings:(NSDictionary *)settings profile:(NSDictionary *)profile;

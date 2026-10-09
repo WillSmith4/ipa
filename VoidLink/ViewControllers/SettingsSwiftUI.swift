@@ -7654,6 +7654,7 @@ extension SettingsViewController {
         swiftUISettingsStore?.reloadFromPersistence()
     }
 
+    @available(iOS 14.0, tvOS 14.0, *)
     @objc func reloadSwiftUISettingsForSession() {
         guard let host = swiftUISettingsHost as? UIHostingController<SettingsRootView> else { return }
         let store = SettingsSession(presentingController: self)
