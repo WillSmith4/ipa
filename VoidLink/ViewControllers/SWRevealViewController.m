@@ -1216,6 +1216,9 @@ const int FrontViewPositionNone = 0xff;
             case FavoriteSettings:
                 menu = [self settingsMenuWithActions:@[action1, action2]];
                 break;
+            case RemoveSettingItem:
+                menu = [self settingsMenuWithActions:@[[self getDoneRemoveSettingAction]]];
+                break;
             default:
                 break;
         }

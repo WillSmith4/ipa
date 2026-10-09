@@ -119,6 +119,14 @@ int main(int argc, const char *argv[]) {
         NSManagedObject *saved = [first retrieveSettings];
         Check([[saved valueForKey:@"width"] intValue] == 2560 && [[saved valueForKey:@"rotationAction"] isEqual:@"Q"], @"Independent DataManagers merge edits");
         Check([[row valueForKey:@"width"] intValue] == 1920 && [[row valueForKey:@"rotationAction"] isEqual:@"MOUSE_MIDDLE"], @"Global row remains intact");
+        [saved setValue:@17 forKey:@"localRadialMenuButton"];
+        NSManagedObject *nextStep = [first retrieveSettings];
+        [nextStep setValue:@18 forKey:@"streamingRadialMenuButton"];
+        [first saveData];
+        saved = [first retrieveSettings];
+        Check([[saved valueForKey:@"localRadialMenuButton"] intValue] == 17 &&
+              [[saved valueForKey:@"streamingRadialMenuButton"] intValue] == 18,
+              @"Multi-step controller capture keeps earlier choices until the final save");
         [saved setValue:@120 forKey:@"framerate"];
         [shared endSession]; [first saveData];
         Check([[row valueForKey:@"framerate"] intValue] == 60, @"Late session save cannot overwrite globals");

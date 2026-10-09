@@ -289,6 +289,13 @@
 - (Settings*) retrieveSettings {
     Settings *global = [self retrieveGlobalSettings];
     ApplicationSettingsStore *store = ApplicationSettingsStore.shared;
+    NSMutableDictionary *pending = [NSMutableDictionary dictionary];
+    if (_sessionSettings && [_settingsSessionIdentifier isEqualToString:store.sessionIdentifier]) {
+        NSDictionary *values = [_sessionSettings dictionaryWithValuesForKeys:global.entity.attributesByName.allKeys];
+        for (NSString *key in values) {
+            if (![values[key] isEqual:_sessionSettingsBaseline[key]]) pending[key] = values[key];
+        }
+    }
     _settingsSessionIdentifier = store.sessionIdentifier;
     _sessionSettings = nil;
     _sessionSettingsBaseline = nil;
@@ -300,6 +307,9 @@
     // writing application overrides into the shared Core Data row.
     _sessionSettings = [[Settings alloc] initWithEntity:global.entity insertIntoManagedObjectContext:nil];
     [_sessionSettings setValuesForKeysWithDictionary:_sessionSettingsBaseline];
+    // Multi-step editors (e.g. controller button capture) read repeatedly and
+    // save only at the end. Keep their unsaved fields while refreshing others.
+    [_sessionSettings setValuesForKeysWithDictionary:pending];
     return _sessionSettings;
 }
 

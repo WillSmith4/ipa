@@ -603,8 +603,12 @@
 }
 
 - (void)reloadSessionSettings {
+    TemporarySettings *snapshot = [[[DataManager alloc] init] getSettings];
+    if (@available(iOS 13.0, *)) {
+        [ThemeManager setUserInterfaceStyle:(UIUserInterfaceStyle)snapshot.appTheme.integerValue];
+    }
     if (!self.isViewLoaded) return;
-    tempSettings = [dataMan getSettings];
+    tempSettings = snapshot;
     if (@available(iOS 14.0, *)) {
         if (self.usesSwiftUISettings) {
             [self reloadSwiftUISettingsForSession];

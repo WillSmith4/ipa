@@ -34,17 +34,19 @@
         @"swipeAction", @"pinchInAction", @"pinchOutAction", @"rotationAction",
         @"rotationSensitivity", @"onscreenControls", @"buttonVisualFeedback", @"touchPointTracking",
         @"enableControllerNavigation", @"streamingRadialMenuDelay", @"streamingRadialMenuButton",
+        @"localRadialMenuButton", @"customLocalRadialMenuButtonPosition",
         @"customStreamingRadialMenuButtonPosition", @"controllerMouseStick",
         @"controllerMouseLeftButton", @"controllerMouseRightButton",
         @"controllerMousePointerVelocity", @"controllerMouseExpo", @"swapABXYButtons",
         @"hapticEngine", @"gyroMode", @"gyroSensitivity", @"pencilTickMode",
+        @"gyroBiasX", @"gyroBiasY", @"gyroBiasZ", @"controllerGyroBiasX", @"controllerGyroBiasY", @"controllerGyroBiasZ",
         @"pencilTickIntervalUs", @"pencilTipOffsetX", @"pencilTipOffsetY",
         @"keyboardToggleFingers", @"slideToSettingsScreenEdge", @"slideToSettingsDistance",
-        @"edgeSlidingSensitivity", @"localMousePointerMode", @"reverseMouseWheelDirection",
+        @"edgeSlidingSensitivity", @"localMousePointerMode", @"reverseMouseWheelDirection", @"btMouseSupport",
         @"globeAsEscape", @"localVolume", @"redirectMic", @"micVolume", @"muteInBackground",
         @"audioConfig", @"statsOverlayLevel", @"statsOverlayEnabled",
         @"backgroundSessionTimer", @"appTheme", @"showKeyboardToolbar", @"softKeyboardHeight",
-        @"relativeTouchSlideThreshold", @"singleTapSensitivity", @"leftClickDelayMs", @"enableGraphs"];
+        @"relativeTouchSlideThreshold", @"singleTapSensitivity", @"leftClickDelayMs", @"enableGraphs", @"graphOpacity"];
 }
 
 + (NSArray<NSString *> *)profileKeys {
@@ -54,7 +56,7 @@
         @"reverseGyroHoldButton", @"useBuiltinGyro", @"swapYawAndRoll", @"mapGyroTo",
         @"yawPitchToRightStick", @"rollToLeftStick", @"gyroSensitivityYaw", @"gyroSensitivityPitch",
         @"gyroSensitivityRoll", @"gyroToStickMinOffset", @"synthesizePhysicalStick",
-        @"pressureCurveEnabled", @"pressureCurvePoints", @"phase1StrokeSampleIndexEnd",
+        @"pressureCurveEnabled", @"pressureCurvePoints", @"phase1StrokeSampleIndexEnd", @"phase2StrokeSampleIndexEnd",
         @"strokeEqualizationStrength", @"doubleTapShorcutEnabled", @"brushShortcut",
         @"eraserShortcut", @"squeezeShorcutEnabled", @"squeezeStartShortcut", @"squeezeEndShortcut",
         @"pencilAndHoverMode", @"pencilPausesNativeTouch", @"disablePencilSlideGestures"];
