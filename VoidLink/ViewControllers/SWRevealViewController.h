@@ -369,6 +369,9 @@ typedef enum
 
 @optional
 
+// Explicit Settings collapse button; automatic dismissal/disconnection does not call this.
+- (void)revealControllerWillCollapseSettings:(SWRevealViewController *)revealController;
+
 // The following delegate methods will be called before and after the front view moves to a position
 - (void)revealController:(SWRevealViewController *)revealController willMoveToPosition:(FrontViewPosition)position;
 - (void)revealController:(SWRevealViewController *)revealController didMoveToPosition:(FrontViewPosition)position;

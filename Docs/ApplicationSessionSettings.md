@@ -6,6 +6,8 @@ defaults. Existing installations need no database migration.
 
 The existing collapse button saves all session-editable settings, including
 Touch Control, gesture assignments and the Settings-owned OSC/Pencil controls.
+Opening the menu or disconnecting the stream does not create or overwrite an
+application override. Only the explicit collapse button commits it.
 Codec, HDR, YUV 4:4:4, frame pacing, async dequeue, renderer and other
 connection-only options remain shared. Widget layout persistence is unchanged.
 

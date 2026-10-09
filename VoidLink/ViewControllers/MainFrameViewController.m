@@ -99,7 +99,7 @@ static NSArray<UIBarButtonItem *> *VLBarButtonItems(UIBarButtonItem *first, UIBa
     bool _viewJustAppeared;
     TemporaryApp * launchedApp;
     NSDictionary *_sessionQualityBeforeEditing;
-    BOOL _closingSessionSettings;
+    BOOL _sessionSettingsMenu;
     BOOL _pendingSettingsReconnect;
     NSUInteger _streamLaunchGeneration;
     BOOL _launchLinkInProgress;
@@ -1455,26 +1455,34 @@ static NSMutableSet* hostList;
     }
 }
 
+- (void)revealControllerWillCollapseSettings:(SWRevealViewController *)revealController {
+    if (!revealController.isStreaming || !self.settingsExpandedInStreamView ||
+        !ApplicationSettingsStore.shared.active) return;
+    self.settingsViewController = (SettingsViewController *)revealController.rearViewController;
+    // Only the explicit collapse button commits the app's settings. Save before
+    // the panel disappears so live reconfiguration reads the committed values.
+    [self.settingsViewController saveSettings];
+    Settings *settings = [[[DataManager alloc] init] retrieveSettings];
+    NSDictionary *values = [settings dictionaryWithValuesForKeys:settings.entity.attributesByName.allKeys];
+    OSCProfile *profile = [[OSCProfilesManager sharedManager:CGRectZero] getSelectedProfile];
+    [ApplicationSettingsStore.shared commitWithSettings:values
+        profile:[profile dictionaryWithValuesForKeys:ApplicationSettingsStore.profileKeys]];
+    _pendingSettingsReconnect = _sessionQualityBeforeEditing &&
+        [ApplicationSettingsStore requiresReconnectFrom:_sessionQualityBeforeEditing to:values];
+}
+
 - (void)revealController:(SWRevealViewController *)revealController willMoveToPosition:(FrontViewPosition)position {
     self.settingsViewController = (SettingsViewController*)[revealController rearViewController];
     revealController.navBarMenuDelegate = self.settingsViewController;
 
-    if (position != FrontViewPositionLeft && revealController.isStreaming) {
-        TemporarySettings *settings = [[[DataManager alloc] init] getSettings];
-        _sessionQualityBeforeEditing = [settings dictionaryWithValuesForKeys:@[@"width", @"height", @"framerate"]];
-    }
-    if (position == FrontViewPositionLeft && self.settingsExpandedInStreamView && ApplicationSettingsStore.shared.active) {
-        // Save before the sidebar disappears, so the existing live-reconfigure
-        // notification reads the new values. The shared database is untouched.
-        _closingSessionSettings = YES;
-        [self.settingsViewController saveSettings];
-        Settings *settings = [[[DataManager alloc] init] retrieveSettings];
-        NSDictionary *values = [settings dictionaryWithValuesForKeys:settings.entity.attributesByName.allKeys];
-        OSCProfile *profile = [[OSCProfilesManager sharedManager:CGRectZero] getSelectedProfile];
-        [ApplicationSettingsStore.shared commitWithSettings:values
-            profile:[profile dictionaryWithValuesForKeys:ApplicationSettingsStore.profileKeys]];
-        _pendingSettingsReconnect = _sessionQualityBeforeEditing &&
-            [ApplicationSettingsStore requiresReconnectFrom:_sessionQualityBeforeEditing to:values];
+    if (position != FrontViewPositionLeft) {
+        // Remember where the menu opened: Disconnect may end the session before
+        // its closing animation completes. That must not trigger a global save.
+        _sessionSettingsMenu = revealController.isStreaming;
+        if (_sessionSettingsMenu) {
+            TemporarySettings *settings = [[[DataManager alloc] init] getSettings];
+            _sessionQualityBeforeEditing = [settings dictionaryWithValuesForKeys:@[@"width", @"height", @"framerate"]];
+        }
     }
     
     _settingsViewExpanded = position != FrontViewPositionLeft;
@@ -1610,14 +1618,15 @@ static NSMutableSet* hostList;
 }
 
 - (void)revealController:(SWRevealViewController *)revealController didMoveToPosition:(FrontViewPosition)position {
-        // If we moved back to the center position, we should save the settings
+    // Main settings still save on dismissal. Session settings only save through
+    // the explicit collapse button, never through Disconnect's animation.
     self.settingsViewController = (SettingsViewController*)[revealController rearViewController];
     self.settingsViewController.mainFrameViewController = self;
 
     if (position == FrontViewPositionLeft) {
         if (@available(iOS 13.0, *)) [ControllerNavigator persistUINavigationHighlight];
-        if (!_closingSessionSettings) [self.settingsViewController saveSettings];
-        _closingSessionSettings = NO;
+        if (!_sessionSettingsMenu) [self.settingsViewController saveSettings];
+        _sessionSettingsMenu = NO;
         if (_pendingSettingsReconnect) {
             _pendingSettingsReconnect = NO;
             dispatch_async(dispatch_get_main_queue(), ^{ [self reconnectAfterSettingsChange]; });

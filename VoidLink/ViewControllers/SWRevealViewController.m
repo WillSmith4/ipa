@@ -1319,7 +1319,11 @@ const int FrontViewPositionNone = 0xff;
 }
 
 - (void)foldRearView{
-    [self revealToggleAnimated:YES];
+    if (self.isStreaming && _frontViewPosition > FrontViewPositionLeft &&
+        [_delegate respondsToSelector:@selector(revealControllerWillCollapseSettings:)]) {
+        [_delegate revealControllerWillCollapseSettings:self];
+    }
+    [self setFrontViewPosition:FrontViewPositionLeft animated:YES];
 }
 
 - (void)disconnectRemoteSession{
@@ -1329,7 +1333,8 @@ const int FrontViewPositionNone = 0xff;
     if([self getSettingsMenuMode] == FavoriteSettings) [self favoriteSettingSelected];
     
     // foldRearView此时, 收起时先通过mainFrame委托方法触发setHidden:false(hidden=false, 并更新清单) 再由内部willMoveToPosition运行layoutSettingsView，根据清单执行隐藏, 确保经过setHidden:false的stack可以恢复显示。
-    [self foldRearView];
+    // Disconnect closes the panel without invoking the Settings save button.
+    [self setFrontViewPosition:FrontViewPositionLeft animated:YES];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"SessionDisconnectedBySettingsMenuNotification" object:self];
 
     // 以上两段没有执行顺序要求，因为第一段放后面的话， 也能保证stack不会在hidden状态下被转移到新的superView

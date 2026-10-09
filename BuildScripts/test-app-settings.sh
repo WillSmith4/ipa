@@ -30,3 +30,25 @@ PY
 xcrun clang -fobjc-arc -fblocks -framework Foundation -I "$test_dir" \
   Tests/ConnectionStopTests.m -o "$test_dir/connection-stop-tests"
 "$test_dir/connection-stop-tests"
+python3 - "$test_dir/SettingsMenuButtonMethods.inc" <<'PY'
+from pathlib import Path
+import sys
+source = Path('VoidLink/ViewControllers/SWRevealViewController.m').read_text(encoding='utf-8')
+methods = []
+for signature in ['- (void)foldRearView{', '- (void)disconnectRemoteSession{']:
+    start = source.index(signature)
+    end = source.index('\n}', start) + 2
+    methods.append(source[start:end])
+Path(sys.argv[1]).write_text('\n'.join(methods), encoding='utf-8')
+# Persistence must be owned by the explicit button callback, not a transition
+# callback that is also invoked by Disconnect and automatic panel dismissal.
+main = Path('VoidLink/ViewControllers/MainFrameViewController.m').read_text(encoding='utf-8')
+start = main.index('- (void)revealControllerWillCollapseSettings:')
+end = main.index('\n- (', start + 1)
+assert main.count('commitWithSettings:') == 1
+assert 'commitWithSettings:' in main[start:end]
+PY
+xcrun clang -fobjc-arc -fblocks -framework Foundation \
+  -I VoidLink/Database -I "$test_dir" VoidLink/Database/ApplicationSettingsStore.m \
+  Tests/SettingsMenuSaveTests.m -o "$test_dir/settings-menu-save-tests"
+"$test_dir/settings-menu-save-tests"
