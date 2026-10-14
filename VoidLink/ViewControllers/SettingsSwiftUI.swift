@@ -381,6 +381,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
     case unlockDisplayOrientation = "unlockDisplayOrientationStack"
     case backgroundSessionTimer = "backgroundSessionTimerStack"
     case appTheme = "appThemeStack"
+    case alwaysHideStatusBar = "alwaysHideStatusBarStack"
     case optimizeGames = "optimizeGamesStack"
     case multiController = "multiControllerStack"
 
@@ -494,6 +495,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .unlockDisplayOrientation: return "90° Display Rotation"
         case .backgroundSessionTimer: return "Background Session"
         case .appTheme: return "Theme"
+        case .alwaysHideStatusBar: return "Always Hide Status Bar"
         case .optimizeGames: return "Optimize Game Settings"
         case .multiController: return "Multi-Controller Mode"
         case .softKeyboardToolbar: return "Soft Keyboard Toolbar"
@@ -1292,6 +1294,7 @@ final class SettingsItemRegistry: ObservableObject {
     let unlockDisplayOrientation = SettingsItemModel<Int>(id: .unlockDisplayOrientation, value: 1)
     let backgroundSessionTimer = SettingsItemModel<Double>(id: .backgroundSessionTimer, value: 0)
     let appTheme = SettingsItemModel<Int>(id: .appTheme, value: UIUserInterfaceStyle.light.rawValue)
+    let alwaysHideStatusBar = SettingsItemModel<Bool>(id: .alwaysHideStatusBar, value: true)
     let optimizeGames = SettingsItemModel<Bool>(id: .optimizeGames, value:true)
     let multiController = SettingsItemModel<Bool>(id: .multiController, value: true)
     let softKeyboardToolbar = SettingsItemModel<Bool>(id: .softKeyboardToolbar, value: true)
@@ -1420,6 +1423,7 @@ final class SettingsItemRegistry: ObservableObject {
             unlockDisplayOrientation.objectWillChange,
             backgroundSessionTimer.objectWillChange,
             appTheme.objectWillChange,
+            alwaysHideStatusBar.objectWillChange,
             optimizeGames.objectWillChange,
             multiController.objectWillChange,
             softKeyboardToolbar.objectWillChange,
@@ -1950,6 +1954,7 @@ final class SettingsSession: NSObject, ObservableObject {
         itemRegistry.unlockDisplayOrientation.value = snapshot.unlockDisplayOrientation ? 1 : 0
         itemRegistry.backgroundSessionTimer.value = Double(snapshot.backgroundSessionTimer.intValue)
         itemRegistry.appTheme.value = snapshot.appTheme.intValue
+        itemRegistry.alwaysHideStatusBar.value = StatusBarPreferences.shared.alwaysHideStatusBar
         itemRegistry.optimizeGames.value = snapshot.optimizeGames
         itemRegistry.multiController.value = snapshot.multiController
         itemRegistry.softKeyboardToolbar.value = snapshot.showKeyboardToolbar
@@ -3433,6 +3438,13 @@ final class SettingsSession: NSObject, ObservableObject {
                 distribution: .equal,
                 onValueChanged: { session in
                     session.appThemeChanged()
+                }
+            ),
+            toggleItem(
+                \.alwaysHideStatusBar,
+                isAvailable: !PublicUtils.isTVOS,
+                onValueChanged: { session in
+                    StatusBarPreferences.shared.alwaysHideStatusBar = session.itemRegistry.alwaysHideStatusBar.value
                 }
             ),
             toggleItem(

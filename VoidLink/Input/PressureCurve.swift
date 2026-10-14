@@ -491,6 +491,7 @@ final class PressureCurveLUT {
 
 // MARK: - ViewController
 class PressureCurveViewController: UIViewController, UIGestureRecognizerDelegate {
+    override var prefersStatusBarHidden: Bool { StatusBarPreferences.shared.alwaysHideStatusBar }
     
     private var navBar = UINavigationBar()
     private var saveButton: UIBarButtonItem = UIBarButtonItem()

@@ -140,6 +140,6 @@ VoidLink uses microphone to stream your voice to PC host. Microphone redirection
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
+	<true/>
 </dict>
 </plist>

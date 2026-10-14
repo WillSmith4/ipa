@@ -31,6 +31,7 @@
 
 #import "SWRevealViewController.h"
 #import "LocalizationHelper.h"
+#import "StatusBarPreferences.h"
 #import "VoidLink-Swift.h"
 
 
@@ -760,6 +761,9 @@ const int FrontViewPositionNone = 0xff;
 
 - (UIViewController *)childViewControllerForStatusBarStyle
 {
+#if !TARGET_OS_TV
+    return nil;
+#else
     int positionDif =  _frontViewPosition - FrontViewPositionLeft;
     
     UIViewController *controller = _frontViewController;
@@ -767,14 +771,40 @@ const int FrontViewPositionNone = 0xff;
     else if ( positionDif < 0 ) controller = _rightViewController;
     
     return controller;
+#endif
 }
 
 - (UIViewController *)childViewControllerForStatusBarHidden
 {
+#if !TARGET_OS_TV
+    // This container owns the shared preference in Hosts, Settings and the
+    // stream, regardless of which navigation/hosting controller is visible.
+    return nil;
+#else
     UIViewController *controller = [self childViewControllerForStatusBarStyle];
     return controller;
+#endif
 }
 
+#if !TARGET_OS_TV
+- (BOOL)prefersStatusBarHidden {
+    return StatusBarPreferences.shared.alwaysHideStatusBar;
+}
+
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    if ((self.isStreaming && _frontViewPosition == FrontViewPositionLeft) ||
+        ThemeManager.userInterfaceStyle == UIUserInterfaceStyleDark) return UIStatusBarStyleLightContent;
+    return UIStatusBarStyleDefault;
+}
+
+- (void)statusBarPreferenceDidChange {
+    // SceneDelegate wraps this container in a GCEventViewController. Invalidate
+    // both controllers so UIKit re-queries the visible scene immediately.
+    for (UIViewController *controller = self; controller; controller = controller.parentViewController) {
+        [controller setNeedsStatusBarAppearanceUpdate];
+    }
+}
+#endif
 
 #pragma mark - View lifecycle
 
@@ -866,6 +896,9 @@ const int FrontViewPositionNone = 0xff;
 }
 
 - (void)updateTheme {
+#if !TARGET_OS_TV
+    [self statusBarPreferenceDidChange];
+#endif
     _contentView.backgroundColor = ThemeManager.menuBackgroundColor;
     _contentView.rearNavView.backgroundColor = ThemeManager.menuBackgroundColor;
     _contentView.safeAreaPadding.backgroundColor = ThemeManager.menuBackgroundColor;
@@ -893,6 +926,10 @@ const int FrontViewPositionNone = 0xff;
 
 - (void)viewDidLoad{
     self.isStreaming = false; //init this flag
+#if !TARGET_OS_TV
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(statusBarPreferenceDidChange)
+        name:StatusBarPreferencesDidChangeNotification object:StatusBarPreferences.shared];
+#endif
     
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(updateTheme)

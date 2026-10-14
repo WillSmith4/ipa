@@ -11,6 +11,7 @@ import SwiftUI
 
 @available(iOS 13.0, *)
 @objc class AboutViewController: UIViewController, ControllerUINavigationDelegate, UIAdaptivePresentationControllerDelegate {
+    override var prefersStatusBarHidden: Bool { StatusBarPreferences.shared.alwaysHideStatusBar }
     private var hasNotifiedDismissal = false
 
     private func notifyDismissal() {

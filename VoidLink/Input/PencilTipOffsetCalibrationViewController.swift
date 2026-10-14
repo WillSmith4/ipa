@@ -103,6 +103,7 @@ private final class PencilTipOffsetCanvasView: UIView {
 }
 
 @objc class PencilTipOffsetCalibrationViewController: UIViewController, UIGestureRecognizerDelegate {
+    override var prefersStatusBarHidden: Bool { StatusBarPreferences.shared.alwaysHideStatusBar }
     private let container = UIView()
     private let canvasView = PencilTipOffsetCanvasView()
     private let xSlider = UISlider()

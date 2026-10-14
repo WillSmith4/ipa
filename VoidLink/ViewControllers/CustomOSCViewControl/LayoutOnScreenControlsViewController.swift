@@ -13,6 +13,7 @@ import UIKit
 
 @objcMembers
 final class LayoutOnScreenControlsViewController: UIViewController, OnScreenWidgetView.OnScreenWidgetLayoutUpdateDelegate, UITextFieldDelegate {
+    override var prefersStatusBarHidden: Bool { StatusBarPreferences.shared.alwaysHideStatusBar }
     private enum AlphaSliderMode: Int {
         case widgetAlpha
         case labelAlpha

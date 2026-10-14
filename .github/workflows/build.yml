@@ -41,6 +41,9 @@ jobs:
       - name: Test per-application session settings
         run: bash BuildScripts/test-app-settings.sh
 
+      - name: Test status bar preference
+        run: bash BuildScripts/test-status-bar.sh
+
       - name: Build unsigned device archive
         run: |
           set -o pipefail

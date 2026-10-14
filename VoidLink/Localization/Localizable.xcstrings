@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Always Hide Status Bar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always Hide Status Bar"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zawsze ukrywaj pasek stanu"
+          }
+        }
+      }
+    },
     "Restore Defaults": {
       "extractionState": "manual",
       "localizations": {

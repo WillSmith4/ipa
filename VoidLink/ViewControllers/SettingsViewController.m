@@ -17,6 +17,7 @@
 #import "TemporarySettings.h"
 #import "DataManager.h"
 #import "ApplicationSettingsStore.h"
+#import "StatusBarPreferences.h"
 #import "VoidLink-Swift.h"
 #import "Connection.h"
 #import "Plot.h"
@@ -85,6 +86,7 @@
     NSMutableArray<UIStackView *> *viewportActionStacks;
     UIStackView *rotationSensitivityStack;
     UISlider *rotationSensitivitySlider;
+    UISwitch *alwaysHideStatusBarSwitch;
 
     // ControllerNavigator UI navigation state
     UIView *_controllerNavigationHighlightOverlayView;
@@ -2025,6 +2027,18 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.backgroundSessionTimerStack ofId:@"backgroundSessionTimerStack" to:otherSection];
 
     [self addSetting:self.appThemeStack ofId:@"appThemeStack" to:otherSection];
+
+    UILabel *statusBarLabel = [[UILabel alloc] init];
+    statusBarLabel.text = [LocalizationHelper localizedStringForKey:@"Always Hide Status Bar"];
+    statusBarLabel.font = ((UILabel *)self.rememberFoldStateStack.arrangedSubviews.firstObject).font;
+    alwaysHideStatusBarSwitch = [[UISwitch alloc] init];
+    alwaysHideStatusBarSwitch.on = StatusBarPreferences.shared.alwaysHideStatusBar;
+    [alwaysHideStatusBarSwitch addTarget:self action:@selector(alwaysHideStatusBarChanged:) forControlEvents:UIControlEventValueChanged];
+    UIStackView *statusBarStack = [[UIStackView alloc] initWithArrangedSubviews:@[statusBarLabel, alwaysHideStatusBarSwitch]];
+    statusBarStack.axis = self.rememberFoldStateStack.axis;
+    statusBarStack.spacing = self.rememberFoldStateStack.spacing;
+    statusBarStack.alignment = self.rememberFoldStateStack.alignment;
+    [self addSetting:statusBarStack ofId:@"alwaysHideStatusBarStack" to:otherSection];
 
     self.optimizeGamesStack.hasInfoTag = YES;
     [self addSetting:self.optimizeGamesStack ofId:@"optimizeGamesStack" to:otherSection];
@@ -4121,6 +4135,10 @@ BOOL isCustomResolution(int resolutionSelected) {
     Settings* currentSettings = [self->dataMan retrieveSettings];
     currentSettings.appTheme = @(sender.selectedSegmentIndex);
     [dataMan saveData];
+}
+
+- (void)alwaysHideStatusBarChanged:(UISwitch *)sender {
+    StatusBarPreferences.shared.alwaysHideStatusBar = sender.isOn;
 }
 
 // veloc factor upto 700%
