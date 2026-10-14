@@ -787,6 +787,12 @@ const int FrontViewPositionNone = 0xff;
 }
 
 #if !TARGET_OS_TV
+- (void)setIsStreaming:(bool)streaming {
+    if (_isStreaming == streaming) return;
+    _isStreaming = streaming;
+    [self statusBarPreferenceDidChange];
+}
+
 - (BOOL)prefersStatusBarHidden {
     return StatusBarPreferences.shared.alwaysHideStatusBar;
 }
