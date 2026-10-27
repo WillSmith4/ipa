@@ -17,6 +17,7 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 
 @implementation RelativeTouchHandler {
     NSUInteger inputGeneration;
+    NSUInteger rightClickGeneration;
     TemporarySettings* currentSettings;
     CGPoint latestMousePointerLocation, initialMousePointerLocation;
     CGPoint twoFingerTouchLocation;
@@ -100,16 +101,16 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 }
 
 - (void)mouseRightClick {
-    NSUInteger generation = inputGeneration;
+    NSUInteger generation = rightClickGeneration;
     multiTouchesDetected = false;
     dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC));
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (generation != self->inputGeneration) return;
+        if (generation != self->rightClickGeneration) return;
         LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_RIGHT);
         Log(LOG_D, @"Sending right mouse button press");
         // Wait 100 ms to simulate a real button press
         dispatch_after(delay, dispatch_get_main_queue(), ^{
-            if (generation != self->inputGeneration) return;
+            if (generation != self->rightClickGeneration) return;
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
         });
     });
@@ -242,13 +243,19 @@ static const float QUICK_TAP_TIME_INTERVAL = 0.2;
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
     inputGeneration++;
+    // Recognizing the two-finger tap cancels its underlying view touches too.
+    // Preserve that click, but still invalidate it on interruption or teardown
+    // (explicit handler cancellation passes a nil event).
+    BOOL completingRightClick = event != nil &&
+        _mouseRightClickTapRecognizer.state == UIGestureRecognizerStateRecognized;
+    if (!completingRightClick) rightClickGeneration++;
     [TouchPadGestureHandler cancel];
     multiTouchesDetected = false;
     quickTapDetected = false;
     touchLockedForMouseMove = nil;
     mousePointerMoved = false;
     LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
-    LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
+    if (!completingRightClick) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_RIGHT);
 }
 
 - (void)sendMouseMoveEvent:(CGPoint)currentLocation{

@@ -55,6 +55,19 @@ pathlib.Path(sys.argv[1]).write_text(source.replace('import UIKit', 'import Foun
 PY
 swiftc "$test_dir/TouchPadGestureHandler.swift" Tests/TouchpadGestureTests.swift -o "$test_dir/touchpad-tests"
 "$test_dir/touchpad-tests"
+python3 - "$test_dir/TouchpadRightClickMethods.inc" <<'PY'
+import pathlib, sys
+source = pathlib.Path('VoidLink/Input/RelativeTouchHandler.m').read_text(encoding='utf-8')
+methods = []
+for name in ['mouseRightClick', 'touchesCancelled:', 'sendLongMouseLeftButtonClickEvent']:
+    start = source.index('- (void)' + name)
+    end = source.index('\n- (', start + 1)
+    methods.append(source[start:end])
+pathlib.Path(sys.argv[1]).write_text('\n'.join(methods), encoding='utf-8')
+PY
+xcrun clang -fobjc-arc -fblocks -framework Foundation -I "$test_dir" \
+  Tests/TouchpadRightClickTests.m -o "$test_dir/touchpad-right-click-tests"
+"$test_dir/touchpad-right-click-tests"
 python3 - "$test_dir/AbsoluteDragHandoffMethods.inc" <<'PY'
 import pathlib, sys
 source = pathlib.Path('VoidLink/Input/AbsoluteTouchHandler.m').read_text(encoding='utf-8')

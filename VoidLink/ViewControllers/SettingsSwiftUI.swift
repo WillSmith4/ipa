@@ -6748,6 +6748,11 @@ private struct SettingsCatalogItemView: View {
     }
 
     private func availableDynamicLabelWidth() -> CGFloat? {
+        // Keep this slider's percentage visible even with its long localized
+        // title. The title already scales down to fit the reserved space.
+        if item.id == .twoFingerSlideSensitivity {
+            return SettingsItemDecorationMetrics.dynamicMinimumWidth
+        }
         let titleWidth = settingsTitleWidth(item.id.titleKey.localized)
         let showsInfo = (item.hasInfo || item.isGameProfileSetting) && !suppressInfo
         let trailingWidth = showsInfo
