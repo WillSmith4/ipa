@@ -100,7 +100,7 @@ int main(void) {
         NSCAssert(sent.count == 0, @"Opening settings cannot apply bitrate");
         [main revealController:menu didMoveToPosition:FrontViewPositionLeft];
         dispatch_sync(main->_settingsBitrateQueue, ^{});
-        NSCAssert([sent isEqual:@[@[@"host-A", @35000]]] && main->_pendingSettingsBitrate == nil,
+        NSCAssert(([sent isEqual:@[@[@"host-A", @35000]]] && main->_pendingSettingsBitrate == nil),
                   @"Apply exactly the committed bitrate after collapse without reconnecting");
         main->_sessionSettingsMenu = YES; // Disconnect has no pending saved bitrate
         [main revealController:menu didMoveToPosition:FrontViewPositionLeft];
@@ -112,7 +112,7 @@ int main(void) {
         main->launchedApp.host = @"host-B";
         dispatch_resume(main->_settingsBitrateQueue);
         dispatch_sync(main->_settingsBitrateQueue, ^{});
-        NSCAssert([sent.lastObject isEqual:@[@"host-A", @40000]], @"Queued request captures its host");
+        NSCAssert(([sent.lastObject isEqual:@[@"host-A", @40000]]), @"Queued request captures its host");
         dispatch_suspend(main->_settingsBitrateQueue);
         [main applySavedSessionBitrate:45000];
         [store endSession];
