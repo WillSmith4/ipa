@@ -101,6 +101,8 @@ static NSArray<UIBarButtonItem *> *VLBarButtonItems(UIBarButtonItem *first, UIBa
     NSDictionary *_sessionQualityBeforeEditing;
     BOOL _sessionSettingsMenu;
     BOOL _pendingSettingsReconnect;
+    NSNumber *_pendingSettingsBitrate;
+    dispatch_queue_t _settingsBitrateQueue;
     NSUInteger _streamLaunchGeneration;
     BOOL _launchLinkInProgress;
 
@@ -1469,6 +1471,7 @@ static NSMutableSet* hostList;
         profile:[profile dictionaryWithValuesForKeys:ApplicationSettingsStore.profileKeys]];
     _pendingSettingsReconnect = _sessionQualityBeforeEditing &&
         [ApplicationSettingsStore requiresReconnectFrom:_sessionQualityBeforeEditing to:values];
+    _pendingSettingsBitrate = _pendingSettingsReconnect ? nil : values[@"bitrate"];
 }
 
 - (void)revealController:(SWRevealViewController *)revealController willMoveToPosition:(FrontViewPosition)position {
@@ -1626,6 +1629,11 @@ static NSMutableSet* hostList;
     if (position == FrontViewPositionLeft) {
         if (@available(iOS 13.0, *)) [ControllerNavigator persistUINavigationHighlight];
         if (!_sessionSettingsMenu) [self.settingsViewController saveSettings];
+        NSNumber *bitrate = _pendingSettingsBitrate;
+        _pendingSettingsBitrate = nil;
+        if (_sessionSettingsMenu && bitrate && revealController.isStreaming) {
+            [self applySavedSessionBitrate:bitrate.integerValue];
+        }
         _sessionSettingsMenu = NO;
         if (_pendingSettingsReconnect) {
             _pendingSettingsReconnect = NO;
@@ -1640,8 +1648,27 @@ static NSMutableSet* hostList;
 
 - (void)streamSettingsSessionEndedFromController:(StreamFrameViewController *)controller {
     if (controller != streamFrameViewController) return;
+    _pendingSettingsBitrate = nil;
     [ApplicationSettingsStore.shared endSession];
     [self.settingsViewController reloadSessionSettings];
+}
+
+- (void)applySavedSessionBitrate:(NSInteger)bitrateKbps {
+    // Capture the active host and the committed value before leaving the main
+    // thread. A late request must never read a different app's current slider.
+    if (!ApplicationSettingsStore.shared.active || !self.isStreaming || bitrateKbps <= 0) return;
+    NSString *sessionIdentifier = ApplicationSettingsStore.shared.sessionIdentifier;
+    HttpManager *manager = [[HttpManager alloc] initWithHost:launchedApp.host];
+    if (!_settingsBitrateQueue) _settingsBitrateQueue = dispatch_queue_create("com.voidlink.session-bitrate", DISPATCH_QUEUE_SERIAL);
+    dispatch_async(_settingsBitrateQueue, ^{
+        if (![ApplicationSettingsStore.shared.sessionIdentifier isEqualToString:sessionIdentifier]) return;
+        HttpResponse *response = [[HttpResponse alloc] init];
+        HttpRequest *request = [HttpRequest requestForResponse:response
+            withUrlRequest:[manager newBirateRequest:bitrateKbps forClient:@"unknown"]];
+        [manager executeRequestSynchronously:request];
+        NSLog(@"Live session bitrate %ld kbps: status %ld (%@)", (long)bitrateKbps,
+              (long)response.statusCode, response.statusMessage ?: @"");
+    });
 }
 
 - (void)reconnectAfterSettingsChange {

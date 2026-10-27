@@ -4932,7 +4932,7 @@ BOOL isCustomResolution(int resolutionSelected) {
 }
 
 - (void)preSavingActions{
-    if(self.mainFrameViewController.isStreaming){
+    if(self.mainFrameViewController.isStreaming && !ApplicationSettingsStore.shared.active){
         [self.mainFrameViewController requestForBitrate:(uint32_t)_bitrate];
     }
     

@@ -52,3 +52,18 @@ xcrun clang -fobjc-arc -fblocks -framework Foundation \
   -I VoidLink/Database -I "$test_dir" VoidLink/Database/ApplicationSettingsStore.m \
   Tests/SettingsMenuSaveTests.m -o "$test_dir/settings-menu-save-tests"
 "$test_dir/settings-menu-save-tests"
+python3 - "$test_dir/SessionBitrateMethods.inc" <<'PY'
+from pathlib import Path
+import sys
+source = Path('VoidLink/ViewControllers/MainFrameViewController.m').read_text(encoding='utf-8')
+methods = []
+for signature in ['- (void)applySavedSessionBitrate:', '- (void)revealController:(SWRevealViewController *)revealController didMoveToPosition:']:
+    start = source.index(signature)
+    end = source.index('\n- (', start + 1)
+    methods.append(source[start:end])
+Path(sys.argv[1]).write_text('\n'.join(methods), encoding='utf-8')
+PY
+xcrun clang -fobjc-arc -fblocks -framework Foundation \
+  -I VoidLink/Database -I "$test_dir" VoidLink/Database/ApplicationSettingsStore.m \
+  Tests/SessionBitrateTests.m -o "$test_dir/session-bitrate-tests"
+"$test_dir/session-bitrate-tests"

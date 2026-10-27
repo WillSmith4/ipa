@@ -23,6 +23,9 @@ with tempfile.TemporaryDirectory() as temporary:
     start = source.index("else if (holder->packet.header.magic == LE32(MOUSE_MOVE_ABS_MAGIC)")
     end = source.index("\n        // If it's a pen packet", start)
     (directory / "MousePositionSendBranch.inc").write_text(source[start:end], encoding="utf-8")
+    start = source.index("bool orderedPosition =")
+    end = source.index("\n        freePacketHolder(holder);", start)
+    (directory / "MousePositionFlush.inc").write_text(source[start:end], encoding="utf-8")
     binary = directory / ("mouse-tests.exe" if os.name == "nt" else "mouse-tests")
     subprocess.run([os.environ.get("CC", "cc"), "-std=c11", "-Wall", "-Wextra", "-Werror",
                     "-I", str(directory), "-I", str(root / "moonlight-common/moonlight-common-c/src"),

@@ -705,13 +705,13 @@ private struct SettingsIOSSegmentedPicker<Value: Hashable>: UIViewRepresentable 
             coordinator.titles = options.map(\.title)
         }
 
-        if coordinator.isEnabled != isEnabled {
+        if segmentedControl.isEnabled != isEnabled {
             segmentedControl.isEnabled = isEnabled
-            coordinator.isEnabled = isEnabled
         }
-        if coordinator.isUserInteractionEnabled != isUserInteractionEnabled {
+        // Viewport culling can change the UIKit control independently of this
+        // coordinator. Compare the actual state when the row becomes visible.
+        if segmentedControl.isUserInteractionEnabled != isUserInteractionEnabled {
             segmentedControl.isUserInteractionEnabled = isUserInteractionEnabled
-            coordinator.isUserInteractionEnabled = isUserInteractionEnabled
         }
         let apportionsSegmentWidthsByContent = widthDistribution == .proportionalToContent
         if coordinator.apportionsSegmentWidthsByContent != apportionsSegmentWidthsByContent {
@@ -751,8 +751,6 @@ private struct SettingsIOSSegmentedPicker<Value: Hashable>: UIViewRepresentable 
         var values: [Value] = []
         var titles: [String] = []
         var optionEnabledStates: [Bool] = []
-        var isEnabled: Bool?
-        var isUserInteractionEnabled: Bool?
         var apportionsSegmentWidthsByContent: Bool?
         var interfaceStyle: UIUserInterfaceStyle?
         var tintColor: UIColor?

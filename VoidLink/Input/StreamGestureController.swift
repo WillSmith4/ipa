@@ -97,6 +97,7 @@ private final class StreamRotationRecognizer: UIGestureRecognizer {
 /// Uses the existing touchpad dead zone to distinguish a swipe from a tap.
 private final class StreamSwipeRecognizer: UIGestureRecognizer {
     var threshold = 6.0
+    var onTouchDown: ((CGPoint) -> Void)?
     private var finger: UITouch?
     private(set) var origin = CGPoint.zero
     var delta = CGPoint.zero
@@ -107,6 +108,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         }
         finger = touch
         origin = touch.location(in: view)
+        onTouchDown?(origin)
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
         guard let finger, touches.contains(finger) else { return }
@@ -137,6 +139,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var cursorAnchor = GestureCursorAnchor()
     private var swipeLocation: CGPoint?
     private var swipeDrag = GestureDoubleTapDragAction(action: "NONE")
+    private var swipeCursorAnchored = false
     private var queuedMoves: [(axis: Int, delta: Double)] = []
     private var endingAxes: Set<Int> = []
     private var activeActions: [Int: Int] = [:]
@@ -171,6 +174,16 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinched(_:)))
         rotation = StreamRotationRecognizer(target: self, action: #selector(rotated(_:)))
         swipe = StreamSwipeRecognizer(target: self, action: #selector(swiped(_:)))
+        swipe.onTouchDown = { [weak self] origin in
+            guard let self else { return }
+            self.swipeCursorAnchored = self.singlePointMode && self.swipeDrag.enabled &&
+                self.actions[3] != "SCROLL_UP" && self.actions[3] != "SCROLL_DOWN"
+            if self.swipeCursorAnchored {
+                // Send the hover position before the movement threshold is
+                // crossed, giving the game the same lead-in as a first tap.
+                (self.view as? StreamView)?.updateSwipeDragCursorLocation(origin)
+            }
+        }
         // Configuration lets Single Point receive touch down immediately when
         // its stationary-hold timer is enabled. Other modes retain swipe deferral.
         swipe.delaysTouchesBegan = true
@@ -269,6 +282,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         rotationCursorDeltaX = 0
         cursorAnchor.reset()
         swipeLocation = nil
+        swipeCursorAnchored = false
         pointer.reset()
         pending = [0, 0, 0]
         hasRecognizedGesture = false
@@ -403,7 +417,9 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             // after legacy cancellation and before the first button/key/scroll.
             let location = CGPoint(x: origin.x, y: origin.y)
             if usesSwipeDrag && swipeDrag.enabled {
-                (view as? StreamView)?.updateSwipeDragCursorLocation(location)
+                if !swipeCursorAnchored {
+                    (view as? StreamView)?.updateSwipeDragCursorLocation(location)
+                }
             } else {
                 (view as? StreamView)?.updateCursorLocation(location, isMouse: false)
             }

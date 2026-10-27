@@ -4609,7 +4609,9 @@ final class SettingsSession: NSObject, ObservableObject {
         isPersistingSettings = true
         defer { isPersistingSettings = false }
 
-        if isStreaming,
+        // Per-app sessions apply the committed bitrate after the explicit
+        // collapse finishes; intermediate editor saves must not send it.
+        if isStreaming, !ApplicationSettingsStore.shared.active,
            let settingsController = presentingController as? SettingsViewController,
            let mainFrameController = settingsController.mainFrameViewController {
             _ = mainFrameController.request(forBitrate: Int(itemRegistry.bitrate.value.rounded()))
@@ -6500,6 +6502,10 @@ private struct SettingsRootView: View {
                 .environment(\.colorScheme, ThemeManager.userInterfaceStyle() == .light ? .light : .dark)
             }
         }
+        // Session start/end and Restore Defaults replace the store. Rebuild
+        // its UIKit controls and scroll resolver so their registrations cannot
+        // remain attached to the previous store's hit-testing registry.
+        .id(ObjectIdentifier(store))
     }
 }
 

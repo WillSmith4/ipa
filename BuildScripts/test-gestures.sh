@@ -4,6 +4,15 @@ cd "$(dirname "$0")/.."
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
 python3 BuildScripts/test-ordered-mouse.py
+python3 - "$test_dir/StreamSwipeRecognizer.swift" <<'PY'
+import pathlib, sys
+source = pathlib.Path('VoidLink/Input/StreamGestureController.swift').read_text(encoding='utf-8')
+start = source.index('private final class StreamSwipeRecognizer:')
+end = source.index('/// Camera gestures', start)
+pathlib.Path(sys.argv[1]).write_text('import Foundation\n' + source[start:end].replace('private final class', 'final class', 1), encoding='utf-8')
+PY
+swiftc "$test_dir/StreamSwipeRecognizer.swift" Tests/SwipeStartTests.swift -o "$test_dir/swipe-start-tests"
+"$test_dir/swipe-start-tests"
 # Compile the actual key map without CommandManager's UIKit dependencies.
 python3 - "$test_dir/GestureTestKeyboard.swift" <<'PY'
 import pathlib, sys

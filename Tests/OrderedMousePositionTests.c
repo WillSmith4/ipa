@@ -53,6 +53,14 @@ static void prepare(PPACKET_HOLDER holder) {
     if (false) {}
     #include "MousePositionSendBranch.inc"
 }
+static bool moreDataSent;
+static int LbqGetItemCount(int *q) { (void)q; return queueCount; }
+static bool sendInputPacket(PPACKET_HOLDER holder, bool moreData) {
+    (void)holder; moreDataSent = moreData; return true;
+}
+static void sendPrepared(PPACKET_HOLDER holder) {
+    #include "MousePositionFlush.inc"
+}
 static void position(int index, int x, int y) {
     PPACKET_HOLDER holder = queue[index];
     prepare(holder);
@@ -62,6 +70,8 @@ static void position(int index, int x, int y) {
     assert(holder->packet.mouseMoveAbs.x == x && holder->packet.mouseMoveAbs.y == y);
     assert(holder->packet.mouseMoveAbs.width == 999 && holder->packet.mouseMoveAbs.height == 799);
     assert(holder->packet.mouseMoveAbs.unused == 0);
+    sendPrepared(holder);
+    assert(moreDataSent == !holder->absolutePositionIsOrdered);
 }
 static void reset(void) {
     for (int i = 0; i < queueCount; i++) freePacketHolder(queue[i]);

@@ -21,6 +21,11 @@ replace_once("else if (holder->packet.header.magic == LE32(MOUSE_MOVE_ABS_MAGIC)
              "else if (holder->packet.header.magic == LE32(MOUSE_MOVE_ABS_MAGIC) && !holder->absolutePositionIsOrdered) {")
 replace_once("        holder->packet.mouseMoveAbs.unused = 0;",
              "        holder->absolutePositionIsOrdered = false;\n        holder->packet.mouseMoveAbs.unused = 0;")
+replace_once("if (!sendInputPacket(holder, LbqGetItemCount(&packetQueue) > 0)) {",
+             """// Ordered swipe positions must reach the host without waiting for
+        // the following press/move to flush the transport's outgoing batch.
+        bool orderedPosition = holder->packet.header.magic == LE32(MOUSE_MOVE_ABS_MAGIC) && holder->absolutePositionIsOrdered;
+        if (!sendInputPacket(holder, !orderedPosition && LbqGetItemCount(&packetQueue) > 0)) {""")
 source += "\n" + (root / "moonlight-common/OrderedMousePosition.c.inc").read_text(encoding="utf-8")
 output = Path(sys.argv[1])
 output.parent.mkdir(parents=True, exist_ok=True)
