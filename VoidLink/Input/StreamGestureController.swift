@@ -355,8 +355,9 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             self.queuedMoves.removeAll()
             if self.singlePointMode, self.fingerCount == 1, self.activeActions[2] != nil,
                let location = self.swipeLocation {
-                // Same absolute drag path as AbsoluteTouchHandler's double tap.
-                (self.view as? StreamView)?.updateCursorLocation(location, isMouse: false)
+                // Keep this absolute move after the drag's initial position and
+                // button press; batching must not overwrite the starting point.
+                (self.view as? StreamView)?.updateSwipeDragCursorLocation(location)
             } else if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
                 // Keep twist-driven yaw and add vertical translation of the
                 // two-finger centre, including while the twist angle is steady.
@@ -395,7 +396,12 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
            let origin = cursorAnchor.takeOrigin(fingerCount: fingerCount) {
             // Use the original down position (the midpoint for two fingers),
             // after legacy cancellation and before the first button/key/scroll.
-            (view as? StreamView)?.updateCursorLocation(CGPoint(x: origin.x, y: origin.y), isMouse: false)
+            let location = CGPoint(x: origin.x, y: origin.y)
+            if axis == 2 {
+                (view as? StreamView)?.updateSwipeDragCursorLocation(location)
+            } else {
+                (view as? StreamView)?.updateCursorLocation(location, isMouse: false)
+            }
             pointer.reset()
         }
         if axis == 2 && action != "SCROLL_UP" && action != "SCROLL_DOWN" {

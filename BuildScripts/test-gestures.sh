@@ -3,6 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
+python3 BuildScripts/test-ordered-mouse.py
 # Compile the actual key map without CommandManager's UIKit dependencies.
 python3 - "$test_dir/GestureTestKeyboard.swift" <<'PY'
 import pathlib, sys

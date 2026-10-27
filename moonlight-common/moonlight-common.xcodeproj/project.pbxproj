@@ -145,7 +145,7 @@
 		98AB2E1E1CAD423B0089BB98 /* ControlStream.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ControlStream.c; sourceTree = "<group>"; };
 		98AB2E1F1CAD423B0089BB98 /* FakeCallbacks.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FakeCallbacks.c; sourceTree = "<group>"; };
 		98AB2E201CAD423B0089BB98 /* Input.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Input.h; sourceTree = "<group>"; };
-		98AB2E211CAD423B0089BB98 /* InputStream.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = InputStream.c; sourceTree = "<group>"; };
+		98AB2E211CAD423B0089BB98 /* InputStream.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = InputStream.c; path = OrderedInputStream.c; sourceTree = DERIVED_FILE_DIR; };
 		98AB2E221CAD423B0089BB98 /* Limelight-internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Limelight-internal.h"; sourceTree = "<group>"; };
 		98AB2E231CAD423B0089BB98 /* Limelight.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Limelight.h; sourceTree = "<group>"; };
 		98AB2E241CAD423B0089BB98 /* LinkedBlockingQueue.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = LinkedBlockingQueue.c; sourceTree = "<group>"; };
@@ -345,6 +345,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = FB1A67F721324EE300507771 /* Build configuration list for PBXNativeTarget "moonlight-common-tv" */;
 			buildPhases = (
+				CA7100000000000000000001 /* Prepare ordered gesture input */,
 				FB1A67EB21324EE300507771 /* Sources */,
 				FB1A67EC21324EE300507771 /* Frameworks */,
 				FB1A67ED21324EE300507771 /* CopyFiles */,
@@ -365,6 +366,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = FB290E3219B37A4E004C83CF /* Build configuration list for PBXNativeTarget "moonlight-common" */;
 			buildPhases = (
+				CA7100000000000000000002 /* Prepare ordered gesture input */,
 				FB290E2A19B37A4E004C83CF /* Sources */,
 				FB290E2B19B37A4E004C83CF /* Frameworks */,
 			);
@@ -417,6 +419,29 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		CA7100000000000000000001 /* Prepare ordered gesture input */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/../BuildScripts/prepare-gesture-input.py", "$(SRCROOT)/moonlight-common-c/src/InputStream.c", "$(SRCROOT)/OrderedMousePosition.c.inc");
+			outputPaths = ("$(DERIVED_FILE_DIR)/OrderedInputStream.c");
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "python3 \"$SRCROOT/../BuildScripts/prepare-gesture-input.py\" \"$DERIVED_FILE_DIR/OrderedInputStream.c\"\n";
+		};
+		CA7100000000000000000002 /* Prepare ordered gesture input */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			inputPaths = ("$(SRCROOT)/../BuildScripts/prepare-gesture-input.py", "$(SRCROOT)/moonlight-common-c/src/InputStream.c", "$(SRCROOT)/OrderedMousePosition.c.inc");
+			outputPaths = ("$(DERIVED_FILE_DIR)/OrderedInputStream.c");
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "python3 \"$SRCROOT/../BuildScripts/prepare-gesture-input.py\" \"$DERIVED_FILE_DIR/OrderedInputStream.c\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		FB1A67EB21324EE300507771 /* Sources */ = {

@@ -89,6 +89,7 @@
 
 #if !TARGET_OS_TV
 - (void) updateCursorLocation:(CGPoint)location isMouse:(BOOL)isMouse;
+- (void)updateSwipeDragCursorLocation:(CGPoint)location;
 #endif
 
 @end

@@ -11,6 +11,7 @@
 
 #import "StreamView.h"
 #include <Limelight.h>
+#include "../../moonlight-common/OrderedMousePosition.h"
 #import "DataManager.h"
 #import "TemporarySettings.h"
 #import "Plot.h"
@@ -1598,6 +1599,12 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 }
 
 #if !TARGET_OS_TV
+- (void)updateSwipeDragCursorLocation:(CGPoint)location {
+    CGPoint position = [self adjustCoordinatesForVideoArea:location];
+    CGSize size = [self getVideoAreaSize];
+    LiSendMousePositionEventOrdered(position.x, position.y, size.width, size.height);
+}
+
 - (void) updateCursorLocation:(CGPoint)location isMouse:(BOOL)isMouse {
     CGPoint normalizedLocation = [self adjustCoordinatesForVideoArea:location];
     CGSize videoSize = [self getVideoAreaSize];
