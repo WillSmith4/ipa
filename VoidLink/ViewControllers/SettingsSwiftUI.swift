@@ -434,7 +434,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .longPressAction: return "Long Press"
         case .doubleTapDragAction: return "Double Tap and Hold to Drag"
         case .twoFingerTapAction: return "Two-Finger Tap"
-        case .twoFingerSlideSensitivity: return "2 Slide Sensitivity"
+        case .twoFingerSlideSensitivity: return "2-finger slide sensitivity"
         case .pinchGesture: return "Pinch Gesture"
         case .passthroughGestures: return "Passthrough Gestures"
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"

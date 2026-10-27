@@ -18,19 +18,19 @@
         }
       }
     },
-    "2 Slide Sensitivity": {
+    "2-finger slide sensitivity": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 Slide Sensitivity"
+            "value": "2-finger slide sensitivity"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 Slide Sensitivity"
+            "value": "2-finger slide sensitivity"
           }
         }
       }
