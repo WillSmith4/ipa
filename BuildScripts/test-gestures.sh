@@ -61,7 +61,7 @@ source = pathlib.Path('VoidLink/Input/RelativeTouchHandler.m').read_text(encodin
 methods = []
 for name in ['mouseRightClick', 'touchesCancelled:', 'sendLongMouseLeftButtonClickEvent']:
     start = source.index('- (void)' + name)
-    end = source.index('\n- (', start + 1)
+    end = source.index('\n}', start) + 2
     methods.append(source[start:end])
 pathlib.Path(sys.argv[1]).write_text('\n'.join(methods), encoding='utf-8')
 PY
