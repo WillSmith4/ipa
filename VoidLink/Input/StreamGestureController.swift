@@ -263,8 +263,12 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private func updateEnabled() {
         pinch.isEnabled = enabled && (0...1).contains { actions[$0] != "NONE" }
         rotation.isEnabled = enabled && (actions[2] != "NONE" || cursorEnabled[2])
+        // Single Point already implements left-button dragging in
+        // AbsoluteTouchHandler. Let it own down/move/up continuously instead of
+        // cancelling it at the swipe threshold and starting a second drag.
+        let usesAbsoluteLeftDrag = singlePointMode && actions[3] == "MOUSE_LEFT"
         // With Swipe Off, preserve the original relative touchpad movement.
-        swipe.isEnabled = enabled && (actions[3] != "NONE" || singlePointMode)
+        swipe.isEnabled = enabled && !usesAbsoluteLeftDrag && (actions[3] != "NONE" || singlePointMode)
         motionObserver.isEnabled = enabled
     }
 

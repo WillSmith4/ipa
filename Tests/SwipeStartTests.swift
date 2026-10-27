@@ -15,6 +15,7 @@ class UITouch: NSObject {
 class UIGestureRecognizer {
     enum State { case possible, began, changed, ended, cancelled, failed }
     var state = State.possible
+    var isEnabled = true
     var view: UIView?
     func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {}
     func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {}
@@ -25,6 +26,28 @@ class UIGestureRecognizer {
 
 @main struct SwipeStartTests {
     static func main() {
+        let routing = GestureRoutingHarness()
+        routing.singlePointMode = true
+        routing.updateEnabled()
+        precondition(!routing.swipe.isEnabled,
+                     "Single Point MOUSE_LEFT must reach AbsoluteTouchHandler without swipe cancellation or extra anchoring")
+        precondition(routing.pinch.isEnabled && routing.rotation.isEnabled && routing.motionObserver.isEnabled,
+                     "Restore finger drag without disabling the two-finger gestures")
+        routing.singlePointMode = false
+        routing.updateEnabled()
+        precondition(routing.swipe.isEnabled, "Touchpad keeps its configured left-button swipe")
+        routing.singlePointMode = true
+        for action in ["NONE", "MOUSE_RIGHT", "MOUSE_MIDDLE", "CTRL+MOUSE_LEFT", "W", "SCROLL_UP", "SCROLL_DOWN"] {
+            routing.actions[3] = action
+            routing.updateEnabled()
+            precondition(routing.swipe.isEnabled, "Other Single Point bindings retain their existing path: \(action)")
+        }
+        routing.enabled = false
+        routing.updateEnabled()
+        precondition(!routing.swipe.isEnabled && !routing.pinch.isEnabled && !routing.rotation.isEnabled && !routing.motionObserver.isEnabled,
+                     "Closing or disabling input must still disable all recognizers")
+        print("Gesture routing: Single Point left drag stays in the original handler; Touchpad and other bindings unchanged")
+
         let recognizer = StreamSwipeRecognizer(), event = UIEvent()
         var starts: [CGPoint] = []
         recognizer.onTouchDown = { starts.append($0) }

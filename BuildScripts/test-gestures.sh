@@ -10,6 +10,18 @@ source = pathlib.Path('VoidLink/Input/StreamGestureController.swift').read_text(
 start = source.index('private final class StreamSwipeRecognizer:')
 end = source.index('/// Camera gestures', start)
 pathlib.Path(sys.argv[1]).write_text('import Foundation\nimport CoreGraphics\n' + source[start:end].replace('private final class', 'final class', 1), encoding='utf-8')
+start = source.index('    private func updateEnabled() {')
+end = source.index('\n    @objc func cancel()', start)
+with pathlib.Path(sys.argv[1]).open('a', encoding='utf-8') as output:
+    output.write('''
+final class GestureRoutingHarness {
+    var enabled = true, singlePointMode = false
+    var actions = ["SCROLL_DOWN", "SCROLL_UP", "MOUSE_MIDDLE", "MOUSE_LEFT"]
+    let cursorEnabled = [false, false, true, true]
+    let pinch = UIGestureRecognizer(), rotation = UIGestureRecognizer()
+    let swipe = UIGestureRecognizer(), motionObserver = UIGestureRecognizer()
+''')
+    output.write(source[start:end].replace('private func', 'func', 1) + '\n}\n')
 PY
 swiftc "$test_dir/StreamSwipeRecognizer.swift" Tests/SwipeStartTests.swift -o "$test_dir/swipe-start-tests"
 "$test_dir/swipe-start-tests"
