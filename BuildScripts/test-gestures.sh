@@ -20,6 +20,8 @@ final class GestureRoutingHarness {
     let cursorEnabled = [false, false, true, true]
     let pinch = UIGestureRecognizer(), rotation = UIGestureRecognizer()
     let swipe = UIGestureRecognizer(), motionObserver = UIGestureRecognizer()
+    let twoFingerTap = UIGestureRecognizer()
+    var twoFingerTapAction = (enabled: true, unused: false)
 ''')
     output.write(source[start:end].replace('private func', 'func', 1) + '\n}\n')
 PY
@@ -46,6 +48,13 @@ PY
 swiftc VoidLink/Input/GestureActionEngine.swift "$test_dir/GestureTestKeyboard.swift" \
   "$test_dir/GestureLongPressAction.swift" Tests/LongPressActionTests.swift -o "$test_dir/long-press-tests"
 "$test_dir/long-press-tests"
+python3 - "$test_dir/TouchPadGestureHandler.swift" <<'PY'
+import pathlib, sys
+source = pathlib.Path('VoidLink/Input/TouchPadGestureHandler.swift').read_text(encoding='utf-8')
+pathlib.Path(sys.argv[1]).write_text(source.replace('import UIKit', 'import Foundation\nimport CoreGraphics'), encoding='utf-8')
+PY
+swiftc "$test_dir/TouchPadGestureHandler.swift" Tests/TouchpadGestureTests.swift -o "$test_dir/touchpad-tests"
+"$test_dir/touchpad-tests"
 python3 - "$test_dir/AbsoluteDragHandoffMethods.inc" <<'PY'
 import pathlib, sys
 source = pathlib.Path('VoidLink/Input/AbsoluteTouchHandler.m').read_text(encoding='utf-8')

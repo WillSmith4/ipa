@@ -222,6 +222,11 @@ struct GestureCursorAnchor {
 /// Tracks the centre of all fingers, matching translation of the whole hand.
 /// Changing the touch set rebases without a cursor jump.
 struct GesturePointerMotion {
+    static func scaledTranslation(_ delta: (x: Double, y: Double), fingerCount: Int,
+                                  sensitivity: Double) -> (x: Double, y: Double) {
+        let scale = fingerCount == 2 && sensitivity.isFinite ? min(3, max(0, sensitivity)) : 1
+        return (delta.x * scale, delta.y * scale)
+    }
     struct Point { let id: Int; let x: Double; let y: Double }
     private var previous: [Int: Point] = [:]
     private var remainderX = 0.0

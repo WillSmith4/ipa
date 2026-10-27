@@ -13,6 +13,8 @@
 #include <Limelight.h>
 
 
+static const float QUICK_TAP_TIME_INTERVAL = 0.2;
+
 @implementation RelativeTouchHandler {
     NSUInteger inputGeneration;
     TemporarySettings* currentSettings;
@@ -23,7 +25,6 @@
     BOOL firstTouchMoved;
     BOOL mousePointerMoved;
     BOOL quickTapDetected;
-    GestureDoubleTapDragAction *doubleTapDragAction;
     
     // upper screen edge check
     bool touchPointSpawnedAtUpperScreenEdge;
@@ -51,7 +52,6 @@
     self->streamView = view;
     self->streamViewBounds = view.bounds;
     self->currentSettings = settings;
-    doubleTapDragAction = [[GestureDoubleTapDragAction alloc] initWithAction:settings.doubleTapDragAction ?: @"MOUSE_LEFT"];
     // replace righclick recoginizing with my CustomTapGestureRecognizer for better experience, higher recoginizing rate.
     _mouseRightClickTapRecognizer = [[CustomTapGestureRecognizer alloc] initWithTarget:self action:@selector(mouseRightClick)];
     _mouseRightClickTapRecognizer.numberOfTouchesRequired = 2;
@@ -89,7 +89,7 @@
 }
 
 - (BOOL)isDoubleTapDragging {
-    return doubleTapDragAction.dragging;
+    return quickTapDetected;
 }
 
 - (bool)isOnScreenControllerBeingPressed:(NSSet* )touches{
@@ -143,7 +143,6 @@
     touchPointSpawnedAtUpperScreenEdge = false; // reset this flag immediately if we get a touch event passing the check above, this fixes irresponsive touch after closing the command tool menu.
      
     if([UITouchUtil touchesIn:streamView from:event].count>=2){
-        [doubleTapDragAction cancel];
         multiTouchesDetected = true;
         return;
     }
@@ -164,9 +163,9 @@
     
     if([UITouchUtil touchesIn:streamView from:event].count == 1){
         NSTimeInterval tapInterval = CACurrentMediaTime() - mousePointerTimestamp;
-        if([GestureDoubleTapDetection isQuickTapFrom:initialMousePointerLocation to:currentTouchLocation elapsed:tapInterval]) {
+        if(tapInterval < QUICK_TAP_TIME_INTERVAL
+           && [self isAdjacentTouches:currentTouchLocation from:initialMousePointerLocation]) {
             quickTapDetected = true;
-            [doubleTapDragAction begin];
             NSLog(@"quick Tap Detected");
         }
         quickTapTouch = touches.anyObject;
@@ -185,7 +184,7 @@
         
     NSSet* currentTouches = [UITouchUtil touchesIn:streamView from:event];
         
-    if(![self isOnScreenControllerBeingPressed:currentTouches]) [TouchPadGestureHandler handleGestureIn:streamView with:event];
+    if(![self isOnScreenControllerBeingPressed:currentTouches]) [TouchPadGestureHandler handleTouchpadGestureIn:streamView with:event];
          
     if(multiTouchesDetected) return;
     
@@ -200,6 +199,7 @@
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+    [TouchPadGestureHandler releaseControl];
     
     
     [TouchPadGestureHandler startInertialScroll];
@@ -219,10 +219,8 @@
         // dealing with a second quick tap following the first tap:
         if(self->quickTapDetected){
             // we're in at least the second tap release of the very short time interval after the first tap.
-            [doubleTapDragAction cancel];
-            // Default/Off retain ordinary double clicks. A custom binding
-            // completes its own input instead of adding an unrelated left click.
-            if(!mousePointerMoved && (!doubleTapDragAction.enabled || doubleTapDragAction.usesLeftButton))
+            LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
+            if(!mousePointerMoved)
                 [self sendShortMouseLeftButtonClickEvent];
             self->quickTapDetected = false; // reset flag
         }
@@ -244,7 +242,6 @@
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
     inputGeneration++;
-    [doubleTapDragAction cancel];
     [TouchPadGestureHandler cancel];
     multiTouchesDetected = false;
     quickTapDetected = false;
@@ -287,13 +284,13 @@
         if (generation != self->inputGeneration) return;
         // if (!self->isDragging){
         Log(LOG_D, @"Sending left mouse button press");
-        [self->doubleTapDragAction firstTap];
+        LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
         
         // Wait 100 ms to simulate a real button press
-        dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(GestureDoubleTapDetection.interval * NSEC_PER_SEC));
+        dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(QUICK_TAP_TIME_INTERVAL * NSEC_PER_SEC));
         dispatch_after(delay, dispatch_get_main_queue(), ^{
             if (generation != self->inputGeneration) return;
-            [self->doubleTapDragAction expireFirstTap];
+            if(!self->quickTapDetected) LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
             // else NSLog(@"Left mouse button release cancelled, keep pressing down, turning into dragging...");
         });
         // do not release the button if we're still dragging, this will prevent the dragging from being interrupted.

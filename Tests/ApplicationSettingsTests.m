@@ -42,6 +42,8 @@ int main(int argc, const char *argv[]) {
         NSUserDefaults *defaults = [[NSUserDefaults alloc] initWithSuiteName:suite];
         ApplicationSettingsStore *store = [[ApplicationSettingsStore alloc] initWithDefaults:defaults];
         NSDictionary *global = @{@"width": @1920, @"height": @1080, @"framerate": @60,
+            @"twoFingerTapAction": @"MOUSE_RIGHT", @"twoFingerSlideSensitivity": @1,
+            @"enablePinch": @YES, @"scrollSensitivity": @1,
             @"bitrate": @20000, @"touchMode": @1, @"rotationAction": @"MOUSE_MIDDLE",
             @"preferredCodec": @2, @"enableHdr": @NO, @"enableYUV444": @NO,
             @"framePacingMode": @1, @"asyncFrameDequeue": @NO, @"renderingBackend": @0,
@@ -54,6 +56,8 @@ int main(int argc, const char *argv[]) {
         NSMutableDictionary *edited = [global mutableCopy];
         edited[@"width"] = @2560; edited[@"height"] = @1440;
         edited[@"bitrate"] = @35000; edited[@"touchMode"] = @2;
+        edited[@"twoFingerTapAction"] = @"CTRL++"; edited[@"twoFingerSlideSensitivity"] = @2.5;
+        edited[@"enablePinch"] = @NO; edited[@"scrollSensitivity"] = @0.5;
         edited[@"preferredCodec"] = @3; edited[@"enableHdr"] = @YES;
         edited[@"framePacingMode"] = @3; edited[@"unlockDisplayOrientation"] = @YES;
         [store stageValues:edited previousValues:global domain:@"settings" sessionIdentifier:token];
@@ -62,6 +66,9 @@ int main(int argc, const char *argv[]) {
         [store stageValues:controls previousValues:profile domain:@"profile" sessionIdentifier:token];
         NSDictionary *effective = [store valuesForDomain:@"settings" defaults:global];
         Check([effective[@"width"] intValue] == 2560, @"Session draft is used by stream readers");
+        for (NSString *key in @[@"twoFingerTapAction", @"twoFingerSlideSensitivity", @"enablePinch", @"scrollSensitivity"]) {
+            Check([effective[key] isEqual:edited[key]], @"Touchpad and Single Point gesture settings belong to the app profile");
+        }
         Check([effective[@"preferredCodec"] intValue] == 2 && ![effective[@"enableHdr"] boolValue] &&
               [effective[@"framePacingMode"] intValue] == 1 && ![effective[@"unlockDisplayOrientation"] boolValue], @"Connection-only settings are shared");
         ApplicationSettingsStore *reopened = [[ApplicationSettingsStore alloc] initWithDefaults:defaults];

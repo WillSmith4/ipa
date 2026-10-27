@@ -35,18 +35,23 @@ class UIGestureRecognizer {
                      "Restore finger drag without disabling the two-finger gestures")
         routing.singlePointMode = false
         routing.updateEnabled()
-        precondition(routing.swipe.isEnabled, "Touchpad keeps its configured left-button swipe")
+        precondition(!routing.swipe.isEnabled && !routing.pinch.isEnabled && !routing.rotation.isEnabled && !routing.motionObserver.isEnabled && !routing.twoFingerTap.isEnabled,
+                     "Touchpad must use only its original handlers, regardless of Single Point bindings")
         routing.singlePointMode = true
         for action in ["NONE", "MOUSE_RIGHT", "MOUSE_MIDDLE", "CTRL+MOUSE_LEFT", "W", "SCROLL_UP", "SCROLL_DOWN"] {
             routing.actions[3] = action
             routing.updateEnabled()
             precondition(routing.swipe.isEnabled, "Other Single Point bindings retain their existing path: \(action)")
         }
+        precondition(routing.twoFingerTap.isEnabled, "Enable the configured Single Point tap")
+        routing.twoFingerTapAction.enabled = false
+        routing.updateEnabled()
+        precondition(!routing.twoFingerTap.isEnabled, "Off must disable tap detection")
         routing.enabled = false
         routing.updateEnabled()
         precondition(!routing.swipe.isEnabled && !routing.pinch.isEnabled && !routing.rotation.isEnabled && !routing.motionObserver.isEnabled,
                      "Closing or disabling input must still disable all recognizers")
-        print("Gesture routing: Single Point left drag stays in the original handler; Touchpad and other bindings unchanged")
+        print("Gesture routing: original Touchpad, original Single Point left drag, configurable two-finger tap")
 
         let recognizer = StreamSwipeRecognizer(), event = UIEvent()
         var starts: [CGPoint] = []

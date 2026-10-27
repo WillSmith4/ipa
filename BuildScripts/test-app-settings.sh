@@ -18,7 +18,7 @@ xcrun momc VoidLink/Limelight.xcdatamodeld "$test_dir/Limelight.momd"
 xcrun clang -fobjc-arc -fblocks -framework Foundation -framework CoreData \
   -I VoidLink/Database -I "$test_dir" VoidLink/Database/ApplicationSettingsStore.m \
   Tests/ApplicationSettingsTests.m -o "$test_dir/app-settings-tests"
-"$test_dir/app-settings-tests" "$test_dir/Limelight.momd/VoidLink v1.7.mom"
+"$test_dir/app-settings-tests" "$test_dir/Limelight.momd/VoidLink v1.8.mom"
 python3 - "$test_dir/ConnectionStopMethod.inc" <<'PY'
 from pathlib import Path
 import sys

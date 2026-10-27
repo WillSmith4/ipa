@@ -86,6 +86,8 @@
     NSMutableArray<UIStackView *> *viewportActionStacks;
     UIStackView *rotationSensitivityStack;
     UISlider *rotationSensitivitySlider;
+    UIStackView *twoFingerSlideSensitivityStack;
+    UISlider *twoFingerSlideSensitivitySlider;
     UISwitch *alwaysHideStatusBarSwitch;
 
     // ControllerNavigator UI navigation state
@@ -983,6 +985,8 @@
     currentSettings.localStreamZoomEnabled = tempSettings.localStreamZoomEnabled;
     currentSettings.longPressAction = tempSettings.longPressAction;
     currentSettings.doubleTapDragAction = tempSettings.doubleTapDragAction;
+    currentSettings.twoFingerTapAction = tempSettings.twoFingerTapAction;
+    currentSettings.twoFingerSlideSensitivity = @(twoFingerSlideSensitivitySlider.value);
     currentSettings.swipeAction = tempSettings.swipeAction;
     currentSettings.pinchInAction = tempSettings.pinchInAction;
     currentSettings.pinchOutAction = tempSettings.pinchOutAction;
@@ -1694,6 +1698,9 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.delayLeftClickStack ofId:@"delayLeftClickStack" to:touchControlSection];
 
     [self addSetting:self.passthroughGesturesStack ofId:@"passthroughGesturesStack" to:touchControlSection];
+    [self addSetting:self.pinchGestureStack ofId:@"pinchGestureStack" to:touchControlSection];
+    self.scrollSensitivityStack.hasDynamicLabel = YES;
+    [self addSetting:self.scrollSensitivityStack ofId:@"scrollSensitivityStack" to:touchControlSection];
 
     NSArray *viewportFields = @[@"localStreamPanEnabled", @"localStreamZoomEnabled"];
     viewportActionStacks = [NSMutableArray array];
@@ -1723,8 +1730,8 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:self.pinchSensitivityStack ofId:@"pinchSensitivityStack" to:touchControlSection];
 
     NSMutableArray *actionStacks = [NSMutableArray array];
-    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotationAction", @"swipeAction", @"longPressAction", @"doubleTapDragAction"];
-    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotation", @"Swipe", @"Long Press", @"Double Tap and Hold to Drag"];
+    NSArray *gestureFields = @[@"pinchInAction", @"pinchOutAction", @"rotationAction", @"swipeAction", @"longPressAction", @"doubleTapDragAction", @"twoFingerTapAction"];
+    NSArray *gestureTitles = @[@"Pinch In", @"Pinch Out", @"Rotation", @"Swipe", @"Long Press", @"Double Tap and Hold to Drag", @"Two-Finger Tap"];
     for (NSInteger i = 0; i < gestureFields.count; i++) {
         UILabel *label = [[UILabel alloc] init];
         label.text = [LocalizationHelper localizedStringForKey:gestureTitles[i]];
@@ -1763,6 +1770,21 @@ BOOL isCustomResolution(int resolutionSelected) {
     rotationSensitivityStack.hasDynamicLabel = YES;
     [self addSetting:rotationSensitivityStack ofId:@"rotationSensitivityStack" to:touchControlSection];
     [self rotationSensitivityChanged:rotationSensitivitySlider];
+    UILabel *slideLabel = [[UILabel alloc] init];
+    slideLabel.text = [LocalizationHelper localizedStringForKey:@"Two-Finger Slide Sensitivity"];
+    slideLabel.font = rotationLabel.font;
+    twoFingerSlideSensitivitySlider = [[UISlider alloc] init];
+    twoFingerSlideSensitivitySlider.minimumValue = 0;
+    twoFingerSlideSensitivitySlider.maximumValue = 3;
+    twoFingerSlideSensitivitySlider.value = tempSettings.twoFingerSlideSensitivity.floatValue;
+    [twoFingerSlideSensitivitySlider addTarget:self action:@selector(twoFingerSlideSensitivityChanged:) forControlEvents:UIControlEventValueChanged];
+    twoFingerSlideSensitivityStack = [[UIStackView alloc] initWithArrangedSubviews:@[slideLabel, twoFingerSlideSensitivitySlider]];
+    twoFingerSlideSensitivityStack.axis = rotationSensitivityStack.axis;
+    twoFingerSlideSensitivityStack.spacing = rotationSensitivityStack.spacing;
+    twoFingerSlideSensitivityStack.hasDynamicLabel = YES;
+    twoFingerSlideSensitivityStack.hasInfoTag = YES;
+    [self addSetting:twoFingerSlideSensitivityStack ofId:@"twoFingerSlideSensitivityStack" to:touchControlSection];
+    [self twoFingerSlideSensitivityChanged:twoFingerSlideSensitivitySlider];
 
     self.onScreenWidgetStack.hasInfoTag = YES; // ?????
     [self addSetting:self.onScreenWidgetStack ofId:@"onScreenWidgetStack" to:touchControlSection];
@@ -2591,6 +2613,12 @@ BOOL isCustomResolution(int resolutionSelected) {
     }
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"doubleTapDragActionStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Double Tap Drag Help"];
+    }
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"twoFingerTapActionStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Two-Finger Tap Help"];
+    }
+    if ([sender.superview.accessibilityIdentifier isEqualToString:@"twoFingerSlideSensitivityStack"]) {
+        tipText = [LocalizationHelper localizedStringForKey:@"Two-Finger Slide Sensitivity Help"];
     }
     if ([sender.superview.accessibilityIdentifier isEqualToString:@"localStreamZoomEnabledStack"]) {
         tipText = [LocalizationHelper localizedStringForKey:@"Zoom Stream Image Help"];
@@ -4278,7 +4306,7 @@ BOOL isCustomResolution(int resolutionSelected) {
                      && sender.selectedSegmentIndex!=AbsoluteTouch) forStack:self.scrollSensitivityStack];*/
     
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:longPressActionStack];
-    [self setHidden:sender.selectedSegmentIndex!=RelativeTouch && sender.selectedSegmentIndex!=AbsoluteTouch forStack:doubleTapDragActionStack];
+    [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:doubleTapDragActionStack];
     for (UIStackView *stack in viewportActionStacks) [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:stack];
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:self.passthroughGesturesStack];
     
@@ -4300,14 +4328,17 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self setHidden:sender.selectedSegmentIndex!=AbsoluteTouch forStack:self.delayLeftClickStack];
     
     
-    BOOL cameraGesturesUnavailable = sender.selectedSegmentIndex != RelativeTouch && sender.selectedSegmentIndex != AbsoluteTouch;
-    [self setHidden:YES forStack:self.pinchGestureStack];
+    BOOL cameraGesturesUnavailable = sender.selectedSegmentIndex != AbsoluteTouch;
+    BOOL touchpad = sender.selectedSegmentIndex == RelativeTouch;
+    [self setHidden:!touchpad forStack:self.pinchGestureStack];
     for (UIStackView *stack in gestureActionStacks) [self setHidden:cameraGesturesUnavailable forStack:stack];
     [self setHidden:cameraGesturesUnavailable forStack:rotationSensitivityStack];
-    [self setHidden:YES forStack:self.scrollSensitivityStack];
+    [self setHidden:cameraGesturesUnavailable forStack:twoFingerSlideSensitivityStack];
+    [self setHidden:!touchpad forStack:self.scrollSensitivityStack];
 
-    [self setHidden:cameraGesturesUnavailable forStack:self.ctrlDownForPinchStack];
-    [self setHidden:cameraGesturesUnavailable forStack:self.pinchSensitivityStack];
+    BOOL pinchOptionsUnavailable = cameraGesturesUnavailable && !(touchpad && self.pinchGestureSwitch.isOn);
+    [self setHidden:pinchOptionsUnavailable forStack:self.ctrlDownForPinchStack];
+    [self setHidden:pinchOptionsUnavailable forStack:self.pinchSensitivityStack];
 
     [self handleOswGestureChange];
 }
@@ -4403,7 +4434,7 @@ BOOL isCustomResolution(int resolutionSelected) {
 
 
 - (void)pinchGestureSwitchFlipped:(UISwitch* )sender{
-    // The retired storyboard switch no longer controls the gesture selectors.
+    // The original pinch switch applies only to Touchpad.
     [self touchModeChanged:self.touchModeSelector1];
 }
 
@@ -4968,6 +4999,10 @@ BOOL isCustomResolution(int resolutionSelected) {
 
 - (void)localStreamViewportChanged:(UISwitch *)sender {
     [tempSettings setValue:@(sender.isOn) forKey:sender.accessibilityIdentifier];
+}
+
+- (void)twoFingerSlideSensitivityChanged:(UISlider *)sender {
+    [self findDynamicLabelFromStack:twoFingerSlideSensitivityStack].text = [NSString stringWithFormat:@"  %d%%  ", (int)round(sender.value * 100)];
 }
 
 - (void)rotationSensitivityChanged:(UISlider *)sender {

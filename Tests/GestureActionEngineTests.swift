@@ -3,6 +3,13 @@ import Foundation
 @main
 struct GestureActionEngineTests {
     static func main() {
+        let motion = (x: 4.0, y: -8.0)
+        for sensitivity in [0.0, 0.5, 1.0, 3.0] {
+            let translated = GesturePointerMotion.scaledTranslation(motion, fingerCount: 2, sensitivity: sensitivity)
+            precondition(translated.x == 4 * sensitivity && translated.y == -8 * sensitivity)
+            let single = GesturePointerMotion.scaledTranslation(motion, fingerCount: 1, sensitivity: sensitivity)
+            precondition(single.x == motion.x && single.y == motion.y, "The slider must never change one-finger motion")
+        }
         let mappings = GestureTestKeyboard.keyboardButtonMappings
         var events: [String] = []
         var scroll: [Int16] = []

@@ -123,7 +123,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     override func reset() { super.reset(); finger = nil; delta = .zero }
 }
 
-/// Camera gestures for Single Point and Touchpad. UIKit cancels the underlying
+/// Camera gestures for Single Point. UIKit cancels the underlying
 /// mouse handler once a gesture is recognized; Native Touch stays native.
 @objc final class StreamGestureController: NSObject, UIGestureRecognizerDelegate {
     private weak var view: UIView?
@@ -131,6 +131,8 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var rotation: StreamRotationRecognizer!
     private var swipe: StreamSwipeRecognizer!
     private var motionObserver: GestureMotionObserver!
+    private var twoFingerTap: CustomTapGestureRecognizer!
+    private var twoFingerTapAction = GestureTapAction(action: "MOUSE_RIGHT")
     private let cursorEnabled = GestureAction.cursorMovement
     private var pointerSpeed = 1.0
     private var pointer = GesturePointerMotion()
@@ -152,6 +154,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     private var actions = GestureAction.defaults
     private var pinchSensitivity = 1.0
     private var rotationSensitivity = 1.0
+    private var twoFingerSlideSensitivity = 1.0
     private var controlScroll = false
     private var edgeTolerance: CGFloat = 0
     private var lastPinch = 1.0
@@ -187,6 +190,13 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         // Configuration lets Single Point receive touch down immediately when
         // its stationary-hold timer is enabled. Other modes retain swipe deferral.
         swipe.delaysTouchesBegan = true
+        twoFingerTap = CustomTapGestureRecognizer(target: self, action: #selector(twoFingerTapped))
+        twoFingerTap.numberOfTouchesRequired = 2
+        twoFingerTap.tapDownTimeThreshold = 0.1 // Same as RelativeTouchHandler.
+        twoFingerTap.delaysTouchesBegan = false
+        twoFingerTap.delaysTouchesEnded = false
+        twoFingerTap.touchCapturingView = view
+        twoFingerTap.delegate = self
         motionObserver = GestureMotionObserver(target: nil, action: nil)
         motionObserver.cancelsTouchesInView = false
         motionObserver.onSample = { [weak self] points in
@@ -232,13 +242,19 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             for recognizer in recognizers where recognizer.view !== view {
                 view.addGestureRecognizer(recognizer)
             }
+            if let tapView = (view as? StreamView)?.streamFrameTopLayerView,
+               twoFingerTap.view !== tapView {
+                tapView.addGestureRecognizer(twoFingerTap)
+            }
         }
+        twoFingerTapAction = GestureTapAction(action: settings.twoFingerTapAction ?? "MOUSE_RIGHT")
         let bindings: [String?] = [settings.pinchInAction, settings.pinchOutAction, settings.rotationAction, settings.swipeAction]
         actions = bindings
             .enumerated().map { $0.element ?? GestureAction.defaults[$0.offset] }
         swipeDrag = GestureDoubleTapDragAction(action: actions[3])
         pinchSensitivity = settings.pinchSensitivity.doubleValue
         rotationSensitivity = settings.rotationSensitivity.doubleValue
+        twoFingerSlideSensitivity = settings.twoFingerSlideSensitivity.doubleValue
         controlScroll = settings.ctrlDownForPinch
         edgeTolerance = CGFloat(settings.edgeSlidingSensitivity.doubleValue)
         pointerSpeed = settings.mousePointerVelocityFactor.doubleValue
@@ -246,8 +262,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         // A stationary finger never resolves the swipe recognizer. Deferring
         // touch down would keep AbsoluteTouchHandler's long-press timer from
         // starting at all. Recognition still cancels that timer before a swipe.
-        // Touchpad must receive the second tap immediately so its original
-        // double-tap drag can take priority over the one-finger swipe.
+        // The second tap must also reach the existing double-tap drag handler.
         swipe.delaysTouchesBegan = singlePointMode && settings.longPressAction == "NONE" && settings.doubleTapDragAction == "NONE"
         self.singlePointMode = singlePointMode
         self.enabled = enabled
@@ -261,18 +276,21 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 
     private func updateEnabled() {
-        pinch.isEnabled = enabled && (0...1).contains { actions[$0] != "NONE" }
-        rotation.isEnabled = enabled && (actions[2] != "NONE" || cursorEnabled[2])
+        let cameraEnabled = enabled && singlePointMode
+        pinch.isEnabled = cameraEnabled && (0...1).contains { actions[$0] != "NONE" }
+        rotation.isEnabled = cameraEnabled && (actions[2] != "NONE" || cursorEnabled[2])
         // Single Point already implements left-button dragging in
         // AbsoluteTouchHandler. Let it own down/move/up continuously instead of
         // cancelling it at the swipe threshold and starting a second drag.
         let usesAbsoluteLeftDrag = singlePointMode && actions[3] == "MOUSE_LEFT"
-        // With Swipe Off, preserve the original relative touchpad movement.
-        swipe.isEnabled = enabled && !usesAbsoluteLeftDrag && (actions[3] != "NONE" || singlePointMode)
-        motionObserver.isEnabled = enabled
+        // With Swipe Off, Single Point still moves the cursor without a button.
+        swipe.isEnabled = cameraEnabled && !usesAbsoluteLeftDrag && (actions[3] != "NONE" || singlePointMode)
+        motionObserver.isEnabled = cameraEnabled
+        twoFingerTap.isEnabled = cameraEnabled && twoFingerTapAction.enabled
     }
 
     @objc func cancel() {
+        twoFingerTapAction.cancel()
         swipeDrag.cancel()
         engine.cancel()
         timer?.invalidate()
@@ -291,7 +309,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         pending = [0, 0, 0]
         hasRecognizedGesture = false
         // Reset UIKit too, preventing an interrupted sequence from resuming.
-        let optionalRecognizers: [UIGestureRecognizer?] = [pinch, rotation, swipe, motionObserver]
+        let optionalRecognizers: [UIGestureRecognizer?] = [pinch, rotation, swipe, motionObserver, twoFingerTap]
         let recognizers = optionalRecognizers.compactMap { $0 }
         for recognizer in recognizers {
             let wasEnabled = recognizer.isEnabled
@@ -299,6 +317,17 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             recognizer.isEnabled = wasEnabled
         }
         TouchPadGestureHandler.cancel()
+    }
+
+    @objc private func twoFingerTapped() {
+        let currentGeneration = generation
+        // Finish UIKit's cancellation of the underlying mouse handler before
+        // sending the tap. It is a short pulse, never a drag or a timed hold.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.generation == currentGeneration else { return }
+            (self.view as? StreamView)?.cancelMouseTouchesForGesture()
+            self.twoFingerTapAction.fire()
+        }
     }
 
     @objc private func pinched(_ recognizer: UIPinchGestureRecognizer) {
@@ -383,8 +412,10 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
             } else if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
                 // Keep twist-driven yaw and add vertical translation of the
                 // two-finger centre, including while the twist angle is steady.
+                let translation = GesturePointerMotion.scaledTranslation(self.cursorDelta,
+                    fingerCount: self.fingerCount, sensitivity: self.twoFingerSlideSensitivity)
                 let motion = self.activeActions[1] != nil && self.cursorEnabled[2]
-                    ? (x: self.rotationCursorDeltaX, y: self.cursorDelta.y) : self.cursorDelta
+                    ? (x: self.rotationCursorDeltaX, y: translation.y) : translation
                 let delta = self.pointer.cursor(dx: motion.x, dy: motion.y, speed: self.pointerSpeed)
                 if delta.0 != 0 || delta.1 != 0 { LiSendMouseMoveEvent(delta.0, delta.1) }
             }
@@ -457,6 +488,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer === twoFingerTap { return singlePointMode && enabled }
         if gestureRecognizer === swipe, (view as? StreamView)?.isDoubleTapDragging() == true {
             return false
         }
@@ -479,6 +511,7 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     }
 
     deinit {
+        twoFingerTapAction.cancel()
         swipeDrag.cancel()
         engine.cancel()
         timer?.invalidate()
@@ -516,8 +549,25 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
     deinit { engine.cancel() }
 }
 
-/// Input ownership for the existing touchpad double-tap detector. Recognition
-/// and its 0.2-second click timer stay in RelativeTouchHandler.
+/// One click/chord for a completed tap, using the touchpad's 100 ms pulse.
+final class GestureTapAction {
+    private let input: GestureLongPressAction
+    private var release: DispatchWorkItem?
+    var enabled: Bool { input.enabled }
+    init(action: String) { input = GestureLongPressAction(action: action) }
+    func fire() {
+        cancel()
+        guard enabled else { return }
+        input.press()
+        let work = DispatchWorkItem { [weak self] in self?.input.cancel() }
+        release = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: work)
+    }
+    func cancel() { release?.cancel(); release = nil; input.cancel() }
+    deinit { cancel() }
+}
+
+/// Original touchpad double-tap criteria reused by Single Point.
 @objc final class GestureDoubleTapDetection: NSObject {
     // Preserve RelativeTouchHandler's original Float interval and 300-point
     // adjacency test in both mouse modes. No recognizer waits for a second tap.

@@ -1,6 +1,74 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Two-Finger Tap": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two-Finger Tap"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapnięcie dwoma palcami"
+          }
+        }
+      }
+    },
+    "Two-Finger Slide Sensitivity": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two-Finger Slide Sensitivity"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czułość przesuwania dwoma palcami"
+          }
+        }
+      }
+    },
+    "Two-Finger Tap Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap with two fingers to click the selected mouse button or press the selected keys once. Off disables this action."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tapnij dwoma palcami, aby raz kliknąć przypisanym przyciskiem myszy lub nacisnąć przypisane klawisze. Off wyłącza tę akcję."
+          }
+        }
+      }
+    },
+    "Two-Finger Slide Sensitivity Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scales cursor/camera movement from sliding both fingers together. 100% keeps the previous behavior. Rotation and pinch sensitivity are separate."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reguluje ruch kursora/kamery przy wspólnym przesuwaniu obu palców. 100% zachowuje dotychczasowe działanie. Czułość obrotu i szczypania jest ustawiana oddzielnie."
+          }
+        }
+      }
+    },
     "Always Hide Status Bar": {
       "extractionState": "manual",
       "localizations": {

@@ -1990,7 +1990,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
 - (void)toggleTouchDisabled:(bool)disabled{
     if (disabled) [self cancelMouseTouchesForGesture];
     touchHandler = disabled ? nil : sessionTouchHandler;
-    [cameraGestures setInputEnabled:!disabled && (touchMode == RelativeTouch || touchMode == AbsoluteTouch)];
+    [cameraGestures setInputEnabled:!disabled && touchMode == AbsoluteTouch];
 }
 
 - (BOOL)isMultipleTouchEnabled {
@@ -2004,7 +2004,7 @@ static NSString * const KeyboardInputSentinel = @"\u200B";
     if (!cameraGestures) cameraGestures = [[StreamGestureController alloc] initWithView:self];
     TemporarySettings *snapshot = [[[DataManager alloc] init] getSettings];
     [cameraGestures configure:snapshot
-                     enabled:(touchMode == RelativeTouch || touchMode == AbsoluteTouch) && !_streamFrameVC.touchDisabled
+                     enabled:touchMode == AbsoluteTouch && !_streamFrameVC.touchDisabled
              singlePointMode:touchMode == AbsoluteTouch];
 #endif
 }

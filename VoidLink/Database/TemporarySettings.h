@@ -99,6 +99,8 @@
 @property (nonatomic) BOOL localStreamZoomEnabled;
 @property (nonatomic, copy) NSString * longPressAction;
 @property (nonatomic, copy) NSString * doubleTapDragAction;
+@property (nonatomic, copy) NSString * twoFingerTapAction;
+@property (nonatomic, retain) NSNumber * twoFingerSlideSensitivity;
 @property (nonatomic) BOOL enablePinch;
 @property (nonatomic, copy) NSString * swipeAction;
 @property (nonatomic, copy) NSString * pinchInAction;

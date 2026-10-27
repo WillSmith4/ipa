@@ -65,8 +65,35 @@ struct LongPressActionTests {
         precondition(RecordedInput.events == ["key18:down", "key81:down", "key81:up", "key18:up"],
                      "Destroying the handler cannot leave a modifier or key held")
         print("Long press: configured keyboard/mouse pulses, Off and cleanup passed")
+        testTwoFingerTap()
         testDoubleTapDrag()
         testSwipeDrag()
+    }
+
+    static func testTwoFingerTap() {
+        for binding in ["MOUSE_RIGHT", "MOUSE_LEFT", "CTRL++", "-", "NONE", "SCROLL_UP"] {
+            RecordedInput.events = []
+            let tap = GestureTapAction(action: binding)
+            tap.fire()
+            if binding == "NONE" { precondition(RecordedInput.events.isEmpty) }
+            else { precondition(!RecordedInput.events.isEmpty, "A completed tap must act immediately") }
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15))
+            let result = RecordedInput.events
+            let down = result.filter { $0.hasSuffix(":down") }.map { String($0.dropLast(5)) }.sorted()
+            let up = result.filter { $0.hasSuffix(":up") }.map { String($0.dropLast(3)) }.sorted()
+            precondition(down == up, "A tap must release every selected key/button without waiting for another touch")
+            tap.cancel()
+            precondition(result == RecordedInput.events, "Finishing a tap cannot duplicate releases")
+        }
+        RecordedInput.events = []
+        let interrupted = GestureTapAction(action: "CTRL+MOUSE_RIGHT")
+        interrupted.fire()
+        interrupted.cancel()
+        let released = RecordedInput.events
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.15))
+        precondition(released == RecordedInput.events && released == ["key17:down", "mouse3:down", "mouse3:up", "key17:up"],
+                     "Mode changes or disconnection must release the pulse and cancel its pending callback")
+        print("Two-finger tap: immediate keyboard/mouse/wheel action, automatic release, Off and cancellation")
     }
 
     static func testSwipeDrag() {

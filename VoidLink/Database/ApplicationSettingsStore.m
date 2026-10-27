@@ -31,6 +31,7 @@
         @"mousePointerVelocityFactor", @"delayLeftClick", @"localStreamPanEnabled",
         @"localStreamZoomEnabled", @"longPressAction", @"doubleTapDragAction",
         @"passthroughGestures", @"ctrlDownForPinch", @"pinchSensitivity",
+        @"enablePinch", @"scrollSensitivity", @"twoFingerTapAction", @"twoFingerSlideSensitivity",
         @"swipeAction", @"pinchInAction", @"pinchOutAction", @"rotationAction",
         @"rotationSensitivity", @"onscreenControls", @"buttonVisualFeedback", @"touchPointTracking",
         @"enableControllerNavigation", @"streamingRadialMenuDelay", @"streamingRadialMenuButton",

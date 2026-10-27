@@ -22,6 +22,8 @@
     self.localStreamZoomEnabled = settings.localStreamZoomEnabled;
     self.longPressAction = settings.longPressAction ?: @"MOUSE_RIGHT";
     self.doubleTapDragAction = settings.doubleTapDragAction ?: @"MOUSE_LEFT";
+    self.twoFingerTapAction = settings.twoFingerTapAction ?: @"MOUSE_RIGHT";
+    self.twoFingerSlideSensitivity = settings.twoFingerSlideSensitivity ?: @1;
     self.swipeAction = settings.swipeAction ?: @"NONE";
     self.pinchInAction = settings.pinchInAction ?: @"SCROLL_DOWN";
     self.pinchOutAction = settings.pinchOutAction ?: @"SCROLL_UP";
