@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 // UIKit delivery is replaced; the recognizer body is copied from production.
 class UIView {}
