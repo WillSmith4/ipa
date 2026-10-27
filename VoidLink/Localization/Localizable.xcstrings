@@ -18,19 +18,19 @@
         }
       }
     },
-    "Two-Finger Slide Sensitivity": {
+    "2 Slide Sensitivity": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Two-Finger Slide Sensitivity"
+            "value": "2 Slide Sensitivity"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Czułość przesuwania dwoma palcami"
+            "value": "2 Slide Sensitivity"
           }
         }
       }

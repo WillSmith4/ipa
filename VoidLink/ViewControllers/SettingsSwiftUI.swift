@@ -434,7 +434,7 @@ enum SettingsItemID: String, Hashable, Identifiable {
         case .longPressAction: return "Long Press"
         case .doubleTapDragAction: return "Double Tap and Hold to Drag"
         case .twoFingerTapAction: return "Two-Finger Tap"
-        case .twoFingerSlideSensitivity: return "Two-Finger Slide Sensitivity"
+        case .twoFingerSlideSensitivity: return "2 Slide Sensitivity"
         case .pinchGesture: return "Pinch Gesture"
         case .passthroughGestures: return "Passthrough Gestures"
         case .ctrlDownForPinch: return "Ctrl Down for Pinch"
@@ -6748,8 +6748,8 @@ private struct SettingsCatalogItemView: View {
     }
 
     private func availableDynamicLabelWidth() -> CGFloat? {
-        // Keep this slider's percentage visible even with its long localized
-        // title. The title already scales down to fit the reserved space.
+        // Keep this slider's percentage visible in narrow settings panels.
+        // The title already scales down to fit the reserved space.
         if item.id == .twoFingerSlideSensitivity {
             return SettingsItemDecorationMetrics.dynamicMinimumWidth
         }

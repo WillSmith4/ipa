@@ -1771,7 +1771,7 @@ BOOL isCustomResolution(int resolutionSelected) {
     [self addSetting:rotationSensitivityStack ofId:@"rotationSensitivityStack" to:touchControlSection];
     [self rotationSensitivityChanged:rotationSensitivitySlider];
     UILabel *slideLabel = [[UILabel alloc] init];
-    slideLabel.text = [LocalizationHelper localizedStringForKey:@"Two-Finger Slide Sensitivity"];
+    slideLabel.text = [LocalizationHelper localizedStringForKey:@"2 Slide Sensitivity"];
     slideLabel.font = rotationLabel.font;
     twoFingerSlideSensitivitySlider = [[UISlider alloc] init];
     twoFingerSlideSensitivitySlider.minimumValue = 0;
