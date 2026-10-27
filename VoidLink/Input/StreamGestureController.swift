@@ -357,7 +357,11 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
                let location = self.swipeLocation {
                 // Keep this absolute move after the drag's initial position and
                 // button press; batching must not overwrite the starting point.
-                (self.view as? StreamView)?.updateSwipeDragCursorLocation(location)
+                if self.swipeDrag.dragging {
+                    (self.view as? StreamView)?.updateSwipeDragCursorLocation(location)
+                } else {
+                    (self.view as? StreamView)?.updateCursorLocation(location, isMouse: false)
+                }
             } else if self.activeActions.values.contains(where: { self.cursorEnabled[$0] }) {
                 // Keep twist-driven yaw and add vertical translation of the
                 // two-finger centre, including while the twist angle is steady.
@@ -392,19 +396,20 @@ private final class StreamSwipeRecognizer: UIGestureRecognizer {
         let index = axis == 2 ? 3 : (axis == 1 ? 2 : (amount > 0 ? 1 : 0))
         activeActions[axis] = index
         let action = actions[index]
+        let usesSwipeDrag = axis == 2 && action != "SCROLL_UP" && action != "SCROLL_DOWN"
         if (axis != 2 || singlePointMode), (action != "NONE" || cursorEnabled[index]),
            let origin = cursorAnchor.takeOrigin(fingerCount: fingerCount) {
             // Use the original down position (the midpoint for two fingers),
             // after legacy cancellation and before the first button/key/scroll.
             let location = CGPoint(x: origin.x, y: origin.y)
-            if axis == 2 {
+            if usesSwipeDrag && swipeDrag.enabled {
                 (view as? StreamView)?.updateSwipeDragCursorLocation(location)
             } else {
                 (view as? StreamView)?.updateCursorLocation(location, isMouse: false)
             }
             pointer.reset()
         }
-        if axis == 2 && action != "SCROLL_UP" && action != "SCROLL_DOWN" {
+        if usesSwipeDrag {
             // Reuse double-tap drag ownership: one press, hold through pauses,
             // release on lift/cancel. Wheel bindings retain proportional scroll.
             swipeDrag.begin()
