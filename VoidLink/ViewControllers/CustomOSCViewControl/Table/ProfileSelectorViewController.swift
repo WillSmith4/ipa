@@ -1676,6 +1676,26 @@ extension ProfileSelectorViewController: ControllerCollectionNavigationDelegate 
 
 #if !os(tvOS)
 extension ProfileSelectorViewController: UICollectionViewDragDelegate, UICollectionViewDropDelegate {
+    private func profilePreviewParameters(in collectionView: UICollectionView, at indexPath: IndexPath) -> UIDragPreviewParameters? {
+        guard let cell = collectionView.cellForItem(at: indexPath) else { return nil }
+        let parameters = UIDragPreviewParameters()
+        // Preserve the tile's transparency and rounded outline instead of UIKit's backing plate.
+        parameters.backgroundColor = .clear
+        parameters.visiblePath = UIBezierPath(
+            roundedRect: cell.contentView.convert(cell.contentView.bounds, to: cell),
+            cornerRadius: cell.contentView.layer.cornerRadius
+        )
+        return parameters
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragPreviewParametersForItemAt indexPath: IndexPath) -> UIDragPreviewParameters? {
+        profilePreviewParameters(in: collectionView, at: indexPath)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dropPreviewParametersForItemAt indexPath: IndexPath) -> UIDragPreviewParameters? {
+        profilePreviewParameters(in: collectionView, at: indexPath)
+    }
+
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
         guard loadingMode != .pickProfileData,
               let profile = profiles[indexPath.item] as? OSCProfile,
