@@ -16,7 +16,6 @@
 #endif
 #import "TemporarySettings.h"
 #import "DataManager.h"
-#import "ApplicationSettingsStore.h"
 #import "StatusBarPreferences.h"
 #import "VoidLink-Swift.h"
 #import "Connection.h"
@@ -606,31 +605,6 @@
 #endif
 }
 
-- (void)reloadSessionSettings {
-    TemporarySettings *snapshot = [[[DataManager alloc] init] getSettings];
-    if (@available(iOS 13.0, *)) {
-        [ThemeManager setUserInterfaceStyle:(UIUserInterfaceStyle)snapshot.appTheme.integerValue];
-    }
-    if (!self.isViewLoaded) return;
-    tempSettings = snapshot;
-    if (@available(iOS 14.0, *)) {
-        if (self.usesSwiftUISettings) {
-            [self reloadSwiftUISettingsForSession];
-            return;
-        }
-    }
-#if !TARGET_OS_TV
-    [self restoreCoreDataSettingsForUIKitMenu:tempSettings];
-    [self reloadGameProfileConfigsUIKit];
-#endif
-}
-
-- (void)restoreSessionDefaults {
-    if (!self.mainFrameViewController.settingsExpandedInStreamView ||
-        !ApplicationSettingsStore.shared.active) return;
-    [ApplicationSettingsStore.shared restoreDefaults];
-    [self reloadSessionSettings];
-}
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
@@ -874,13 +848,12 @@
     
     CGFloat settingsMenuOffset = _rememberFoldStateSwitch.isOn ? _scrollView.contentOffset.y : 0;
     
-    CMVideoDimensions dimensions = [self getChosenStreamDimensions];
-    NSInteger chosenResolution = self.customResolutionSwitch.isOn ? RESOLUTION_TABLE_CUSTOM_INDEX : self.resolutionSelector.selectedSegmentIndex;
-    if (self.mainFrameViewController.isStreaming && chosenResolution == tempSettings.resolutionSelected.integerValue &&
-        (chosenResolution != RESOLUTION_TABLE_CUSTOM_INDEX ||
-         (dimensions.width == tempSettings.width.intValue && dimensions.height == tempSettings.height.intValue))) {
-        dimensions.width = currentSettings.width.intValue;
-        dimensions.height = currentSettings.height.intValue;
+    CMVideoDimensions dimensions;
+    if (self.mainFrameViewController.isStreaming) {
+        dimensions.width = (int32_t)currentSettings.width.intValue;
+        dimensions.height = (int32_t)currentSettings.height.intValue;
+    } else {
+        dimensions = [self getChosenStreamDimensions];
     }
     NSInteger height = dimensions.height;
     NSInteger width = dimensions.width;
@@ -4963,7 +4936,7 @@ BOOL isCustomResolution(int resolutionSelected) {
 }
 
 - (void)preSavingActions{
-    if(self.mainFrameViewController.isStreaming && !ApplicationSettingsStore.shared.active){
+    if(self.mainFrameViewController.isStreaming){
         [self.mainFrameViewController requestForBitrate:(uint32_t)_bitrate];
     }
     

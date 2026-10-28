@@ -129,24 +129,8 @@ class OSCProfilesManager: NSObject {
             index = profiles.index(of: profile)
         }
 
-        let store = ApplicationSettingsStore.shared
-        if let sessionID = store.sessionIdentifier,
-           let globalProfile = profiles[index] as? OSCProfile {
-            let keys = ApplicationSettingsStore.profileKeys()
-            let globalValues = globalProfile.dictionaryWithValues(forKeys: keys)
-            store.stageValues(newProfile.dictionaryWithValues(forKeys: keys),
-                              previousValues: store.values(forDomain: "profile", defaults: globalValues),
-                              domain: "profile", sessionIdentifier: sessionID)
-            // Widget layout persistence keeps its existing behavior. Only the
-            // controls edited in Settings belong to the application override.
-            let sharedProfile = newProfile.mutableCopy() as! OSCProfile
-            sharedProfile.setValuesForKeys(globalValues)
-            if index > 0 || overwriteDefault { profiles.replaceObject(at: index, with: sharedProfile) }
-            persistProfiles(profiles)
-            return
-        }
-
         if index > 0 || overwriteDefault {
+            newProfile.profileIdentifier = (profiles[index] as? OSCProfile)?.profileIdentifier
             profiles.replaceObject(at: index, with: newProfile)
         }
 
@@ -171,6 +155,7 @@ class OSCProfilesManager: NSObject {
             }
         }
 
+        newProfile.profileIdentifier = (profiles[index] as? OSCProfile)?.profileIdentifier
         profiles.removeObject(at: index)
         profiles.insert(newProfile, at: index)
         persistProfiles(profiles)
@@ -191,9 +176,15 @@ class OSCProfilesManager: NSObject {
         return profilesEncoded
     }
 
-    func importEncodedProfiles(_ profilesEncoded: NSMutableArray) {
-        let localProfiles = currentProfiles.mutableCopy() as? NSMutableArray ?? NSMutableArray()
+    @discardableResult
+    func importEncodedProfiles(_ profilesEncoded: NSMutableArray) -> String? {
+        let localProfiles = getAllProfiles().mutableCopy() as? NSMutableArray ?? NSMutableArray()
         let profilesDecoded = decodeProfiles(from: profilesEncoded)
+        guard profilesDecoded.count == profilesEncoded.count, profilesDecoded.count > 0 else { return nil }
+        // Import creates local profiles; it must not reuse the identity of a source or an earlier import.
+        for case let profile as OSCProfile in profilesDecoded { profile.profileIdentifier = UUID().uuidString }
+        let importedProfiles = profilesDecoded.compactMap { $0 as? OSCProfile }
+        let assignedProfile = importedProfiles.first(where: { $0.isSelected }) ?? importedProfiles.first
         let importedIncludesDefault = (profilesDecoded.firstObject as? OSCProfile)?.name == "Default"
         let isSingleProfile = profilesEncoded.count == 1
 
@@ -248,6 +239,7 @@ class OSCProfilesManager: NSObject {
         }
         
         persistEncodedProfiles(encodedProfiles(from: profilesDecoded))
+        return assignedProfile?.profileIdentifier
     }
 
     private func isIPhone() -> Bool {
@@ -330,6 +322,15 @@ class OSCProfilesManager: NSObject {
         }
 
         let profilesDecoded = decodeProfiles(from: profilesEncoded)
+        var migrated = false
+        var identifiers = Set<String>()
+        for case let profile as OSCProfile in profilesDecoded {
+            if let identifier = profile.profileIdentifier, !identifier.isEmpty, identifiers.insert(identifier).inserted { continue }
+            profile.profileIdentifier = UUID().uuidString
+            identifiers.insert(profile.profileIdentifier!)
+            migrated = true
+        }
+        if migrated { persistProfiles(profilesDecoded) }
         currentProfiles = profilesDecoded
         return profilesDecoded
     }
@@ -366,13 +367,7 @@ class OSCProfilesManager: NSObject {
         }
 
         
-        let profile = profiles[Int(selectedIndex)] as! OSCProfile
-        if ApplicationSettingsStore.shared.active {
-            let keys = ApplicationSettingsStore.profileKeys()
-            profile.setValuesForKeys(ApplicationSettingsStore.shared.values(
-                forDomain: "profile", defaults: profile.dictionaryWithValues(forKeys: keys)))
-        }
-        return profile
+        return profiles[Int(selectedIndex)] as! OSCProfile
 
         // return (profiles.firstObject as? OSCProfile) ?? OSCProfile(name: "", buttonStates: NSMutableArray(), isSelected: false)
     }
@@ -399,6 +394,20 @@ class OSCProfilesManager: NSObject {
         }
 
         persistProfiles(profiles)
+    }
+
+    @objc(activateAssignedProfileForHostUUID:appID:)
+    func activateAssignedProfile(hostUUID: String?, appID: String?) {
+        guard let identifier = ApplicationProfileStore.shared.profileIdentifier(forHostUUID: hostUUID, appID: appID) else { return }
+        // Initialize bundled templates before looking up an assignment.
+        _ = getSelectedProfile()
+        let profiles = getAllProfiles()
+        guard let index = profiles.enumerated().first(where: { ($0.element as? OSCProfile)?.profileIdentifier == identifier })?.offset else {
+            ApplicationProfileStore.shared.setProfileIdentifier(nil, forHostUUID: hostUUID, appID: appID)
+            return
+        }
+        setProfileToSelected(UInt32(index))
+        NotificationCenter.default.post(name: Notification.Name("GameProfileSelectedNotification"), object: getSelectedProfile())
     }
 
     func updateSelectedProfile(_ oscButtonLayers: NSMutableSet) -> Bool {
@@ -428,6 +437,7 @@ class OSCProfilesManager: NSObject {
             newProfile = profile.mutableCopy() as? OSCProfile
             newProfile?.isSelected = true
             newProfile?.name = name
+            newProfile?.profileIdentifier = UUID().uuidString
         }
 
         guard let newProfile, let newProfileEncoded = try? NSKeyedArchiver.archivedData(withRootObject: newProfile, requiringSecureCoding: true) else {

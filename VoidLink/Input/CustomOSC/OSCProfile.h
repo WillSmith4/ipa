@@ -37,6 +37,7 @@ typedef NS_ENUM(NSInteger, PencilAndHoverMode) {
 @interface OSCProfile : NSObject <NSCoding, NSSecureCoding, NSMutableCopying>
 
 @property NSString *name;
+@property (nonatomic, copy, nullable) NSString *profileIdentifier;
 @property NSMutableArray <NSData *> *buttonStatesEncoded;
 @property (nonatomic, assign) int16_t unfoldedExclusiveFolderSequence;
 @property NSSet<NSNumber *> *postExclusiveUnfoldedSequences;

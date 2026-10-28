@@ -17,6 +17,7 @@
 - (id) initWithName:(NSString*)name buttonStates:(NSMutableArray*)buttonStates isSelected:(BOOL)isSelected {
     if ((self = [self init])) {
         self.name = name;
+        self.profileIdentifier = NSUUID.UUID.UUIDString;
         self.buttonStatesEncoded = buttonStates;
         self.isSelected = isSelected;
     }
@@ -30,6 +31,7 @@
 
 - (void) encodeWithCoder:(NSCoder*)encoder {
     [encoder encodeObject:self.name forKey:@"name"];
+    [encoder encodeObject:self.profileIdentifier forKey:@"profileIdentifier"];
     [encoder encodeObject:self.buttonStatesEncoded forKey:@"buttonStates"];
     [encoder encodeInt32:self.unfoldedExclusiveFolderSequence forKey:@"unfoldedExclusiveFolderSequence"];
     [encoder encodeObject:self.postExclusiveUnfoldedSequences forKey:@"postExclusiveUnfoldedSequences"];
@@ -80,6 +82,8 @@
 
 - (id) initWithCoder:(NSCoder*)decoder {
     if (self = [super init]) {
+        self.profileIdentifier = [decoder containsValueForKey:@"profileIdentifier"] ?
+            [decoder decodeObjectOfClass:NSString.class forKey:@"profileIdentifier"] : nil;
         self.name =
             [decoder decodeObjectOfClasses:
                 [NSSet setWithObjects:
@@ -211,6 +215,7 @@
 
 - (nonnull id)mutableCopyWithZone:(nullable NSZone *)zone {
     OSCProfile *copy = [[[self class] allocWithZone:zone] init];
+    copy.profileIdentifier = self.profileIdentifier;
     copy.name = [self.name mutableCopy]; // NSString → NSMutableString
     copy.buttonStatesEncoded = [[NSMutableArray alloc] initWithArray:self.buttonStatesEncoded copyItems:YES];
     copy.unfoldedExclusiveFolderSequence = self.unfoldedExclusiveFolderSequence;

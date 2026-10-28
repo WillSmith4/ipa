@@ -13,14 +13,10 @@
 #import "TemporaryApp.h"
 #import "TemporarySettings.h"
 #import "GestureSettingsMigration.h"
-#import "ApplicationSettingsStore.h"
 
 @implementation DataManager {
     NSManagedObjectContext *_managedObjectContext;
     AppDelegate *_appDelegate;
-    Settings *_sessionSettings;
-    NSDictionary *_sessionSettingsBaseline;
-    NSString *_settingsSessionIdentifier;
 }
 
 - (id) init {
@@ -45,7 +41,7 @@
 
 - (void) updateUniqueId:(NSString*)uniqueId {
     [_managedObjectContext performBlockAndWait:^{
-        [self retrieveGlobalSettings].uniqueId = uniqueId;
+        [self retrieveSettings].uniqueId = uniqueId;
         [self saveData];
     }];
 }
@@ -54,7 +50,7 @@
     __block NSString *uid;
     
     [_managedObjectContext performBlockAndWait:^{
-        uid = [self retrieveGlobalSettings].uniqueId;
+        uid = [self retrieveSettings].uniqueId;
     }];
 
     return uid;
@@ -287,33 +283,6 @@
 }
 
 - (Settings*) retrieveSettings {
-    Settings *global = [self retrieveGlobalSettings];
-    ApplicationSettingsStore *store = ApplicationSettingsStore.shared;
-    NSMutableDictionary *pending = [NSMutableDictionary dictionary];
-    if (_sessionSettings && [_settingsSessionIdentifier isEqualToString:store.sessionIdentifier]) {
-        NSDictionary *values = [_sessionSettings dictionaryWithValuesForKeys:global.entity.attributesByName.allKeys];
-        for (NSString *key in values) {
-            if (![values[key] isEqual:_sessionSettingsBaseline[key]]) pending[key] = values[key];
-        }
-    }
-    _settingsSessionIdentifier = store.sessionIdentifier;
-    _sessionSettings = nil;
-    _sessionSettingsBaseline = nil;
-    if (!_settingsSessionIdentifier) return global;
-
-    NSDictionary *values = [global dictionaryWithValuesForKeys:global.entity.attributesByName.allKeys];
-    _sessionSettingsBaseline = [store valuesForDomain:@"settings" defaults:values];
-    // An uninserted object retains the existing Settings API without ever
-    // writing application overrides into the shared Core Data row.
-    _sessionSettings = [[Settings alloc] initWithEntity:global.entity insertIntoManagedObjectContext:nil];
-    [_sessionSettings setValuesForKeysWithDictionary:_sessionSettingsBaseline];
-    // Multi-step editors (e.g. controller button capture) read repeatedly and
-    // save only at the end. Keep their unsaved fields while refreshing others.
-    [_sessionSettings setValuesForKeysWithDictionary:pending];
-    return _sessionSettings;
-}
-
-- (Settings*) retrieveGlobalSettings {
     NSArray* fetchedRecords = [self fetchRecords:@"Settings"];
     if (fetchedRecords.count == 0) {
         // create a new settings object with the default values
@@ -365,21 +334,6 @@
 }
 
 - (void) saveData {
-    if (_sessionSettings) {
-        ApplicationSettingsStore *store = ApplicationSettingsStore.shared;
-        NSDictionary *values = [_sessionSettings dictionaryWithValuesForKeys:_sessionSettings.entity.attributesByName.allKeys];
-        [store stageValues:values previousValues:_sessionSettingsBaseline
-                   domain:@"settings" sessionIdentifier:_settingsSessionIdentifier];
-        if ([_settingsSessionIdentifier isEqualToString:store.sessionIdentifier]) {
-            // Sidebar presentation preferences are shared, not stream settings.
-            Settings *global = [self retrieveGlobalSettings];
-            for (NSString *key in @[@"settingsMenuMode", @"settingsMenuWidth", @"settingsMenuOffset"]) {
-                [global setValue:[_sessionSettings valueForKey:key] forKey:key];
-            }
-        }
-        _sessionSettings = nil;
-        _sessionSettingsBaseline = nil;
-    }
     NSError* error;
     if ([_managedObjectContext hasChanges] && ![_managedObjectContext save:&error]) {
         Log(LOG_E, @"Unable to save hosts to database: %@", error);

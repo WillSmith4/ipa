@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
 xcrun clang -fobjc-arc -fblocks -framework Foundation -I VoidLink/Database \
-  VoidLink/Database/StatusBarPreferences.m VoidLink/Database/ApplicationSettingsStore.m \
+  VoidLink/Database/StatusBarPreferences.m VoidLink/Database/ApplicationProfileStore.m \
   Tests/StatusBarPreferencesTests.m -o "$test_dir/status-bar-tests"
 "$test_dir/status-bar-tests"
 python3 - <<'PY'

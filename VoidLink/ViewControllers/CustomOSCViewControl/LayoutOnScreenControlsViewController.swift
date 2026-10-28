@@ -595,7 +595,11 @@ final class LayoutOnScreenControlsViewController: UIViewController, OnScreenWidg
                 self.reloadOnScreenWidgetViews()
             }
         }
-        present(controller, animated: animated)
+        if loadingMode == .selectProfileFromMainFrame {
+            controller.presentInKeyWindow(animated: animated)
+        } else {
+            present(controller, animated: animated)
+        }
     }
 
     private var loadJustTapped:Bool = false

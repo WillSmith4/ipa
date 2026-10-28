@@ -38,7 +38,7 @@ jobs:
       - name: Test app launch URLs, icons and Web Clips
         run: bash BuildScripts/test-app-shortcuts.sh
 
-      - name: Test per-application session settings
+      - name: Test application profile assignments and shared settings
         run: bash BuildScripts/test-app-settings.sh
 
       - name: Test status bar preference

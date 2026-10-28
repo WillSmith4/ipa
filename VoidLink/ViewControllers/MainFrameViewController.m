@@ -22,7 +22,6 @@
 #import "AppListResponse.h"
 #import "ServerInfoResponse.h"
 #import "StreamFrameViewController.h"
-#import "ApplicationSettingsStore.h"
 #import "LoadingFrameViewController.h"
 #import "TemporaryApp.h"
 #import "IdManager.h"
@@ -98,12 +97,6 @@ static NSArray<UIBarButtonItem *> *VLBarButtonItems(UIBarButtonItem *first, UIBa
     id navBarAppearanceStandard;
     bool _viewJustAppeared;
     TemporaryApp * launchedApp;
-    NSDictionary *_sessionQualityBeforeEditing;
-    BOOL _sessionSettingsMenu;
-    BOOL _pendingSettingsReconnect;
-    NSNumber *_pendingSettingsBitrate;
-    dispatch_queue_t _settingsBitrateQueue;
-    NSUInteger _streamLaunchGeneration;
     BOOL _launchLinkInProgress;
 
     NSTimer *_foregroundHostUpdateTimer;
@@ -859,17 +852,12 @@ static NSMutableSet* hostList;
         self.navigationController.navigationBar.hidden = false;
     });
     
+    [[OSCProfilesManager sharedManager:CGRectZero] activateAssignedProfileForHostUUID:app.host.uuid appID:app.id];
     launchedApp = app;
-    _streamLaunchGeneration++;
-    self.settingsViewController = (SettingsViewController *)self.revealViewController.rearViewController;
-    self.settingsViewController.mainFrameViewController = self;
-    [ApplicationSettingsStore.shared beginWithHostUUID:app.host.uuid appID:app.id];
-    [self.settingsViewController reloadSessionSettings];
     [self updateResolutionAccordingly];
     self.revealViewController.isStreaming = true; // tell the revealViewController streaming is started.
     _streamConfig = [[StreamConfiguration alloc] init];
     _streamConfig.host = app.host.activeAddress;
-    _streamConfig.hostUUID = app.host.uuid;
     _streamConfig.httpsPort = app.host.httpsPort;
     _streamConfig.appID = app.id;
     _streamConfig.appName = app.name;
@@ -1457,36 +1445,9 @@ static NSMutableSet* hostList;
     }
 }
 
-- (void)revealControllerWillCollapseSettings:(SWRevealViewController *)revealController {
-    if (!revealController.isStreaming || !self.settingsExpandedInStreamView ||
-        !ApplicationSettingsStore.shared.active) return;
-    self.settingsViewController = (SettingsViewController *)revealController.rearViewController;
-    // Only the explicit collapse button commits the app's settings. Save before
-    // the panel disappears so live reconfiguration reads the committed values.
-    [self.settingsViewController saveSettings];
-    Settings *settings = [[[DataManager alloc] init] retrieveSettings];
-    NSDictionary *values = [settings dictionaryWithValuesForKeys:settings.entity.attributesByName.allKeys];
-    OSCProfile *profile = [[OSCProfilesManager sharedManager:CGRectZero] getSelectedProfile];
-    [ApplicationSettingsStore.shared commitWithSettings:values
-        profile:[profile dictionaryWithValuesForKeys:ApplicationSettingsStore.profileKeys]];
-    _pendingSettingsReconnect = _sessionQualityBeforeEditing &&
-        [ApplicationSettingsStore requiresReconnectFrom:_sessionQualityBeforeEditing to:values];
-    _pendingSettingsBitrate = _pendingSettingsReconnect ? nil : values[@"bitrate"];
-}
-
 - (void)revealController:(SWRevealViewController *)revealController willMoveToPosition:(FrontViewPosition)position {
     self.settingsViewController = (SettingsViewController*)[revealController rearViewController];
     revealController.navBarMenuDelegate = self.settingsViewController;
-
-    if (position != FrontViewPositionLeft) {
-        // Remember where the menu opened: Disconnect may end the session before
-        // its closing animation completes. That must not trigger a global save.
-        _sessionSettingsMenu = revealController.isStreaming;
-        if (_sessionSettingsMenu) {
-            TemporarySettings *settings = [[[DataManager alloc] init] getSettings];
-            _sessionQualityBeforeEditing = [settings dictionaryWithValuesForKeys:@[@"width", @"height", @"framerate"]];
-        }
-    }
     
     _settingsViewExpanded = position != FrontViewPositionLeft;
     if (position == FrontViewPositionLeft) {
@@ -1546,8 +1507,8 @@ static NSMutableSet* hostList;
         }
     }
 #if !TARGET_OS_TV
-    [self.settingsViewController setHidden:NO forStack:self.settingsViewController.resolutionStack];
-    [self.settingsViewController setHidden:NO forStack:self.settingsViewController.fpsStack];
+    [self.settingsViewController setHidden:_settingsExpandedInStreamView forStack:self.settingsViewController.resolutionStack];
+    [self.settingsViewController setHidden:_settingsExpandedInStreamView forStack:self.settingsViewController.fpsStack];
     // [self.settingsViewController widget:self.settingsViewController.bitrateSlider setEnabled:!self.settingsExpandedInStreamView];
     [self.settingsViewController setHidden:_settingsExpandedInStreamView forStack:self.settingsViewController.optimizeGamesStack];
     [self.settingsViewController setHidden:_settingsExpandedInStreamView forStack:self.settingsViewController.audioOnPcStack];
@@ -1621,81 +1582,18 @@ static NSMutableSet* hostList;
 }
 
 - (void)revealController:(SWRevealViewController *)revealController didMoveToPosition:(FrontViewPosition)position {
-    // Main settings still save on dismissal. Session settings only save through
-    // the explicit collapse button, never through Disconnect's animation.
+        // If we moved back to the center position, we should save the settings
     self.settingsViewController = (SettingsViewController*)[revealController rearViewController];
     self.settingsViewController.mainFrameViewController = self;
 
     if (position == FrontViewPositionLeft) {
         if (@available(iOS 13.0, *)) [ControllerNavigator persistUINavigationHighlight];
-        if (!_sessionSettingsMenu) [self.settingsViewController saveSettings];
-        NSNumber *bitrate = _pendingSettingsBitrate;
-        _pendingSettingsBitrate = nil;
-        if (_sessionSettingsMenu && bitrate && revealController.isStreaming) {
-            [self applySavedSessionBitrate:bitrate.integerValue];
-        }
-        _sessionSettingsMenu = NO;
-        if (_pendingSettingsReconnect) {
-            _pendingSettingsReconnect = NO;
-            dispatch_async(dispatch_get_main_queue(), ^{ [self reconnectAfterSettingsChange]; });
-        }
+        [self.settingsViewController saveSettings];
         _settingsButton.enabled = YES; // make sure these 2 buttons are enabled after closing setting view.
         _upButton.enabled = YES; // here is the select new host button
     }
     
     currentPosition = position;
-}
-
-- (void)streamSettingsSessionEndedFromController:(StreamFrameViewController *)controller {
-    if (controller != streamFrameViewController) return;
-    _pendingSettingsBitrate = nil;
-    [ApplicationSettingsStore.shared endSession];
-    [self.settingsViewController reloadSessionSettings];
-}
-
-- (void)applySavedSessionBitrate:(NSInteger)bitrateKbps {
-    // Capture the active host and the committed value before leaving the main
-    // thread. A late request must never read a different app's current slider.
-    if (!ApplicationSettingsStore.shared.active || !self.isStreaming || bitrateKbps <= 0) return;
-    NSString *sessionIdentifier = ApplicationSettingsStore.shared.sessionIdentifier;
-    HttpManager *manager = [[HttpManager alloc] initWithHost:launchedApp.host];
-    if (!_settingsBitrateQueue) _settingsBitrateQueue = dispatch_queue_create("com.voidlink.session-bitrate", DISPATCH_QUEUE_SERIAL);
-    dispatch_async(_settingsBitrateQueue, ^{
-        if (![ApplicationSettingsStore.shared.sessionIdentifier isEqualToString:sessionIdentifier]) return;
-        HttpResponse *response = [[HttpResponse alloc] init];
-        HttpRequest *request = [HttpRequest requestForResponse:response
-            withUrlRequest:[manager newBirateRequest:bitrateKbps forClient:@"unknown"]];
-        [manager executeRequestSynchronously:request];
-        NSLog(@"Live session bitrate %ld kbps: status %ld (%@)", (long)bitrateKbps,
-              (long)response.statusCode, response.statusMessage ?: @"");
-    });
-}
-
-- (void)reconnectAfterSettingsChange {
-    StreamFrameViewController *controller = streamFrameViewController;
-    TemporaryApp *app = launchedApp;
-    if (!controller || !controller.streamMan || self.navigationController.topViewController != controller ||
-        ![app.id isEqualToString:controller.streamConfig.appID] ||
-        ![app.host.uuid isEqualToString:controller.streamConfig.hostUUID]) return;
-
-    NSUInteger generation = _streamLaunchGeneration;
-    StreamManager *retiringManager = controller.streamMan;
-    controller.endingForReconnect = YES;
-    [controller returnToMainFrame];
-    [self showLoadingFrame:nil];
-    __weak typeof(self) weakSelf = self;
-    [retiringManager stopStreamWithCompletion:^{
-        typeof(self) self = weakSelf;
-        if (!self) return;
-        [self hideLoadingFrame:^{
-            if (generation != self->_streamLaunchGeneration ||
-                self.navigationController.topViewController != self ||
-                ![self->_selectedHost.uuid isEqualToString:app.host.uuid]) return;
-            [self prepareToStreamApp:app];
-            self->_streamConfig.reconnectExistingApp = YES;
-            [self performSegueWithIdentifier:@"createStreamFrame" sender:nil];
-        }];
-    }];
 }
 // #endif
 

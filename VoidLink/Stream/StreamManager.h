@@ -19,7 +19,6 @@
 - (id) initWithConfig:(StreamConfiguration*)config renderView:(UIView*)view connectionCallbacks:(id<ConnectionCallbacks>)callback;
 
 - (void) stopStream;
-- (void)stopStreamWithCompletion:(void (^)(void))completion;
 - (void) setNeedRequeuing:(bool)needRequeuing;
 
 - (NSString*) getStatsOverlayText: (uint16_t) overlayLevel;

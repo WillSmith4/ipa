@@ -352,8 +352,6 @@
 - (void)mainFrameGameProfileButtonTapped:(bool)animated;
 - (void)updateTheme;
 - (void)saveSettings;
-- (void)reloadSessionSettings;
-- (void)restoreSessionDefaults;
 
 @end
 

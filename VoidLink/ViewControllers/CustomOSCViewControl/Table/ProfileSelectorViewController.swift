@@ -9,6 +9,15 @@
 import Compression
 import UIKit
 
+#if !os(tvOS)
+private final class ProfileDragWindow: UIWindow {
+    var passesThroughTouches = false
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        passesThroughTouches ? nil : super.hitTest(point, with: event)
+    }
+}
+#endif
+
 #if os(tvOS)
 private final class ProfileSelectorNoFocusWindow: UIWindow {
     override var canBecomeFocused: Bool {
@@ -321,6 +330,12 @@ final class ProfileSelectorViewController: UIViewController, UICollectionViewDat
     private var panelConstraints: [NSLayoutConstraint] = []
     private var pendingTransitionSize: CGSize?
     private var presentationWindow: UIWindow?
+    private weak var previousKeyWindow: UIWindow?
+    private var profileCloseNotified = false
+#if !os(tvOS)
+    private var nativeDragActive = false
+    private var dismissedDuringDrag = false
+#endif
     private var themeObserver: NSObjectProtocol?
     private var profileOrderChanged = false
     private var controllerNavigationReorderActive = false
@@ -368,7 +383,7 @@ final class ProfileSelectorViewController: UIViewController, UICollectionViewDat
         if isBeingDismissed || navigationController?.isBeingDismissed == true {
             persistProfileOrderIfNeeded(notify: false)
         }
-        NotificationCenter.default.post(name: Notification.Name(PublicUtils.isTVOS ? "GameProfileSelectorCloseNotification" : "ProfileSelectorCloseNotification"), object: self)
+        notifySelectorClosed()
         // tvOS launches profileSelector without layout editor
     }
 
@@ -379,6 +394,7 @@ final class ProfileSelectorViewController: UIViewController, UICollectionViewDat
             ControllerNavigator.restorePreviousUINavigationDelegate(ifCurrentDelegateIs: self)
         }
         if isBeingDismissed || navigationController?.isBeingDismissed == true {
+            previousKeyWindow?.makeKey()
             presentationWindow?.isHidden = true
             presentationWindow = nil
         }
@@ -398,9 +414,15 @@ final class ProfileSelectorViewController: UIViewController, UICollectionViewDat
         tap.delegate = self
         view.addGestureRecognizer(tap)
 
+        #if os(tvOS)
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleCollectionLongPress(_:)))
         longPress.minimumPressDuration = 0.25
         profileCollectionView.addGestureRecognizer(longPress)
+        #else
+        profileCollectionView.dragInteractionEnabled = loadingMode != .pickProfileData
+        profileCollectionView.dragDelegate = self
+        profileCollectionView.dropDelegate = self
+        #endif
 
         reloadProfilesAsync(scrollToSelected: true)
     }
@@ -425,8 +447,36 @@ final class ProfileSelectorViewController: UIViewController, UICollectionViewDat
         })
     }
 
+    private func notifySelectorClosed() {
+        guard !profileCloseNotified else { return }
+        profileCloseNotified = true
+        NotificationCenter.default.post(name: Notification.Name(PublicUtils.isTVOS ? "GameProfileSelectorCloseNotification" : "ProfileSelectorCloseNotification"), object: self)
+    }
+
     @objc private func dismissSelf() {
+#if !os(tvOS)
+        if nativeDragActive, let window = presentationWindow as? ProfileDragWindow {
+            // Keep the source and its window alive until UIKit finishes the drag.
+            // New touches and drop hit-testing can now reach Hosts / Applications below.
+            dismissedDuringDrag = true
+            contentView.alpha = 0
+            window.passesThroughTouches = true
+            previousKeyWindow?.makeKey()
+            persistProfileOrderIfNeeded(notify: false)
+            ControllerNavigator.restorePreviousUINavigationDelegate(ifCurrentDelegateIs: self)
+            notifySelectorClosed()
+            return
+        }
+#endif
         dismiss(animated: false)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+#if !os(tvOS)
+        return nativeDragActive
+#else
+        return false
+#endif
     }
 
     @objc func presentInKeyWindow(animated: Bool) {
@@ -444,12 +494,17 @@ final class ProfileSelectorViewController: UIViewController, UICollectionViewDat
 #if os(tvOS)
         let window = ProfileSelectorNoFocusWindow(windowScene: windowScene)
 #else
-        let window = UIWindow(windowScene: windowScene)
+        let window = ProfileDragWindow(windowScene: windowScene)
 #endif
         let rootViewController = UIViewController()
         rootViewController.view.backgroundColor = .clear
         window.rootViewController = rootViewController
+#if os(tvOS)
         window.windowLevel = .alert + 1
+#else
+        window.windowLevel = .normal + 1
+#endif
+        previousKeyWindow = windowScene.windows.first(where: { $0.isKeyWindow })
         window.backgroundColor = .clear
         window.isHidden = false
         window.makeKeyAndVisible()
@@ -1012,59 +1067,19 @@ final class ProfileSelectorViewController: UIViewController, UICollectionViewDat
     }
 
     private func fileToProfiles(_ sourceURL: URL) {
-        var restoreFailed = false
         let accessed = sourceURL.startAccessingSecurityScopedResource()
-        if !accessed {
-            restoreFailed = true
-        }
-
-        defer {
-            if accessed {
-                sourceURL.stopAccessingSecurityScopedResource()
-            }
-        }
-
+        defer { if accessed { sourceURL.stopAccessingSecurityScopedResource() } }
         do {
-            let fileData = try Data(contentsOf: sourceURL)
-            let profilePayloadData = try ProfileFileContainer.unpackedData(from: fileData)
-            // NSLog("profile file read: \(UInt32(fileData.count))")
-            let classes: [AnyClass] = [NSMutableData.self, NSMutableArray.self]
-            let profilesEncoded = try NSKeyedUnarchiver.unarchivedObject(ofClasses: classes, from: profilePayloadData) as? NSMutableArray
-
-            let restoredAlert = UIAlertController(
-                title: LocalizationHelper.localizedString(forKey: ""),
-                message: LocalizationHelper.localizedString(forKey: "Pofiles imported"),
-                preferredStyle: .alert
-            )
-            let failedAlert = UIAlertController(
-                title: LocalizationHelper.localizedString(forKey: ""),
-                message: LocalizationHelper.localizedString(forKey: "Failed to import profiles"),
-                preferredStyle: .alert
-            )
-            let okAction = UIAlertAction(title: LocalizationHelper.localizedString(forKey: "OK"), style: .default)
-
-            if restoreFailed || profilesEncoded == nil {
-                failedAlert.addAction(okAction)
-                present(failedAlert, animated: true)
-            } else {
-                profilesManager.importEncodedProfiles(profilesEncoded!)
-                restoredAlert.addAction(okAction)
-                present(restoredAlert, animated: true)
-            }
-
+            let fileData = try Data(contentsOf: sourceURL, options: .mappedIfSafe)
+            _ = try GameProfileTransfer.importFile(fileData)
             profileViewRefresh()
-            // NSLog("profile test: \(UInt32(profilesEncoded?.count ?? 0))")
+            let alert = UIAlertController(title: nil, message: "Pofiles imported".localized, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK".localized, style: .default))
+            present(alert, animated: true)
         } catch {
-            restoreFailed = true
-            let failedAlert = UIAlertController(
-                title: LocalizationHelper.localizedString(forKey: ""),
-                message: LocalizationHelper.localizedString(forKey: "Failed to import profiles"),
-                preferredStyle: .alert
-            )
-            failedAlert.addAction(UIAlertAction(title: LocalizationHelper.localizedString(forKey: "OK"), style: .default))
-            present(failedAlert, animated: true)
-            profileViewRefresh()
-            // NSLog("解码失败: \(error)")
+            let alert = UIAlertController(title: nil, message: "Failed to import profiles".localized, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK".localized, style: .default))
+            present(alert, animated: true)
         }
     }
 
@@ -1658,3 +1673,70 @@ extension ProfileSelectorViewController: ControllerCollectionNavigationDelegate 
         updateVisibleReorderHiddenCells()
     }
 }
+
+#if !os(tvOS)
+extension ProfileSelectorViewController: UICollectionViewDragDelegate, UICollectionViewDropDelegate {
+    func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+        guard loadingMode != .pickProfileData,
+              let profile = profiles[indexPath.item] as? OSCProfile,
+              let identifier = profile.profileIdentifier else { return [] }
+        let item = UIDragItem(itemProvider: NSItemProvider(object: profile.name as NSString))
+        item.localObject = GameProfileDragReference(identifier: identifier)
+        return [item]
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionIsRestrictedToDraggingApplication session: UIDragSession) -> Bool { true }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionWillBegin session: UIDragSession) {
+        nativeDragActive = true
+        session.localContext = self
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dragSessionDidEnd session: UIDragSession) {
+        nativeDragActive = false
+        persistProfileOrderIfNeeded(notify: !dismissedDuringDrag)
+        if dismissedDuringDrag { dismiss(animated: false) }
+        session.localContext = nil
+    }
+
+    func collectionView(_ collectionView: UICollectionView, canHandle session: UIDropSession) -> Bool {
+        loadingMode != .pickProfileData && GameProfileTransfer.accepts(session)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+        if dismissedDuringDrag { return UICollectionViewDropProposal(operation: .forbidden) }
+        if let reference = session.items.first?.localObject as? GameProfileDragReference {
+            guard let source = profiles.enumerated().first(where: { ($0.element as? OSCProfile)?.profileIdentifier == reference.identifier })?.offset, source > 0 else {
+                return UICollectionViewDropProposal(operation: .forbidden)
+            }
+            return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+        }
+        return UICollectionViewDropProposal(operation: .copy, intent: .unspecified)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+        guard !dismissedDuringDrag, let item = coordinator.items.first else { return }
+        if let reference = item.dragItem.localObject as? GameProfileDragReference {
+            guard let source = profiles.enumerated().first(where: { ($0.element as? OSCProfile)?.profileIdentifier == reference.identifier })?.offset, source > 0 else { return }
+            let destination = min(max(1, coordinator.destinationIndexPath?.item ?? profiles.count - 1), profiles.count - 1)
+            let from = IndexPath(item: source, section: 0)
+            let to = IndexPath(item: destination, section: 0)
+            collectionView.performBatchUpdates {
+                self.collectionView(collectionView, moveItemAt: from, to: to)
+                collectionView.moveItem(at: from, to: to)
+            }
+            coordinator.drop(item.dragItem, toItemAt: to)
+            persistProfileOrderIfNeeded(notify: true)
+        } else {
+            GameProfileTransfer.loadFile(from: item.dragItem.itemProvider) { [weak self] result in
+                guard let self else { return }
+                do {
+                    _ = try GameProfileTransfer.importFile(result.get())
+                    self.reloadProfilesAsync(notify: true)
+                    GameProfileTransfer.showImportResult(true, on: self)
+                } catch { GameProfileTransfer.showImportResult(false, on: self) }
+            }
+        }
+    }
+}
+#endif

@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "StatusBarPreferences.h"
-#import "ApplicationSettingsStore.h"
+#import "ApplicationProfileStore.h"
 
 static void Check(BOOL condition, NSString *message) {
     if (!condition) { NSLog(@"FAIL: %@", message); exit(1); }
@@ -26,14 +26,10 @@ int main(void) {
         preferences.alwaysHideStatusBar = NO;
         Check(changes == 1, @"Unchanged values do not cause repeated appearance updates");
 
-        ApplicationSettingsStore *apps = [[ApplicationSettingsStore alloc] initWithDefaults:defaults];
-        [apps beginWithHostUUID:@"pc-a" appID:@"game-a"];
-        [apps commitWithSettings:@{@"width": @1920} profile:@{}];
-        [apps restoreDefaults];
-        [apps endSession];
-        [apps beginWithHostUUID:@"pc-b" appID:@"game-b"];
-        Check(!preferences.alwaysHideStatusBar, @"Save, Restore Defaults and switching games cannot reset shared status bar visibility");
-        [apps endSession];
+        ApplicationProfileStore *apps = [[ApplicationProfileStore alloc] initWithDefaults:defaults];
+        [apps setProfileIdentifier:@"profile-a" forHostUUID:@"pc-a" appID:@"game-a"];
+        [apps setProfileIdentifier:@"profile-b" forHostUUID:@"pc-b" appID:@"game-b"];
+        Check(!preferences.alwaysHideStatusBar, @"Assigning game profiles cannot reset shared status bar visibility");
 
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{ preferences.alwaysHideStatusBar = YES; });
         NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:2];

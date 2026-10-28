@@ -71,6 +71,7 @@ final class UIAppView: UIButton {
         addSubview(appImage)
 
         #if !os(tvOS)
+        addInteraction(UIDropInteraction(delegate: self))
         if #available(iOS 13.0, *) {
             let delegate = UIAppViewContextMenuDelegate(appView: self)
             contextMenuDelegate = delegate
@@ -269,3 +270,64 @@ private final class UIAppViewContextMenuDelegate: NSObject, UIContextMenuInterac
         return nil
     }
 }
+
+#if !os(tvOS)
+extension UIAppView: UIDropInteractionDelegate {
+    func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool {
+        app.host?.uuid != nil && app.id != nil && GameProfileTransfer.accepts(session)
+    }
+
+    func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession) -> UIDropProposal {
+        UIDropProposal(operation: .copy)
+    }
+
+    func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession) {
+        guard let item = session.items.first, let hostUUID = app.host?.uuid, let appID = app.id else { return }
+        // Capture the destination before asynchronous iCloud/file loading can finish.
+        if let reference = item.localObject as? GameProfileDragReference {
+            assignProfile(reference.identifier, hostUUID: hostUUID, appID: appID)
+        } else {
+            GameProfileTransfer.loadFile(from: item.itemProvider) { [weak self] result in
+                do {
+                    let identifier = try GameProfileTransfer.importFile(result.get())
+                    ApplicationProfileStore.shared.setProfileIdentifier(identifier, forHostUUID: hostUUID, appID: appID)
+                    self?.showProfileDropFeedback(identifier)
+                } catch {
+                    GameProfileTransfer.showImportResult(false, on: self?.dropPresentationController())
+                }
+            }
+        }
+    }
+
+    private func assignProfile(_ identifier: String, hostUUID: String, appID: String) {
+        let profiles = OSCProfilesManager.sharedManager(.zero).getAllProfiles()
+        guard profiles.contains(where: { ($0 as? OSCProfile)?.profileIdentifier == identifier }) else { return }
+        ApplicationProfileStore.shared.setProfileIdentifier(identifier, forHostUUID: hostUUID, appID: appID)
+        showProfileDropFeedback(identifier)
+    }
+
+    private func dropPresentationController() -> UIViewController? {
+        var controller = window?.rootViewController
+        while let presented = controller?.presentedViewController, !presented.isBeingDismissed { controller = presented }
+        return controller
+    }
+
+    private func showProfileDropFeedback(_ identifier: String) {
+        let profiles = OSCProfilesManager.sharedManager(.zero).getAllProfiles()
+        let profile = profiles.compactMap { $0 as? OSCProfile }.first { $0.profileIdentifier == identifier }
+        let label = UILabel()
+        label.text = "✓ " + (profile?.name ?? "Game Profile".localized)
+        label.textColor = .white
+        label.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.95)
+        label.textAlignment = .center
+        label.font = .preferredFont(forTextStyle: .caption1)
+        label.numberOfLines = 2
+        label.frame = CGRect(x: 0, y: bounds.midY - 24, width: bounds.width, height: 48)
+        label.autoresizingMask = [.flexibleWidth, .flexibleTopMargin, .flexibleBottomMargin]
+        addSubview(label)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIAccessibility.post(notification: .announcement, argument: label.text)
+        UIView.animate(withDuration: 0.25, delay: 2, options: []) { label.alpha = 0 } completion: { _ in label.removeFromSuperview() }
+    }
+}
+#endif

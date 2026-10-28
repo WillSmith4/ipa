@@ -1,27 +1,40 @@
-# Settings during a stream
+# Settings and application Game Profiles
 
-Opening Settings from the edge of the stream uses overrides for that host UUID
-and application ID. The main application's Settings still edits the shared
-defaults. Existing installations need no database migration.
+The in-session sidebar uses the same settings as the main menu, as before
+application overrides were introduced. Its collapse button closes the sidebar
+and uses the original shared-settings/live-update path. Resolution, custom
+resolution and frame rate are hidden during streaming. Restore Defaults and
+settings-driven reconnection have been removed. Old per-app settings snapshots
+are ignored; they are not converted into Game Profiles.
 
-The existing collapse button saves all session-editable settings, including
-Touch Control, gesture assignments and the Settings-owned OSC/Pencil controls.
-Opening the menu or disconnecting the stream does not create or overwrite an
-application override. Only the explicit collapse button commits it.
-Codec, HDR, YUV 4:4:4, frame pacing, async dequeue, renderer and other
-connection-only options remain shared. Widget layout persistence is unchanged.
+To assign an existing Game Profile, hold it in Game Profiles, tap outside with
+another finger, navigate to a host and Applications, and drop it on an app tile.
+The native iOS drag preview remains above the interface. Dropping inside the
+profile list still reorders profiles; Default remains first. Controller reorder
+is unchanged. Dropping another profile on the same app overwrites its assignment.
 
-Video Resolution, Custom Resolution and Frame Rate are available in the session
-sidebar. Changing effective width, height or FPS reconnects to the same running
-application after the old transport has fully stopped. Other edits use the
-existing live update path. Closing an unchanged resolution selector does not
-recalculate the stream size from a newly rotated window.
+Assignments store only the stable profile identifier under a key made from the
+trimmed/lowercase host UUID and trimmed app ID, each base64-encoded separately.
+Renaming, reordering or editing the existing profile preserves the assignment.
+Duplicates and imported copies receive their own identifiers. A missing/deleted
+profile falls back to the current profile and clears its stale assignment.
+Unassigned apps keep the original current-profile selection behavior.
 
-The ellipsis menu contains **Restore Defaults** only during a stream. It removes
-the current application's override and displays the main settings. Collapse the
-sidebar to apply them; reconnection is needed only if resolution or FPS changes.
-Subsequent main-settings changes are inherited until another app override is saved.
+When starting an assigned app, VoidLink selects that existing Game Profile
+before constructing the stream. The profile's existing widget layout and
+settings marked with a gamepad icon apply; no general settings are copied into
+an app-specific record. Edits to that shared Game Profile also affect other apps
+assigned to it.
 
-`BuildScripts/test-app-settings.sh` checks persistence, host/app isolation,
-restoring shared defaults, reconnect decisions, the real DataManager methods
-against Core Data, and waiting for connection termination before reconnecting.
+Existing profile files (raw archives and compressed VLPR .bin exports) can be
+dropped from Files into the profile list to import them. Dropping a file on an
+app tile imports it and assigns it to that host/app. For an export containing
+multiple profiles, all are imported and the exported selected profile is
+assigned (or the first profile if the export has no selected profile). Import
+and Export buttons remain available. Invalid files do not modify the collection.
+
+`BuildScripts/test-app-settings.sh` checks assignment isolation/persistence,
+shared Core Data settings, stable profile identity, import validation and
+activation using the production persistence methods. Existing gesture,
+localization, shortcut and status-bar tests remain in the macOS build workflow.
+The multi-finger drag across Hosts/Applications also requires an iPad UI check.

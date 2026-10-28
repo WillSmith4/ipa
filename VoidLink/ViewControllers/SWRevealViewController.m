@@ -1178,23 +1178,6 @@ const int FrontViewPositionNone = 0xff;
     }];
 }
 
-- (void)restoreSessionDefaults {
-    if (self.isStreaming && [self.navBarMenuDelegate respondsToSelector:@selector(restoreSessionDefaults)]) {
-        [self.navBarMenuDelegate restoreSessionDefaults];
-    }
-}
-
-- (UIMenu *)settingsMenuWithActions:(NSArray<UIMenuElement *> *)actions API_AVAILABLE(ios(13.0)) {
-    NSMutableArray *items = [actions mutableCopy];
-    if (self.isStreaming) {
-        [items addObject:[UIAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"Restore Defaults"]
-                                           image:[UIImage systemImageNamed:@"arrow.uturn.backward"]
-                                      identifier:nil handler:^(__kindof UIAction *action) {
-            [self restoreSessionDefaults];
-        }]];
-    }
-    return [UIMenu menuWithTitle:@"" children:items];
-}
 - (UIAction* )getAllSettingMenuAction API_AVAILABLE(ios(13.0)){
     return [UIAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"All Settings"] image:[UIImage systemImageNamed:@"circle.grid.3x3"] identifier:nil handler:^(__kindof UIAction * _Nonnull action) {
         [self allSettingSelected];
@@ -1218,7 +1201,7 @@ const int FrontViewPositionNone = 0xff;
     if (@available(iOS 13.0, *)) {
         // UIAction* action1 = [self getAllSettingMenuAction];
         UIAction* action1 = [self getDoneRemoveSettingAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1]];
     }
 
     if ([self.navBarMenuDelegate respondsToSelector:@selector(enterRemoveSettingItemMode)]) {
@@ -1230,7 +1213,7 @@ const int FrontViewPositionNone = 0xff;
     if (@available(iOS 13.0, *)) {
         UIAction* action1 = [self getAllSettingMenuAction];
         UIAction* action2 = [self getRemoveSettingItemAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1, action2]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1, action2]];
     }
 
     if ([self.navBarMenuDelegate respondsToSelector:@selector(doneRemoveSettingItem)]) {
@@ -1254,13 +1237,13 @@ const int FrontViewPositionNone = 0xff;
         // 创建菜单
         switch ([self getSettingsMenuMode]) {
             case AllSettings:
-                menu = [self settingsMenuWithActions:@[[self getFavoriteMenuAction]]];
+                menu = [UIMenu menuWithTitle:@"" children:@[[self getFavoriteMenuAction]]];
                 break;
             case FavoriteSettings:
-                menu = [self settingsMenuWithActions:@[action1, action2]];
+                menu = [UIMenu menuWithTitle:@"" children:@[action1, action2]];
                 break;
             case RemoveSettingItem:
-                menu = [self settingsMenuWithActions:@[[self getDoneRemoveSettingAction]]];
+                menu = [UIMenu menuWithTitle:@"" children:@[[self getDoneRemoveSettingAction]]];
                 break;
             default:
                 break;
@@ -1309,12 +1292,6 @@ const int FrontViewPositionNone = 0xff;
         default:
             break;
     }
-    if (self.isStreaming) {
-        [actionSheet addAction:[UIAlertAction actionWithTitle:[LocalizationHelper localizedStringForKey:@"Restore Defaults"]
-                                                       style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-            [self restoreSessionDefaults];
-        }]];
-    }
     actionSheet.popoverPresentationController.sourceView = _contentView.rearNavView; // center of the view;
     actionSheet.popoverPresentationController.sourceRect = CGRectMake(_rearViewRevealWidth + _moreButton.imageInsets.right - _moreButton.image.size.width/2, _contentView.rearNavView.bounds.size.height+_contentView.safeAreaInsets.top, 1.0, 1.0);
     [self presentViewController:actionSheet animated:NO completion:nil];
@@ -1334,7 +1311,7 @@ const int FrontViewPositionNone = 0xff;
     if (@available(iOS 13.0, *)) {
         UIAction* action1 = [self getAllSettingMenuAction];
         UIAction* action2 = [self getRemoveSettingItemAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1, action2]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1, action2]];
     }
     if ([self.navBarMenuDelegate respondsToSelector:@selector(switchToFavoriteSettings)]) {
         [self.navBarMenuDelegate switchToFavoriteSettings];
@@ -1344,7 +1321,7 @@ const int FrontViewPositionNone = 0xff;
 - (void)allSettingSelected {
     if (@available(iOS 13.0, *)) {
         UIAction* action1 = [self getFavoriteMenuAction];
-        if (@available(iOS 14.0, *)) _moreButton.menu = [self settingsMenuWithActions:@[action1]];
+        if (@available(iOS 14.0, *)) _moreButton.menu = [UIMenu menuWithTitle:@"" children:@[action1]];
     }
     if ([self.navBarMenuDelegate respondsToSelector:@selector(switchToAllSettings)]) {
         [self.navBarMenuDelegate switchToAllSettings];
@@ -1362,11 +1339,7 @@ const int FrontViewPositionNone = 0xff;
 }
 
 - (void)foldRearView{
-    if (self.isStreaming && _frontViewPosition > FrontViewPositionLeft &&
-        [_delegate respondsToSelector:@selector(revealControllerWillCollapseSettings:)]) {
-        [_delegate revealControllerWillCollapseSettings:self];
-    }
-    [self setFrontViewPosition:FrontViewPositionLeft animated:YES];
+    [self revealToggleAnimated:YES];
 }
 
 - (void)disconnectRemoteSession{
@@ -1376,8 +1349,7 @@ const int FrontViewPositionNone = 0xff;
     if([self getSettingsMenuMode] == FavoriteSettings) [self favoriteSettingSelected];
     
     // foldRearView此时, 收起时先通过mainFrame委托方法触发setHidden:false(hidden=false, 并更新清单) 再由内部willMoveToPosition运行layoutSettingsView，根据清单执行隐藏, 确保经过setHidden:false的stack可以恢复显示。
-    // Disconnect closes the panel without invoking the Settings save button.
-    [self setFrontViewPosition:FrontViewPositionLeft animated:YES];
+    [self foldRearView];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"SessionDisconnectedBySettingsMenuNotification" object:self];
 
     // 以上两段没有执行顺序要求，因为第一段放后面的话， 也能保证stack不会在hidden状态下被转移到新的superView

@@ -1293,7 +1293,6 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
         
         [safeTimer pause];
         [safeTimer clean];
-        [self.mainFrameViewcontroller streamSettingsSessionEndedFromController:self];
     }
 }
 
@@ -1709,7 +1708,7 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 - (void) connectionStarted {
     Log(LOG_I, @"Connection started");
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.endingForReconnect || self->_returningToMainFrame) return;
+        if (self->_returningToMainFrame) return;
         // Leave the spinner spinning until it's obscured by
         // the first frame of video.
         self->_stageLabel.hidden = YES;
@@ -1741,14 +1740,14 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 }
 
 - (void)connectionTerminated:(int)errorCode {
-    if (self.endingForReconnect || _returningToMainFrame) return;
+    if (_returningToMainFrame) return;
     Log(LOG_I, @"Connection terminated: %d", errorCode);
     
     unsigned int portFlags = LiGetPortFlagsFromTerminationErrorCode(errorCode);
     unsigned int portTestResults = LiTestClientConnectivity(CONN_TEST_SERVER, 443, portFlags);
     
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.endingForReconnect || self->_returningToMainFrame) return;
+        if (self->_returningToMainFrame) return;
         [self->_streamView cancelStreamGestures];
         // Allow the display to go to sleep now
         [UIApplication sharedApplication].idleTimerDisabled = NO;
@@ -1843,14 +1842,14 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 }
 
 - (void) stageComplete:(const char*)stageName {
-    if (self.endingForReconnect || _returningToMainFrame) return;
+    if (_returningToMainFrame) return;
     _micStreamInitialized = false;
     if(strcmp(stageName, "mic stream establishment")==0){
 #if !TARGET_OS_TV
         if(self->_streamConfig.redirectMic){
             dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC));
             dispatch_after(delay, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                if (self.endingForReconnect || self->_returningToMainFrame) return;
+                if (self->_returningToMainFrame) return;
                 self->_micStreamInitialized = true;
                 self->micHandler = [[MicHandler alloc] initWithUseBuiltinMic:self->_settings.useBuiltinMic];
                 [MicHandler setVolume:self->_settings.micVolume.floatValue];
@@ -1888,13 +1887,13 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 }
 
 - (void) stageFailed:(const char*)stageName withError:(int)errorCode portTestFlags:(int)portTestFlags {
-    if (self.endingForReconnect || _returningToMainFrame) return;
+    if (_returningToMainFrame) return;
     Log(LOG_I, @"Stage %s failed: %d", stageName, errorCode);
     
     unsigned int portTestResults = LiTestClientConnectivity(CONN_TEST_SERVER, 443, portTestFlags);
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.endingForReconnect || self->_returningToMainFrame) return;
+        if (self->_returningToMainFrame) return;
         [self->_streamView cancelStreamGestures];
         // Allow the display to go to sleep now
         [UIApplication sharedApplication].idleTimerDisabled = NO;
@@ -1924,11 +1923,11 @@ static __weak StreamFrameViewController *VLSharedStreamFrameViewController = nil
 }
 
 - (void) launchFailed:(NSString*)message {
-    if (self.endingForReconnect || _returningToMainFrame) return;
+    if (_returningToMainFrame) return;
     Log(LOG_I, @"Launch failed: %@", message);
     
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.endingForReconnect || self->_returningToMainFrame) return;
+        if (self->_returningToMainFrame) return;
         [self->_streamView cancelStreamGestures];
         // Allow the display to go to sleep now
         [UIApplication sharedApplication].idleTimerDisabled = NO;
